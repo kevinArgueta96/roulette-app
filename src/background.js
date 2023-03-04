@@ -24,6 +24,9 @@ async function createWindow() {
     }
   })
 
+  win.setFullScreen(true)
+  
+
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
@@ -62,6 +65,7 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
+  
   const mainMenu = Menu.buildFromTemplate([])
   Menu.setApplicationMenu(mainMenu)
   createWindow()

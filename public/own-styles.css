@@ -1,0 +1,70 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #fdf1f0;
+}
+
+#container-objects {
+  height: 100%;
+}
+
+#app {
+  margin-top: 2000px;
+}
+
+header {
+  width: 100%;
+  background-color: black;
+  height: 5rem;
+}
+
+.footer {
+  width: 500px;
+  height: 180px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  margin: 1%;
+}
+
+.win-colmun {
+  height: 100%;
+  background-color: blueviolet;
+}
+
+.win-central {
+  background-color: aqua;
+  height: 100%;
+}
+
+.win-text {
+  position: relative;
+  top: 50%;
+}
+
+#null-column {
+  position: absolute;
+  height: 33.33%;
+  position: relative;
+}
+
+
+
+@media only screen and (max-width: 1400) {
+  #null-column-rigth {
+    position: absolute;
+    background-color: blue;
+    height: 33.33%;
+    position: relative;
+    right: 1650%;
+  }
+}
+#null-column-rigth {
+  position: absolute;
+    height: 33.33%;
+    position: relative;
+    right: 165%;
+}
+
