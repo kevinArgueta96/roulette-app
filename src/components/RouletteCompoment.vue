@@ -49,59 +49,55 @@ export default {
         "#ffeda3",
       ],
 
+      spinRoullete: true,
       heightCircule: 0,
       widthCircule: 0,
-
       startAngle: 0,
       spinTimeout: null,
-
       spinArcStart: 10, // para decir cuanto girara el arco
       spinTime: 0,
       spinTimeTotal: 0,
-
       ctx: null,
       circuleLogoCenter: null,
-
       canvas: null,
-      radio: 85,
 
-      outsideRadius: 400, // radio del circulo, que tan grande sera
-      textRadius: 250, // radio del tecto
-      insideRadius: 10,
+      outsideRadius: 300, // radio del circulo, que tan grande sera
+      textRadius: 200, // radio del tecto
+      insideRadius: 50,
     };
   },
   mounted() {
-    //console.log(this.$refs.testRef.offsetWidth);
-    //console.log(this.$refs.testRef.offsetHeight);
+    
     this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight;
 
-    //this.drawRouletteWheel();
-    // this.drawMiddleRouletteWheel();
     requestAnimationFrame(this.drawRouletteWheel);
+
+
+  
   },
   methods: {
-    setName(event, lastName) {
-      this.name = event.target.value + " " + lastName;
-    },
     drawRouletteWheel() {
       this.canvas = this.$refs.myCanvas;
-
       this.ctx = this.canvas.getContext("2d");
-      this.ctx.clearRect(0, 0, 500, 500);
+      const widthCircle = this.widthCircule / 2;
+      const heightCirlce = this.heightCircule / 2;
+
+      this.ctx.moveTo(widthCircle, heightCirlce - this.outsideRadius);
+
+      this.ctx.save();
+      this.ctx.restore();
 
       this.ctx.strokeStyle = "white";
       this.ctx.lineWidth = 1;
 
       this.ctx = this.canvas.getContext("2d");
 
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
       // determina el color de la line externa
       this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
       this.ctx.beginPath();
 
-      this.ctx.font = "bold 20px Helvetica, Arial";
+      this.ctx.font = "bold 1rem Helvetica, Arial";
 
       for (let i = 0; i < this.options.length; i++) {
         let angle = this.startAngle + i * this.arc;
@@ -136,9 +132,9 @@ export default {
           angle,
           true
         );
+
         this.ctx.stroke();
         this.ctx.fill();
-
         this.ctx.save();
 
         this.ctx.beginPath();
@@ -156,11 +152,19 @@ export default {
 
         this.ctx.stroke();
 
-        this.ctx.shadowOffsetX = -1;
-        this.ctx.shadowOffsetY = -1;
+        this.ctx.shadowOffsetX = 0;
+        this.ctx.shadowOffsetY = 0;
         this.ctx.shadowBlur = 0;
-        this.ctx.shadowColor = "rgb(220,220,220)";
-        this.ctx.fillStyle = "black";
+
+        if (i === 0 || i === 2 || i === 3 || i === 5) {
+          this.ctx.shadowColor = "white";
+          this.ctx.fillStyle = "white";
+        }
+
+        if (i === 1 || i === 4 || i === 6 || i === 7) {
+          this.ctx.shadowColor = "black";
+          this.ctx.fillStyle = "black";
+        }
 
         if (i === 7) {
           //this.textRadius = this.textRadius +50
@@ -179,12 +183,13 @@ export default {
             this.heightCircule / 2 +
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 1);
+          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
         }
 
         var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
         this.ctx.restore();
+        
       }
 
       //Arrow
@@ -192,16 +197,19 @@ export default {
       this.ctx.fillStyle = "blue";
       this.ctx.beginPath();
 
-      const widthOfArrow = 10;
-      const heigthOfArrow = 15;
-      const widthOfTriangle = 25;
-      const largeOfTriangle = 35;
+      var img = new Image();
+      img.src = "/img/storytel-flecha.png";
 
-      this.ctx.moveTo(
-        widthCircle - widthOfArrow,
-        heightCirlce - (this.outsideRadius + heigthOfArrow)
-      );
-      this.ctx.lineTo(
+      img.onload = () => {
+        this.ctx.drawImage(img, widthCircle - 40, -4);
+      };
+
+      //const widthOfArrow = 0;
+      //const heigthOfArrow = 0;
+      //const widthOfTriangle = 25;
+      //const largeOfTriangle = 35;
+
+      /*this.ctx.lineTo(
         widthCircle + widthOfArrow,
         heightCirlce - (this.outsideRadius + heigthOfArrow)
       );
@@ -230,14 +238,16 @@ export default {
         heightCirlce - (this.outsideRadius + heigthOfArrow)
       );
 
-      this.ctx.fill();
+      this.ctx.fill();*/
     },
 
     spin() {
-      this.spinAngleStart = Math.random() * 10 + 10;
-      this.spinTime = 0;
-      this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
-      this.rotateWheel();
+      if (this.spinRoullete) {
+        this.spinAngleStart = Math.random() * 10 + 10;
+        this.spinTime = 0;
+        this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
+        this.rotateWheel();
+      }
     },
 
     rotateWheel() {
@@ -268,11 +278,13 @@ export default {
       var index = Math.floor((360 - (degrees % 360)) / arcd);
       this.ctx.save();
       this.ctx.font = "bold 30px Helvetica, Arial";
+      index === 0;
 
       if (index === 7) {
         this.$emit("showImg", { type: "win" });
+      } else {
+        this.$emit("showImg", { type: "loose" });
       }
-      this.$emit("showImg", { type: "loose" });
 
       this.ctx.restore();
     },
@@ -331,5 +343,4 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-</style>
+<style scoped></style>
