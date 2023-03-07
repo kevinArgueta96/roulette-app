@@ -4,14 +4,14 @@
       <div class="col-sm-12">
         <div class="row" id="null-column">
           <WinRowComponent
-            srcImg="/img/win-image.png"
+            srcImg="/img/loose-image.png"
             :visible="isVisbleLooseImg"
           />
         </div>
       </div>
       <div class="row" style="height: 100%;">
         <div class="col-sm-1 win-colmun">
-          <div class="row" id="null-column"></div>
+          <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
             <WinRowComponent
               srcImg="/img/win-image.png"
@@ -24,7 +24,7 @@
           <RouletteCompoment msg="Welcome to Your Vue.js App" @showImg="showImg"/>
         </div>
         <div class="col-sm-1 win-colmun">
-          <div class="row" id="null-column"></div>
+          <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-rigth">
             <WinRowComponent srcImg="/img/win-image.png" :visible="isVisbleWinImg" />
           </div>
@@ -58,7 +58,12 @@ export default {
   },
   methods: {
     showImg(value) {
-      this.isVisbleWinImg = value;
+      if(value.type === 'loose'){
+        this.isVisbleLooseImg = true;
+      } else{
+        this.isVisbleWinImg = true;
+      }
+      
     },
   },
   watch: {

@@ -1,9 +1,19 @@
 <template>
-  <div class="hello">
-    <div id="roulette" @click="spin()">
-      <canvas id="canvas" ref="myCanvas" width="300" height="300"></canvas>
-      <button id="spin-button">Girar</button>
-    </div>
+  <div class="container text-center" style="height: 100%" ref="testRef">
+    <canvas
+      id="canvas"
+      @click="spin()"
+      ref="myCanvas"
+      :width="widthCircule"
+      :height="heightCircule"
+    ></canvas>
+
+    <!--<div class="row central-columns-top-down" style="height: 100%; background-color: red; position: relative; bottom: 100%; z-index: -1;">
+        <canvas id="canvas2" ref="myCanvas2" width="300" height="200"></canvas>
+    </div>-->
+    <!--<div style="position: relative; bottom: ; 10px;background-color: aquamarine;">
+      <canvas id="canvasOther" ref="myCanvasOther" width="100" height="100"></canvas>
+    </div>-->
   </div>
 </template>
 
@@ -19,71 +29,217 @@ export default {
       counter: 0,
       name: "",
       options: [
-        "Premio 1",
-        "Premio 2",
-        "Premio 3",
-        "Premio 4",
-        "Premio 5",
-        "Premio 6",
+        "LAHJAKORTT",
+        "UUDESTAAN",
+        "YLLÄTYSPALKINTO",
+        "LAHJAKORTTI",
+        "TUOTEPALKINTO",
+        "YLLÄTYSPALKINTO",
+        "UUDESTAAN",
+        "PÄÄPALKINTO",
       ],
+      colors: [
+        "#000000",
+        "#c9ecff",
+        "#ff501c",
+        "#4f6068",
+        "#fff2f1",
+        "#ff501c",
+        "#c9ecff",
+        "#ffeda3",
+      ],
+
+      heightCircule: 0,
+      widthCircule: 0,
+
       startAngle: 0,
       spinTimeout: null,
-      spinArcStart: 10,
-      spinTimeTotal: 0,
+
+      spinArcStart: 10, // para decir cuanto girara el arco
       spinTime: 0,
+      spinTimeTotal: 0,
+
       ctx: null,
+      circuleLogoCenter: null,
+
+      canvas: null,
+      radio: 85,
+
+      outsideRadius: 400, // radio del circulo, que tan grande sera
+      textRadius: 250, // radio del tecto
+      insideRadius: 10,
     };
   },
   mounted() {
-    this.drawRouletteWheel();
+    //console.log(this.$refs.testRef.offsetWidth);
+    //console.log(this.$refs.testRef.offsetHeight);
+    this.widthCircule = this.$refs.testRef.offsetWidth;
+    this.heightCircule = this.$refs.testRef.offsetHeight;
+
+    //this.drawRouletteWheel();
+    // this.drawMiddleRouletteWheel();
+    requestAnimationFrame(this.drawRouletteWheel);
   },
   methods: {
     setName(event, lastName) {
       this.name = event.target.value + " " + lastName;
     },
     drawRouletteWheel() {
-      const canvas = this.$refs.myCanvas;
-      this.ctx = canvas.getContext("2d");
-      this.ctx.fillStyle = "#";
-      this.ctx.strokeStyle = "#000";
-      this.ctx.lineWidth = 2;
-      this.ctx.clearRect(0, 0, 300, 300);
+      this.canvas = this.$refs.myCanvas;
+
+      this.ctx = this.canvas.getContext("2d");
+      this.ctx.clearRect(0, 0, 500, 500);
+
+      this.ctx.strokeStyle = "white";
+      this.ctx.lineWidth = 1;
+
+      this.ctx = this.canvas.getContext("2d");
+
+      const widthCircle = this.widthCircule / 2;
+      const heightCirlce = this.heightCircule / 2;
+      // determina el color de la line externa
+      this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
       this.ctx.beginPath();
-      this.ctx.arc(150, 150, 120, 0, 2 * Math.PI);
-      this.ctx.stroke();
-      this.ctx.save();
-      this.ctx.translate(150, 150);
+
+      this.ctx.font = "bold 20px Helvetica, Arial";
+
       for (let i = 0; i < this.options.length; i++) {
-        const angle = this.startAngle + i * this.arc;
-        this.ctx.fillStyle = i % 2 === 0 ? "#eaeaea" : "#fff";
+        let angle = this.startAngle + i * this.arc;
+        this.ctx.fillStyle = this.colors[i];
+        //this.ctx.fillStyle = i % 2 === 0 ? "#eaeaea" : "#A4A5A5";
+
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, 100, angle, angle + this.arc);
-        this.ctx.lineTo(0, 0);
+        this.ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius,
+          angle,
+          angle + this.arc,
+          false
+        );
+
+        this.ctx.beginPath();
+        this.ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius,
+          angle,
+          angle + this.arc,
+          false
+        );
+
+        this.ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.insideRadius,
+          angle + this.arc,
+          angle,
+          true
+        );
+        this.ctx.stroke();
         this.ctx.fill();
+
         this.ctx.save();
+
+        this.ctx.beginPath();
+
+        this.ctx.strokeStyle = "black";
+        this.ctx.lineWidth = 20;
+        this.ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius + 20,
+          angle,
+          angle + this.arc,
+          false
+        );
+
+        this.ctx.stroke();
+
         this.ctx.shadowOffsetX = -1;
         this.ctx.shadowOffsetY = -1;
         this.ctx.shadowBlur = 0;
-        this.ctx.shadowColor = "#fff";
-        this.ctx.fillStyle = "#000";
-        this.ctx.translate(0, 100);
-        this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-        const text = this.options[i];
+        this.ctx.shadowColor = "rgb(220,220,220)";
+        this.ctx.fillStyle = "black";
+
+        if (i === 7) {
+          //this.textRadius = this.textRadius +50
+          this.ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+        } else {
+          this.ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius +
+              20,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 1);
+        }
+
+        var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
         this.ctx.restore();
       }
-      
-      this.ctx.restore();
-      
+
+      //Arrow
+
+      this.ctx.fillStyle = "blue";
+      this.ctx.beginPath();
+
+      const widthOfArrow = 10;
+      const heigthOfArrow = 15;
+      const widthOfTriangle = 25;
+      const largeOfTriangle = 35;
+
+      this.ctx.moveTo(
+        widthCircle - widthOfArrow,
+        heightCirlce - (this.outsideRadius + heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + widthOfArrow,
+        heightCirlce - (this.outsideRadius + heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + widthOfArrow,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + widthOfTriangle,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + 0,
+        heightCirlce - (this.outsideRadius - largeOfTriangle)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfTriangle,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfArrow,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfArrow,
+        heightCirlce - (this.outsideRadius + heigthOfArrow)
+      );
+
+      this.ctx.fill();
     },
+
     spin() {
-      this.$emit('showImg', {type:"loose"})
-      this.$emit('showImg', {type:"win"})
-      this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
+      this.spinAngleStart = Math.random() * 10 + 10;
       this.spinTime = 0;
-      this.spinArcStart = Math.random() * 10 + 10;
+      this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
       this.rotateWheel();
     },
+
     rotateWheel() {
       this.spinTime += 30;
       if (this.spinTime >= this.spinTimeTotal) {
@@ -93,37 +249,32 @@ export default {
       const spinAngle =
         this.spinArcStart -
         this.easeOut(this.spinTime, 0, this.spinArcStart, this.spinTimeTotal);
+
       this.startAngle += (spinAngle * Math.PI) / 180;
       this.drawRouletteWheel();
       this.spinTimeout = setTimeout(this.rotateWheel, 30);
     },
 
-    easeOut(t, b, c, d) {
-      const ts = (t /= d) * t;
-      const tc = ts * t;
-      return b + c * (tc + -3 * ts + 3 * t);
+    easeOut(spinTime, b, spinArcStart, spinTimeTotal) {
+      const ts = (spinTime /= spinTimeTotal) * spinTime;
+      const tc = ts * spinTime;
+      return b + spinArcStart * (tc + -3 * ts + 3 * spinTime);
     },
 
     stopRotateWheel() {
       clearTimeout(this.spinTimeout);
-      const degrees = (this.startAngle * 180) / Math.PI + 90;
-      const arcd = (this.arc * 180) / Math.PI;
-      const index = Math.floor((360 - (degrees % 360)) / arcd);
+      var degrees = (this.startAngle * 180) / Math.PI + 90;
+      var arcd = (this.arc * 180) / Math.PI;
+      var index = Math.floor((360 - (degrees % 360)) / arcd);
       this.ctx.save();
-      this.ctx.font = "bold 30px sans-serif";
-      const text = this.options[index];
-      this.ctx.fillText(
-        text,
-        150 - this.ctx.measureText(text).width / 2,
-        150 + 10
-      );
+      this.ctx.font = "bold 30px Helvetica, Arial";
+
+      if (index === 7) {
+        this.$emit("showImg", { type: "win" });
+      }
+      this.$emit("showImg", { type: "loose" });
+
       this.ctx.restore();
-      const now = new Date();
-      const day = now.getDate().toString().padStart(2, "0");
-      const month = (now.getMonth() + 1).toString().padStart(2, "0");
-      const year = now.getFullYear();
-      console.log(`La fecha actual es: ${day}/${month}/${year}`);
-      
     },
     add(num) {
       fetch("https://roulette-db-default-rtdb.firebaseio.com/suervey.json", {
@@ -173,7 +324,7 @@ export default {
   },
   computed: {
     arc() {
-      return Math.PI / (this.options.length / 2);
+      return Math.PI / (this.options.length / 2); // valor de cada arco
     },
   },
 };

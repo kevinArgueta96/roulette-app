@@ -3,7 +3,6 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #fdf1f0;
 }
 
 #container-objects {
@@ -30,13 +29,13 @@ header {
 }
 
 .win-colmun {
-  height: 100%;
-  background-color: blueviolet;
+  height: 100%; 
+  
 }
 
 .win-central {
-  background-color: aqua;
   height: 100%;
+  position: relative;
 }
 
 .win-text {
@@ -50,21 +49,19 @@ header {
   position: relative;
 }
 
-
-
-@media only screen and (max-width: 1400) {
-  #null-column-rigth {
-    position: absolute;
-    background-color: blue;
-    height: 33.33%;
-    position: relative;
-    right: 1650%;
-  }
+#null-column-top {
+  height: 20%;
+  position: relative;
 }
+
 #null-column-rigth {
-  position: absolute;
     height: 33.33%;
     position: relative;
     right: 165%;
 }
 
+.central-columns-middle{
+  position: relative;
+  height: 5%;
+  background-color: cadetblue;
+}
