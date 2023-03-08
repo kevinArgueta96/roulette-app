@@ -7,6 +7,20 @@
       :width="widthCircule"
       :height="heightCircule"
     ></canvas>
+    <img
+      src="/img/logo.png"
+      style="position: absolute;"
+      :style="{top: topCentralLogo + '%' , right: rightCentralLogo + '%', width: widthCentralLogo + '%' }"
+      class="img-fluid win-text"
+      alt="Responsive image"
+    />
+    <img
+      src="/img/storytel-flecha.png"
+      style="position: absolute;"
+      :style="{top: topArrowLogo + '%' , right: rightArrowLogo + '%', width: widthArrowLogo + '%' }"
+      class="img-fluid win-text"
+      alt="Responsive image"
+    />
 
     <!--<div class="row central-columns-top-down" style="height: 100%; background-color: red; position: relative; bottom: 100%; z-index: -1;">
         <canvas id="canvas2" ref="myCanvas2" width="300" height="200"></canvas>
@@ -25,6 +39,14 @@ export default {
   },
   data: () => {
     return {
+      screenWidth: window.innerWidth,
+      screenHeight: window.innerHeight,
+      topCentralLogo: 0,
+      rightCentralLogo: 0,
+      widthCentralLogo: 0,
+      topArrowLogo: 0,
+      rightArrowLogo: 0,
+      widthArrowLogo: 0,
       result: [],
       counter: 0,
       name: "",
@@ -64,19 +86,37 @@ export default {
       outsideRadius: 300, // radio del circulo, que tan grande sera
       textRadius: 200, // radio del tecto
       insideRadius: 50,
+      
     };
   },
+  created() {
+    window.addEventListener("resize", this.handleResize);
+  },
+
+  destroyed() {
+    window.removeEventListener("resize", this.handleResize);
+  },
   mounted() {
-    
     this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight;
-
+    this.validateSizeOfImg();
     requestAnimationFrame(this.drawRouletteWheel);
-
-
-  
   },
   methods: {
+    validateSizeOfImg(){
+      if(this.screenWidth > 1024){
+        this.topCentralLogo = 40;  
+        this.rightCentralLogo = 40;
+        this.widthCentralLogo = 17;
+        this.topArrowLogo= 12;
+        this.rightArrowLogo= 44;
+        this.widthArrowLogo= 10;
+      }
+    },
+    handleResize() {
+      this.screenWidth = window.innerWidth;
+      this.screenHeight = window.innerHeight;
+    },
     drawRouletteWheel() {
       this.canvas = this.$refs.myCanvas;
       this.ctx = this.canvas.getContext("2d");
@@ -189,20 +229,12 @@ export default {
         var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
         this.ctx.restore();
-        
       }
 
       //Arrow
 
       this.ctx.fillStyle = "blue";
       this.ctx.beginPath();
-
-      var img = new Image();
-      img.src = "/img/storytel-flecha.png";
-
-      img.onload = () => {
-        this.ctx.drawImage(img, widthCircle - 40, -4);
-      };
 
       //const widthOfArrow = 0;
       //const heigthOfArrow = 0;
@@ -243,6 +275,7 @@ export default {
 
     spin() {
       if (this.spinRoullete) {
+        this.spinRoullete = false;
         this.spinAngleStart = Math.random() * 10 + 10;
         this.spinTime = 0;
         this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
@@ -285,7 +318,9 @@ export default {
       } else {
         this.$emit("showImg", { type: "loose" });
       }
-
+      setTimeout(() => {
+        this.spinRoullete = true;
+      }, 3000);
       this.ctx.restore();
     },
     add(num) {
@@ -339,6 +374,11 @@ export default {
       return Math.PI / (this.options.length / 2); // valor de cada arco
     },
   },
+  watch:{
+    /*screenWidth(value){
+      console.log(value);
+    }*/
+  }
 };
 </script>
 
