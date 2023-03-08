@@ -9,15 +9,23 @@
     ></canvas>
     <img
       src="/img/logo.png"
-      style="position: absolute;"
-      :style="{top: topCentralLogo + '%' , right: rightCentralLogo + '%', width: widthCentralLogo + '%' }"
+      style="position: absolute"
+      :style="{
+        top: topCentralLogo + '%',
+        right: rightCentralLogo + '%',
+        width: widthCentralLogo + '%',
+      }"
       class="img-fluid win-text"
       alt="Responsive image"
     />
     <img
       src="/img/storytel-flecha.png"
-      style="position: absolute;"
-      :style="{top: topArrowLogo + '%' , right: rightArrowLogo + '%', width: widthArrowLogo + '%' }"
+      style="position: absolute"
+      :style="{
+        top: topArrowLogo + '%',
+        right: rightArrowLogo + '%',
+        width: widthArrowLogo + '%',
+      }"
       class="img-fluid win-text"
       alt="Responsive image"
     />
@@ -62,13 +70,13 @@ export default {
       ],
       colors: [
         "#000000",
-        "#c9ecff",
-        "#ff501c",
-        "#4f6068",
-        "#fff2f1",
-        "#ff501c",
-        "#c9ecff",
-        "#ffeda3",
+        "#6c334b",
+        "#c49e95",
+        "#9a4038",
+        "#8c585c",
+        "#48001e",
+        "#434959",
+        "#ff5527",
       ],
 
       spinRoullete: true,
@@ -104,10 +112,10 @@ export default {
   methods: {
     validateSizeOfImg() {
       if (this.screenWidth > 1024) {
-        this.topCentralLogo = 40;
-        this.rightCentralLogo = 40;
+        this.topCentralLogo = 39;
+        this.rightCentralLogo = 39.5;
         this.widthCentralLogo = 17;
-        this.topArrowLogo = 12;
+        this.topArrowLogo = 1;
         this.rightArrowLogo = 44;
         this.widthArrowLogo = 10;
       }
@@ -136,7 +144,7 @@ export default {
       this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
       this.ctx.beginPath();
 
-      this.ctx.font = "bold 1rem Helvetica, Arial";
+      this.ctx.font = "bold 0.9rem Sans Serif, Arial";
 
       for (let i = 0; i < this.options.length; i++) {
         let angle = this.startAngle + i * this.arc;
@@ -178,52 +186,24 @@ export default {
 
         this.ctx.beginPath();
 
-        this.ctx.strokeStyle = "black";
-        this.ctx.lineWidth = 20;
-        this.ctx.arc(
-          widthCircle,
-          heightCirlce,
-          this.outsideRadius + 20,
-          angle,
-          angle + this.arc,
-          false
-        );
-
         this.ctx.stroke();
 
         this.ctx.shadowOffsetX = 0;
         this.ctx.shadowOffsetY = 0;
         this.ctx.shadowBlur = 0;
 
-        if (i === 0 || i === 2 || i === 3 || i === 5) {
-          this.ctx.shadowColor = "white";
-          this.ctx.fillStyle = "white";
-        }
+        this.ctx.shadowColor = "white";
+        this.ctx.fillStyle = "white";
 
-        if (i === 1 || i === 4 || i === 6 || i === 7) {
-          this.ctx.shadowColor = "black";
-          this.ctx.fillStyle = "black";
-        }
-
-        if (i === 7) {
-          //this.textRadius = this.textRadius +50
-          this.ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
-          );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-        } else {
-          this.ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius +
-              20,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
-          );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
-        }
+        this.ctx.translate(
+          this.widthCircule / 2 +
+            Math.cos(angle + this.arc / 2) * this.textRadius +
+            10,
+          this.heightCircule / 2 +
+            Math.sin(angle + this.arc / 2) * this.textRadius
+        );
+        
+        this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
 
         var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
