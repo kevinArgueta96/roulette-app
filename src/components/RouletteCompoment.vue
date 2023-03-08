@@ -274,6 +274,7 @@ export default {
     },
 
     spin() {
+      
       if (this.spinRoullete) {
         this.spinRoullete = false;
         this.spinAngleStart = Math.random() * 10 + 10;
