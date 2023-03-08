@@ -62,13 +62,13 @@ export default {
       ],
       colors: [
         "#000000",
-        "#c9ecff",
-        "#ff501c",
-        "#4f6068",
-        "#fff2f1",
-        "#ff501c",
-        "#c9ecff",
-        "#ffeda3",
+        "#C9ECFF",
+        "#FF501C",
+        "#2B353A",
+        "#FFF2F1",
+        "#FF501C",
+        "#C9ECFF",
+        "#FFEDA3",
       ],
 
       spinRoullete: true,
@@ -76,7 +76,7 @@ export default {
       widthCircule: 0,
       startAngle: 0,
       spinTimeout: null,
-      spinArcStart: 10, // para decir cuanto girara el arco
+      spinArcStart: 20, // para decir cuanto girara el arco
       spinTime: 0,
       spinTimeTotal: 0,
       ctx: null,
@@ -107,9 +107,9 @@ export default {
         this.topCentralLogo = 40;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
-        this.topArrowLogo = 12;
-        this.rightArrowLogo = 44;
-        this.widthArrowLogo = 10;
+        this.topArrowLogo = 10;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6;
       }
     },
     handleResize() {
@@ -206,6 +206,7 @@ export default {
         }
 
         if (i === 7) {
+          
           //this.textRadius = this.textRadius +50
           this.ctx.translate(
             this.widthCircule / 2 +
@@ -214,6 +215,7 @@ export default {
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+          
         } else {
           this.ctx.translate(
             this.widthCircule / 2 +
@@ -225,16 +227,14 @@ export default {
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
         }
 
+       
         var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
         this.ctx.restore();
       }
 
       //Arrow
-
-      this.ctx.fillStyle = "blue";
-      this.ctx.beginPath();
-
+      
       //const widthOfArrow = 0;
       //const heigthOfArrow = 0;
       //const widthOfTriangle = 25;
@@ -275,9 +275,8 @@ export default {
     spin() {
       if (this.spinRoullete) {
         this.spinRoullete = false;
-        this.spinAngleStart = Math.random() * 10 + 10;
+        this.spinTimeTotal = Math.random() * (10 + 10) * 500;
         this.spinTime = 0;
-        this.spinTimeTotal = Math.random() * 3 + 4 * 1000;
         this.rotateWheel();
       }
     },
@@ -310,7 +309,6 @@ export default {
       var index = Math.floor((360 - (degrees % 360)) / arcd);
       this.ctx.save();
       this.ctx.font = "bold 30px Helvetica, Arial";
-      index === 0;
 
       if (index === 7) {
         this.$emit("showImg", { type: "win" });
