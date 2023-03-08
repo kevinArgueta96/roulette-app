@@ -86,7 +86,6 @@ export default {
       outsideRadius: 300, // radio del circulo, que tan grande sera
       textRadius: 200, // radio del tecto
       insideRadius: 50,
-      
     };
   },
   created() {
@@ -103,14 +102,14 @@ export default {
     requestAnimationFrame(this.drawRouletteWheel);
   },
   methods: {
-    validateSizeOfImg(){
-      if(this.screenWidth > 1024){
-        this.topCentralLogo = 40;  
+    validateSizeOfImg() {
+      if (this.screenWidth > 1024) {
+        this.topCentralLogo = 40;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
-        this.topArrowLogo= 12;
-        this.rightArrowLogo= 44;
-        this.widthArrowLogo= 10;
+        this.topArrowLogo = 12;
+        this.rightArrowLogo = 44;
+        this.widthArrowLogo = 10;
       }
     },
     handleResize() {
@@ -274,7 +273,6 @@ export default {
     },
 
     spin() {
-      
       if (this.spinRoullete) {
         this.spinRoullete = false;
         this.spinAngleStart = Math.random() * 10 + 10;
@@ -316,6 +314,7 @@ export default {
 
       if (index === 7) {
         this.$emit("showImg", { type: "win" });
+        this.$emit("showImg", { type: "roulette" });
       } else {
         this.$emit("showImg", { type: "loose" });
       }
@@ -375,11 +374,11 @@ export default {
       return Math.PI / (this.options.length / 2); // valor de cada arco
     },
   },
-  watch:{
+  watch: {
     /*screenWidth(value){
       console.log(value);
     }*/
-  }
+  },
 };
 </script>
 

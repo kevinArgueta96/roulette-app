@@ -1,27 +1,22 @@
 <template>
   <div id="app">
+    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti"  />
     <div class="container text-center" id="container-objects">
       <div class="col-sm-12">
         <div class="row" id="null-column">
-          <WinRowComponent
-            srcImg="/img/loose-image.png"
-            :visible="isVisbleLooseImg"
-          />
+          <WinRowComponent srcImg="/img/loose-image.png" :visible="isVisbleLooseImg" />
         </div>
       </div>
       <div class="row" style="height: 100%;">
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent
-              srcImg="/img/win-image.png"
-              :visible="isVisbleWinImg"
-            />
+            <WinRowComponent srcImg="/img/win-image.png" :visible="isVisbleWinImg" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
         <div class="col-sm-10 win-central">
-          <RouletteCompoment msg="Welcome to Your Vue.js App" @showImg="showImg"/>
+          <RouletteCompoment msg="Welcome to Your Vue.js App" @showImg="showImg" />
         </div>
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
@@ -43,27 +38,32 @@
 <script>
 import RouletteCompoment from "./components/RouletteCompoment.vue";
 import WinRowComponent from "./components/WinRowComponent.vue";
+import ConfettiComponent from "./components/ConfettiComponent.vue";
 
 export default {
   name: "App",
   components: {
     RouletteCompoment,
     WinRowComponent,
+    ConfettiComponent,
   },
   data: () => {
     return {
       isVisbleWinImg: false,
       isVisbleLooseImg: false,
+      isVisibleConfetti: false,
     };
   },
   methods: {
     showImg(value) {
-      if(value.type === 'loose'){
+
+      if (value.type === "loose") {
         this.isVisbleLooseImg = true;
-      } else{
+      } else if(value.type === "win"){
         this.isVisbleWinImg = true;
+      }else {
+        this.isVisibleConfetti = !this.isVisibleConfetti;
       }
-      
     },
   },
   watch: {
@@ -78,6 +78,13 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
+        }, 3000);
+      }
+    },
+    isVisibleConfetti(value) {
+      if (value) {
+        setTimeout(() => {
+          this.isVisibleConfetti = !this.isVisibleConfetti;
         }, 3000);
       }
     },
