@@ -71,21 +71,21 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
-        }, 3000);
+        }, 4000);
       }
     },
     isVisbleLooseImg(value) {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
-        }, 3000);
+        }, 4000);
       }
     },
     isVisibleConfetti(value) {
       if (value) {
         setTimeout(() => {
           this.isVisibleConfetti = !this.isVisibleConfetti;
-        }, 3000);
+        }, 4000);
       }
     },
   },

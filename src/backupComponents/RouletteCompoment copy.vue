@@ -317,7 +317,7 @@ export default {
       }
       setTimeout(() => {
         this.spinRoullete = true;
-      }, 3000);
+      }, 4000);
       this.ctx.restore();
     },
     generateNumberToShow(position) {

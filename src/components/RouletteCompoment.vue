@@ -21,14 +21,13 @@
       class="img-fluid win-text"
       alt="Responsive image"
     />
-
   </div>
 </template>
 
 <script>
 export default {
   name: "HelloWorld",
- 
+
   data: () => {
     return {
       winner: null,
@@ -67,7 +66,7 @@ export default {
       spinRoullete: true,
       heightCircule: 0,
       widthCircule: 0,
-      startAngle: 0,
+      startAngle: 5.1,
       spinTimeout: null,
       spinArcStart: 15, // para decir cuanto girara el arco
       spinTime: 0,
@@ -102,9 +101,9 @@ export default {
         this.topCentralLogo = 40;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
-        this.topArrowLogo = 10;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6;
+        this.topArrowLogo = 0;
+        this.rightArrowLogo = 45;
+        this.widthArrowLogo = 8;
       }
     },
     handleResize() {
@@ -158,7 +157,7 @@ export default {
         this.ctx.beginPath();
 
         this.ctx.strokeStyle = "black";
-        this.ctx.lineWidth = 20;
+        this.ctx.lineWidth = 15;
         this.ctx.arc(
           widthCircle,
           heightCirlce,
@@ -185,7 +184,6 @@ export default {
         }
 
         if (i === 7) {
-          //this.textRadius = this.textRadius +50
           this.ctx.translate(
             this.widthCircule / 2 +
               Math.cos(angle + this.arc / 2) * this.textRadius,
@@ -206,6 +204,7 @@ export default {
 
         var text = this.options[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
+       
         this.ctx.restore();
       }
     },
@@ -268,7 +267,7 @@ export default {
       }
       setTimeout(() => {
         this.spinRoullete = true;
-      }, 3000);
+      }, 5000);
       this.ctx.restore();
     },
     generateNumberToShow() {
@@ -394,13 +393,10 @@ export default {
     },
     actualPosition() {
       var degrees = (this.startAngle * 180) / Math.PI + 90;
-      //var arcd = (this.arc * 180) / Math.PI;
       return Math.floor(360 - (degrees % 360));
     },
   },
-  watch: {
-  
-  },
+  watch: {},
 };
 </script>
 

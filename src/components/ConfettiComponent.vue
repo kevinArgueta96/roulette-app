@@ -52,7 +52,7 @@ export default {
           this.confetti.clear();
           this.confetti = null;
           this.confetti = new ConfettiGenerator(this.confettiSettings);
-        }, 3000);
+        }, 4000);
       }
     },
   },
