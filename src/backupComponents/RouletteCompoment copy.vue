@@ -1,5 +1,6 @@
 <template>
   <div class="container text-center" style="height: 100%" ref="testRef">
+    {{ actualPosition }}
     <canvas
       id="canvas"
       @click="spin()"
@@ -22,16 +23,23 @@
       alt="Responsive image"
     />
 
+    <!--<div class="row central-columns-top-down" style="height: 100%; background-color: red; position: relative; bottom: 100%; z-index: -1;">
+        <canvas id="canvas2" ref="myCanvas2" width="300" height="200"></canvas>
+    </div>-->
+    <!--<div style="position: relative; bottom: ; 10px;background-color: aquamarine;">
+      <canvas id="canvasOther" ref="myCanvasOther" width="100" height="100"></canvas>
+    </div>-->
   </div>
 </template>
 
 <script>
 export default {
   name: "HelloWorld",
- 
+  props: {
+    msg: String,
+  },
   data: () => {
     return {
-      winner: null,
       screenWidth: window.innerWidth,
       screenHeight: window.innerHeight,
       topCentralLogo: 0,
@@ -67,7 +75,7 @@ export default {
       spinRoullete: true,
       heightCircule: 0,
       widthCircule: 0,
-      startAngle: 0,
+      startAngle: 5.1,
       spinTimeout: null,
       spinArcStart: 15, // para decir cuanto girara el arco
       spinTime: 0,
@@ -79,8 +87,6 @@ export default {
       outsideRadius: 300, // radio del circulo, que tan grande sera
       textRadius: 200, // radio del tecto
       insideRadius: 50,
-
-      speedRoulette: 10,
     };
   },
   created() {
@@ -117,6 +123,11 @@ export default {
       const widthCircle = this.widthCircule / 2;
       const heightCirlce = this.heightCircule / 2;
 
+      this.ctx.moveTo(widthCircle, heightCirlce - this.outsideRadius);
+
+      this.ctx.save();
+      this.ctx.restore();
+
       this.ctx.strokeStyle = "white";
       this.ctx.lineWidth = 1;
 
@@ -130,8 +141,19 @@ export default {
 
       for (let i = 0; i < this.options.length; i++) {
         let angle = this.startAngle + i * this.arc;
-
         this.ctx.fillStyle = this.colors[i];
+        //this.ctx.fillStyle = i % 2 === 0 ? "#eaeaea" : "#A4A5A5";
+
+        this.ctx.beginPath();
+        this.ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius,
+          angle,
+          angle + this.arc,
+          false
+        );
+
         this.ctx.beginPath();
         this.ctx.arc(
           widthCircle,
@@ -208,40 +230,67 @@ export default {
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
         this.ctx.restore();
       }
+
+      //Arrow
+
+      //const widthOfArrow = 0;
+      //const heigthOfArrow = 0;
+      //const widthOfTriangle = 25;
+      //const largeOfTriangle = 35;
+
+      /*this.ctx.lineTo(
+        widthCircle + widthOfArrow,
+        heightCirlce - (this.outsideRadius + heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + widthOfArrow,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + widthOfTriangle,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle + 0,
+        heightCirlce - (this.outsideRadius - largeOfTriangle)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfTriangle,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfArrow,
+        heightCirlce - (this.outsideRadius - heigthOfArrow)
+      );
+      this.ctx.lineTo(
+        widthCircle - widthOfArrow,
+        heightCirlce - (this.outsideRadius + heigthOfArrow)
+      );
+
+      this.ctx.fill();*/
     },
 
     spin() {
+      this.generateNumberToShow(this.actualPosition);
       if (this.spinRoullete) {
-        this.winner = this.generateNumberToShow(this.actualPosition);
         this.spinRoullete = false;
-        this.spinTimeTotal = 100;
+        this.spinTimeTotal = 10000;
         this.spinTime = 0;
         this.rotateWheel();
       }
     },
 
     rotateWheel() {
-      const winner = this.winner;
-      if (this.startAngle >= 6.28) {
-        this.startAngle = 0;
+      this.spinTime += 30;
+      if (this.spinTime >= this.spinTimeTotal) {
+        this.stopRotateWheel();
+        return;
       }
-
-      if (
-        this.actualPosition <= winner.topAngle &&
-        this.actualPosition >= winner.downAngle
-      ) {
-        this.spinTime += 2.5;
-        if (this.spinTime >= this.spinTimeTotal) {
-          this.stopRotateWheel();
-          return;
-        }
-      }
-
       const spinAngle =
         this.spinArcStart -
         this.easeOut(this.spinTime, 0, this.spinArcStart, this.spinTimeTotal);
 
-      this.startAngle += (spinAngle * 2 * Math.PI) / 180;
+      this.startAngle += (spinAngle * Math.PI) / 180;
       this.drawRouletteWheel();
       this.spinTimeout = setTimeout(this.rotateWheel, 30);
     },
@@ -249,7 +298,7 @@ export default {
     easeOut(spinTime, b, spinArcStart, spinTimeTotal) {
       const ts = (spinTime /= spinTimeTotal) * spinTime;
       const tc = ts * spinTime;
-      return b + spinArcStart * (tc + -2 * ts + 2 * spinTime);
+      return b + spinArcStart * (tc + -3 * ts + 3 * spinTime);
     },
 
     stopRotateWheel() {
@@ -271,7 +320,7 @@ export default {
       }, 3000);
       this.ctx.restore();
     },
-    generateNumberToShow() {
+    generateNumberToShow(position) {
       let probabilities = [
         { opcion: "LAHJAKORTT", probability: 0 }, // 1 vez x dia
         { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
@@ -285,62 +334,44 @@ export default {
 
       let randomNum = Math.random();
       let positionIndex = 0;
-      let cumulativeProbability = probabilities[0].probability; // Las probabilidades deben sumar 1
+      let cumulativeProbability = probabilities[0].probability // Las probabilidades deben sumar 1
+      console.log(cumulativeProbability);
 
       while (randomNum > cumulativeProbability) {
         positionIndex++;
         cumulativeProbability += probabilities[positionIndex].probability;
       }
-      console.log(positionIndex);
-      switch (positionIndex) {
+      console.log(this.options[positionIndex]);
+      // Devolver la posición correspondiente
+
+      switch (position) {
         case 0:
-          return {
-            topAngle: 45,
-            downAngle: 0,
-          };
+          return 2000;
         case 1:
-          return {
-            topAngle: 90,
-            downAngle: 46,
-          };
+          return 3000;
 
         case 2:
-          return {
-            topAngle: 135,
-            downAngle: 91,
-          };
+          return 4000;
 
         case 3:
-          return {
-            topAngle: 180,
-            downAngle: 136,
-          };
+          return 5000;
 
         case 4:
-          return {
-            topAngle: 225,
-            downAngle: 181,
-          };
+          return 6000;
 
         case 5:
-          return {
-            topAngle: 270,
-            downAngle: 226,
-          };
+          return 7000;
 
         case 6:
-          return {
-            topAngle: 315,
-            downAngle: 271,
-          };
+          return 8000;
 
         case 7:
-          return {
-            topAngle: 360,
-            downAngle: 316,
-          };
+          console.log(this.options.length);
+          return 5000;
+
+        case 8:
+          return 10000;
       }
-      return positionIndex;
     },
     add(num) {
       fetch("https://roulette-db-default-rtdb.firebaseio.com/suervey.json", {
@@ -394,12 +425,14 @@ export default {
     },
     actualPosition() {
       var degrees = (this.startAngle * 180) / Math.PI + 90;
-      //var arcd = (this.arc * 180) / Math.PI;
-      return Math.floor(360 - (degrees % 360));
+      var arcd = (this.arc * 180) / Math.PI;
+      return Math.floor((360 - (degrees % 360)) / arcd);
     },
   },
   watch: {
-  
+    /*screenWidth(value){
+      console.log(value);
+    }*/
   },
 };
 </script>

@@ -16,7 +16,7 @@
           <div class="row" id="null-column"></div>
         </div>
         <div class="col-sm-10 win-central">
-          <RouletteCompoment msg="Welcome to Your Vue.js App" @showImg="showImg" />
+          <RouletteCompoment @showImg="showImg" />
         </div>
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
