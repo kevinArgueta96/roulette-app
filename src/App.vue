@@ -86,9 +86,7 @@ export default {
           }
         })
         .then((data) => {
-          for (const id in data) {
-            this.setOptions(data[id]);
-          }
+          this.setOptions(data.sectors);
         });
     },
     getTotalReplay() {
@@ -102,6 +100,7 @@ export default {
         })
         .then((data) => {
           for (const id in data) {
+            console.log(data)
             const payload = {
               id: id,
               totalReplay: data[id].totalReplay

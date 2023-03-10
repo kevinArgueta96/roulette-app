@@ -22,7 +22,7 @@ export default new Vuex.Store({
   },
   mutations: {
     setOptions(state,payload){
-      state.options = payload.payload;
+      state.options = payload;
     },
     setTotalReplay(state,payload){
       state.totalReplay = payload;
@@ -39,6 +39,7 @@ export default new Vuex.Store({
   },
   actions: {
     setOptions(context,payload){
+      console.log(payload)
       context.commit('setOptions',payload)
     },
     setTotalReplay(context,payload){

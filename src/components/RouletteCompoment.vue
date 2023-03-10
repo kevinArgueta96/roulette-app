@@ -45,7 +45,7 @@ export default {
       counter: 0,
       name: "",
       sectors: [
-        "LAHJAKORTT", // 1 vez x dia
+        "LAHJAKORTTI", // 1 vez x dia
         "UUDESTAAN", //15-20%
         "YLLÄTYSPALKINTO", // based on probability (surpise win)
         "LAHJAKORTTI", // based on probability (surpise win)
@@ -104,7 +104,7 @@ export default {
         this.topCentralLogo = 40;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
-        this.topArrowLogo = 0;
+        this.topArrowLogo = 13;
         this.rightArrowLogo = 45;
         this.widthArrowLogo = 8;
       }
@@ -213,7 +213,7 @@ export default {
     },
 
     spin() {
-      this.testUpdateData();
+      //this.testUpdateData();
       if (this.spinRoullete) {
         this.winner = this.generateNumberToShow(this.actualPosition);
         this.spinRoullete = false;
@@ -341,10 +341,10 @@ export default {
         total= total-10;
       }
       const data = {
-        id: this.totalSpecialPrice.id,
-        totalSpecialPrice:total
+        id: 1,
+        total:30
       }
-      const options = {
+        const options = {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -352,7 +352,7 @@ export default {
         body: JSON.stringify(data),
       };
       fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/special-price.json",
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/replay.json",
         options
       )
         .then((response) => {
