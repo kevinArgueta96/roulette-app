@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti"  />
+    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
     <div class="container text-center" id="container-objects">
       <div class="col-sm-12">
         <div class="row" id="null-column">
@@ -39,6 +39,7 @@
 import RouletteCompoment from "./components/RouletteCompoment.vue";
 import WinRowComponent from "./components/WinRowComponent.vue";
 import ConfettiComponent from "./components/ConfettiComponent.vue";
+import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "App",
@@ -54,16 +55,117 @@ export default {
       isVisibleConfetti: false,
     };
   },
+  computed: {
+    ...mapGetters(["timeToShowOptions"]),
+  },
+  mounted() {
+    this.getOptions();
+    this.getTotalReplay();
+    this.getTotalSpecialPrice();
+    this.getTotalSurpriseWin();
+    this.getTopPrice();
+  },
   methods: {
+    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice"]),
     showImg(value) {
-
       if (value.type === "loose") {
         this.isVisbleLooseImg = true;
-      } else if(value.type === "win"){
+      } else if (value.type === "win") {
         this.isVisbleWinImg = true;
-      }else {
+      } else {
         this.isVisibleConfetti = !this.isVisibleConfetti;
       }
+    },
+    getOptions() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/roulette.json",{}
+      )
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+        })
+        .then((data) => {
+          for (const id in data) {
+            this.setOptions(data[id]);
+          }
+        });
+    },
+    getTotalReplay() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/replay.json",{}
+      )
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+        })
+        .then((data) => {
+          for (const id in data) {
+            const payload = {
+              id: id,
+              totalReplay: data[id].totalReplay
+            }
+            this.setTotalReplay(payload)
+          }
+        });
+    },
+    getTotalSpecialPrice() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/special-price.json",{}
+      )
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+        })
+        .then((data) => {
+          for (const id in data) {
+            const payload = {
+              id: id,
+              totalSpecialPrice: data[id].totalSpecialPrice
+            }
+            this.setTotalSpecialPrice(payload)
+          }
+        });
+    },
+    getTotalSurpriseWin() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/surprise-win.json",{}
+      )
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+        })
+        .then((data) => {
+          for (const id in data) {
+            const payload = {
+              id: id,
+              totalSpecialSurprise: data[id].totalSpecialSurprise
+            }
+            this.setTotalSpecialSurprise(payload)
+          }
+        });
+    },
+    getTopPrice() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/top-price.json",{}
+      )
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+        })
+        .then((data) => {
+          for (const id in data) {
+            const payload = {
+              id: id,
+              totalTopPrice: data[id].totalTopPrice
+            }
+            this.setTotalTopPrice(payload)
+          }
+        });
     },
   },
   watch: {
@@ -71,21 +173,21 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
-        }, 4000);
+        }, this.timeToShowOptions);
       }
     },
     isVisbleLooseImg(value) {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
-        }, 4000);
+        }, this.timeToShowOptions);
       }
     },
     isVisibleConfetti(value) {
       if (value) {
         setTimeout(() => {
           this.isVisibleConfetti = !this.isVisibleConfetti;
-        }, 4000);
+        }, this.timeToShowOptions);
       }
     },
   },

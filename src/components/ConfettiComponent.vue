@@ -4,6 +4,7 @@
 
 <script>
 import ConfettiGenerator from "confetti-js";
+import { mapGetters } from "vuex";
 
 export default {
   data: () => {
@@ -36,6 +37,7 @@ export default {
     },
   },
   computed: {
+    ...mapGetters(['timeToShowOptions']),
     confettiVisible() {
       return this.isVisibleConfetti;
     },
@@ -52,7 +54,7 @@ export default {
           this.confetti.clear();
           this.confetti = null;
           this.confetti = new ConfettiGenerator(this.confettiSettings);
-        }, 4000);
+        }, this.timeToShowOptions);
       }
     },
   },

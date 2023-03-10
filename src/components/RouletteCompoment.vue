@@ -25,6 +25,8 @@
 </template>
 
 <script>
+import { mapGetters, mapActions } from "vuex";
+
 export default {
   name: "HelloWorld",
 
@@ -42,7 +44,7 @@ export default {
       result: [],
       counter: 0,
       name: "",
-      options: [
+      sectors: [
         "LAHJAKORTT", // 1 vez x dia
         "UUDESTAAN", //15-20%
         "YLLÄTYSPALKINTO", // based on probability (surpise win)
@@ -96,6 +98,7 @@ export default {
     requestAnimationFrame(this.drawRouletteWheel);
   },
   methods: {
+    ...mapActions(["increment"]),
     validateSizeOfImg() {
       if (this.screenWidth > 1024) {
         this.topCentralLogo = 40;
@@ -127,7 +130,7 @@ export default {
 
       this.ctx.font = "bold 1rem Helvetica, Arial";
 
-      for (let i = 0; i < this.options.length; i++) {
+      for (let i = 0; i < this.sectors.length; i++) {
         let angle = this.startAngle + i * this.arc;
 
         this.ctx.fillStyle = this.colors[i];
@@ -202,14 +205,15 @@ export default {
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
         }
 
-        var text = this.options[i];
+        var text = this.sectors[i];
         this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
-       
+
         this.ctx.restore();
       }
     },
 
     spin() {
+      this.testUpdateData();
       if (this.spinRoullete) {
         this.winner = this.generateNumberToShow(this.actualPosition);
         this.spinRoullete = false;
@@ -267,21 +271,11 @@ export default {
       }
       setTimeout(() => {
         this.spinRoullete = true;
-      }, 5000);
+      }, this.timeToShowOptions);
       this.ctx.restore();
     },
     generateNumberToShow() {
-      let probabilities = [
-        { opcion: "LAHJAKORTT", probability: 0 }, // 1 vez x dia
-        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
-        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-        { opcion: "TUOTEPALKINTO", probability: 0.85 }, //10 % special prize
-        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
-        { opcion: "PÄÄPALKINTO", probability: 0.5 }, // 0% dependiendo la hrora
-      ];
-
+      let probabilities = this.options;
       let randomNum = Math.random();
       let positionIndex = 0;
       let cumulativeProbability = probabilities[0].probability; // Las probabilidades deben sumar 1
@@ -341,34 +335,74 @@ export default {
       }
       return positionIndex;
     },
-    add(num) {
-      fetch("https://roulette-db-default-rtdb.firebaseio.com/suervey.json", {
-        method: "POST",
+    testUpdateData() {
+      let total = this.totalSpecialPrice.totalSpecialPrice;
+      if (total > 0) {
+        total= total-10;
+      }
+      const data = {
+        id: this.totalSpecialPrice.id,
+        totalSpecialPrice:total
+      }
+      const options = {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: "test",
-          rating: "otherTest",
-        }),
-      }).then(function (response) {
+        body: JSON.stringify(data),
+      };
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/special-price.json",
+        options
+      )
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log(`El usuario con ID ${data.id} ha sido actualizado`);
+        })
+        .catch((error) => {
+          console.error("Error al actualizar el usuario:", error);
+        });
+    },
+    add() {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/top-price.json",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            totalTopPrice: 2,
+          }),
+        }
+      ).then(function (response) {
         console.log(response);
       });
-      this.counter = this.counter + num;
     },
     sendData(payload) {
-      fetch("https://roulette-db-default-rtdb.firebaseio.com/wins.json", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ payload }),
-      }).then(function (response) {
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/roulette.json",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ payload }),
+        }
+      ).then(function (response) {
         console.log(response);
       });
     },
     reduce(num) {
-      fetch("https://roulette-db-default-rtdb.firebaseio.com/suervey.json", {})
+      fetch(
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/time.json",
+        {}
+      )
         .then((response) => {
           console.log(response);
           if (response.ok) {
@@ -384,12 +418,19 @@ export default {
           this.result = results;
         });
       this.counter = this.counter - num;
-      // this.counter--;
     },
   },
   computed: {
+    ...mapGetters([
+      "timeToShowOptions",
+      "options",
+      "totalReplay",
+      "totalSpecialPrice",
+      "totalSpecialSurprise",
+      "totalTopPrice",
+    ]),
     arc() {
-      return Math.PI / (this.options.length / 2); // valor de cada arco
+      return Math.PI / (this.sectors.length / 2); // valor de cada arco
     },
     actualPosition() {
       var degrees = (this.startAngle * 180) / Math.PI + 90;
