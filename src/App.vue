@@ -40,6 +40,7 @@ import RouletteCompoment from "./components/RouletteCompoment.vue";
 import WinRowComponent from "./components/WinRowComponent.vue";
 import ConfettiComponent from "./components/ConfettiComponent.vue";
 import { mapGetters, mapActions } from "vuex";
+import service from '@/services/totals.service'
 
 export default {
   name: "App",
@@ -64,9 +65,10 @@ export default {
     this.getTotalSpecialPrice();
     this.getTotalSurpriseWin();
     this.getTopPrice();
+    this.getTotalGiftCard();
   },
   methods: {
-    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice"]),
+    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice","setTotalGiftCard"]),
     showImg(value) {
       if (value.type === "loose") {
         this.isVisbleLooseImg = true;
@@ -76,95 +78,29 @@ export default {
         this.isVisibleConfetti = !this.isVisibleConfetti;
       }
     },
-    getOptions() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/roulette.json",{}
-      )
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          this.setOptions(data.sectors);
-        });
+    async getOptions() {
+      const options = await service.getOptions();
+      this.setOptions(options)
     },
-    getTotalReplay() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/replay.json",{}
-      )
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          for (const id in data) {
-            console.log(data)
-            const payload = {
-              id: id,
-              totalReplay: data[id].totalReplay
-            }
-            this.setTotalReplay(payload)
-          }
-        });
+    async getTotalReplay() {
+      const replay = await service.getTotalReplay();
+      this.setTotalReplay(replay)
     },
-    getTotalSpecialPrice() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/special-price.json",{}
-      )
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          for (const id in data) {
-            const payload = {
-              id: id,
-              totalSpecialPrice: data[id].totalSpecialPrice
-            }
-            this.setTotalSpecialPrice(payload)
-          }
-        });
+    async getTotalGiftCard() {
+      const gitfCard = await service.getTotalGiftCard();
+      this.setTotalGiftCard(gitfCard)
     },
-    getTotalSurpriseWin() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/surprise-win.json",{}
-      )
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          for (const id in data) {
-            const payload = {
-              id: id,
-              totalSpecialSurprise: data[id].totalSpecialSurprise
-            }
-            this.setTotalSpecialSurprise(payload)
-          }
-        });
+    async getTotalSpecialPrice() {
+      const totalSpecialPrice = await service.getTotalSpecialPrice();
+      this.setTotalSpecialPrice(totalSpecialPrice)
     },
-    getTopPrice() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/top-price.json",{}
-      )
-        .then((response) => {
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          for (const id in data) {
-            const payload = {
-              id: id,
-              totalTopPrice: data[id].totalTopPrice
-            }
-            this.setTotalTopPrice(payload)
-          }
-        });
+    async getTotalSurpriseWin() {
+      const getTotalSurpriseWin = await service.getTotalSpecialPrice();
+      this.setTotalSpecialSurprise(getTotalSurpriseWin)
+    },
+    async getTopPrice() {
+      const setTotalTopPrice = await service.getTopPrice();
+      this.setTotalTopPrice(setTotalTopPrice)
     },
   },
   watch: {

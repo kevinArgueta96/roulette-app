@@ -26,10 +26,9 @@
 
 <script>
 import { mapGetters, mapActions } from "vuex";
+//import service from '@/services/totals.service'
 
 export default {
-  name: "HelloWorld",
-
   data: () => {
     return {
       winner: null,
@@ -92,13 +91,20 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   mounted() {
+    document.addEventListener("click", this.handleClick);
     this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight;
     this.validateSizeOfImg();
     requestAnimationFrame(this.drawRouletteWheel);
   },
+  beforeDestroy() {
+    document.removeEventListener("click", this.handleClick);
+  },
   methods: {
     ...mapActions(["increment"]),
+    handleClick(){
+      this.spin()
+    },
     validateSizeOfImg() {
       if (this.screenWidth > 1024) {
         this.topCentralLogo = 40;
@@ -213,9 +219,15 @@ export default {
     },
 
     spin() {
-      //this.testUpdateData();
+      /*const winnerNumber = this.generateNumberToShow();
+      const path = this.nameToUpdate(winnerNumber);
+      const newVal = service.setNewTotal(path,winnerNumber)
+      console.log(newVal);*/
+      //const options = await service.getOptions();
+      //this.setOptions(options.sectors)
       if (this.spinRoullete) {
-        this.winner = this.generateNumberToShow(this.actualPosition);
+        const numberWinner = this.generateNumberToShow();
+        this.winner = this.generateAnglesToWin(numberWinner);
         this.spinRoullete = false;
         this.spinTimeTotal = 100;
         this.spinTime = 0;
@@ -274,17 +286,30 @@ export default {
       }, this.timeToShowOptions);
       this.ctx.restore();
     },
-    generateNumberToShow() {
-      let probabilities = this.options;
-      let randomNum = Math.random();
-      let positionIndex = 0;
-      let cumulativeProbability = probabilities[0].probability; // Las probabilidades deben sumar 1
-
-      while (randomNum > cumulativeProbability) {
-        positionIndex++;
-        cumulativeProbability += probabilities[positionIndex].probability;
+    nameToUpdate(update) {
+      const gifCard = "gift-card";
+      const replay = "replay";
+      const specialPrice = "special-price";
+      const surpriseWin = "surprise-win";
+      const topPrice = "top-price";
+      switch (update) {
+        case 0:
+        case 3:
+          return gifCard;
+        case 1:
+        case 6:
+          return replay;
+        case 2:
+        case 5:
+          return surpriseWin;
+        case 4:
+          return specialPrice;
+        case 7:
+          return topPrice;
       }
-      console.log(positionIndex);
+    },
+
+    generateAnglesToWin(positionIndex) {
       switch (positionIndex) {
         case 0:
           return {
@@ -335,16 +360,39 @@ export default {
       }
       return positionIndex;
     },
+    generateNumberToShow() {
+      let probabilities = [
+        { opcion: "LAHJAKORTT", probability: 0 }, // 1 vez x dia
+        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
+        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
+        { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+        { opcion: "TUOTEPALKINTO", probability: 0.85 }, //10 % special prize
+        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
+        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
+        { opcion: "PÄÄPALKINTO", probability: 0.5 }, // 0% dependiendo la hrora
+      ];
+
+      let randomNum = Math.random();
+      let positionIndex = 0;
+      let cumulativeProbability = probabilities[0].probability; // Las probabilidades deben sumar 1
+      while (randomNum > cumulativeProbability) {
+        positionIndex++;
+        cumulativeProbability += probabilities[positionIndex].probability; // faltaba el arreglo "probabilities" en esta línea
+      }
+
+      //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
+      return positionIndex;
+    },
     testUpdateData() {
       let total = this.totalSpecialPrice.totalSpecialPrice;
       if (total > 0) {
-        total= total-10;
+        total = total - 10;
       }
       const data = {
         id: 1,
-        total:30
-      }
-        const options = {
+        total: 5,
+      };
+      const options = {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -352,7 +400,7 @@ export default {
         body: JSON.stringify(data),
       };
       fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/replay.json",
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/gift-card.json",
         options
       )
         .then((response) => {
@@ -370,14 +418,15 @@ export default {
     },
     add() {
       fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/top-price.json",
+        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/gift-card.json",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            totalTopPrice: 2,
+            id: 1,
+            total: 5,
           }),
         }
       ).then(function (response) {
