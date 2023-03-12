@@ -1,7 +1,8 @@
 <template>
   <div class="container">
     <div class="container" :class="{ fadeInImage: visible, notShowImg: !visible } " style="height: 100%; width: 20rem; padding-bottom: 30px; ">
-      <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" />
+      <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" 
+      :style="{height: f+'%'}"/>
     </div>
   </div>
 </template>

@@ -76,10 +76,10 @@ export default {
       circuleLogoCenter: null,
       canvas: null,
 
-      outsideRadius: 300, // radio del circulo, que tan grande sera
-      textRadius: 200, // radio del tecto
-      insideRadius: 50,
-
+      outsideRadius: 0, // radio del circulo, que tan grande sera
+      textRadius: 0, // radio del tecto
+      insideRadius: 0,
+      letterSize:0,
       speedRoulette: 10,
     };
   },
@@ -92,8 +92,9 @@ export default {
   },
   mounted() {
     document.addEventListener("click", this.handleClick);
-    this.widthCircule = this.$refs.testRef.offsetWidth;
-    this.heightCircule = this.$refs.testRef.offsetHeight;
+    
+    this.widthCircule = this.$refs.testRef.offsetWidth ;
+    this.heightCircule = this.$refs.testRef.offsetHeight - 100;
     this.validateSizeOfImg();
     requestAnimationFrame(this.drawRouletteWheel);
   },
@@ -103,17 +104,91 @@ export default {
   methods: {
     ...mapActions(["increment"]),
     handleClick(){
+      this.generateNumberToShow()
       this.spin()
     },
+
     validateSizeOfImg() {
-      if (this.screenWidth > 1024) {
-        this.topCentralLogo = 40;
+      if ((this.screenWidth > 0 && this.screenWidth < 900 ) && this.screenHeight > 0 && this.screenHeight <=700 ) {
+        this.topCentralLogo = 30;
+        this.rightCentralLogo = 42;
+        this.widthCentralLogo = 12;
+        this.topArrowLogo = -1;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6;
+
+        this.outsideRadius= 100; // radio del circulo, que tan grande sera
+        this.textRadius= 100; // radio del tecto
+        this.insideRadius= 5;
+        this.letterSize=0.7;
+      }
+      if ((this.screenWidth > 0 && this.screenWidth <= 1280 ) && this.screenHeight > 0 && this.screenHeight <= 1000 ) {
+        this.topCentralLogo = 30;
+        this.rightCentralLogo = 42;
+        this.widthCentralLogo = 12;
+        this.topArrowLogo = -1;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6;
+
+        this.outsideRadius= 210; // radio del circulo, que tan grande sera
+        this.textRadius= 140; // radio del tecto
+        this.insideRadius= 5;
+        this.letterSize=0.7;
+      }
+      if ((this.screenWidth < 1400 && this.screenHeight < 1000) ) {
+        this.topCentralLogo = 30;
+        this.rightCentralLogo = 42;
+        this.widthCentralLogo = 12;
+        this.topArrowLogo = -1;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6;
+
+        this.outsideRadius= 210; // radio del circulo, que tan grande sera
+        this.textRadius= 140; // radio del tecto
+        this.insideRadius= 5;
+        this.letterSize=0.7;
+      }
+      if ((this.screenWidth <= 1920 && this.screenHeight < 1080) ) {
+        this.topCentralLogo = 34;
+        this.rightCentralLogo = 42;
+        this.widthCentralLogo = 12;
+        this.topArrowLogo = 8;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6;
+
+        this.outsideRadius= 210; // radio del circulo, que tan grande sera
+        this.textRadius= 140; // radio del tecto
+        this.insideRadius= 5;
+        this.letterSize=0.7;
+      }
+      
+      if ((this.screenWidth > 1280 && this.screenWidth < 1920 ) && this.screenHeight > 720 && this.screenHeight < 1080 ) {
+        this.topCentralLogo = 30;
+        this.rightCentralLogo = 42;
+        this.widthCentralLogo = 12;
+        this.topArrowLogo = 4;
+        this.rightArrowLogo = 45;
+        this.widthArrowLogo = 6;
+
+        this.outsideRadius= 230; // radio del circulo, que tan grande sera
+        this.textRadius= 150; // radio del tecto
+        this.insideRadius= 10;
+        this.letterSize=0.7;
+      }
+      if ((this.screenWidth >= 1920 && this.screenWidth  ) && this.screenHeight >= 600 && this.screenHeight <= 2160 ) {
+        this.topCentralLogo = 35;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
-        this.topArrowLogo = 13;
+        this.topArrowLogo = 0;
         this.rightArrowLogo = 45;
-        this.widthArrowLogo = 8;
+        this.widthArrowLogo = 9;
+
+        this.outsideRadius= 300; // radio del circulo, que tan grande sera
+        this.textRadius= 200; // radio del tecto
+        this.insideRadius= 10;
+        this.letterSize=1;
       }
+      
     },
     handleResize() {
       this.screenWidth = window.innerWidth;
@@ -134,7 +209,7 @@ export default {
       this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
       this.ctx.beginPath();
 
-      this.ctx.font = "bold 1rem Helvetica, Arial";
+      this.ctx.font = `bold ${this.letterSize}rem Helvetica, Arial`;
 
       for (let i = 0; i < this.sectors.length; i++) {
         let angle = this.startAngle + i * this.arc;
@@ -362,25 +437,26 @@ export default {
     },
     generateNumberToShow() {
       let probabilities = [
-        { opcion: "LAHJAKORTT", probability: 0 }, // 1 vez x dia
-        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
+        { opcion: "LAHJAKORTT", probability: 0.10 }, // 1 vez x dia
+        { opcion: "UUDESTAAN", probability: 0.10 }, //15-20%
         { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-        { opcion: "TUOTEPALKINTO", probability: 0.85 }, //10 % special prize
+        { opcion: "LAHJAKORTTI", probability: 0.1 }, // based on probability (surpise win)
+        { opcion: "TUOTEPALKINTO", probability: 0.1 }, //10 % special prize
         { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "UUDESTAAN", probability: 0.025 }, //15-20%
-        { opcion: "PÄÄPALKINTO", probability: 0.5 }, // 0% dependiendo la hrora
+        { opcion: "UUDESTAAN", probability: 0.1 }, //15-20%
+        { opcion: "PÄÄPALKINTO", probability: 0.3 }, // 0% dependiendo la hrora
       ];
 
       let randomNum = Math.random();
       let positionIndex = 0;
-      let cumulativeProbability = probabilities[0].probability; // Las probabilidades deben sumar 1
+      let cumulativeProbability = 0; // Las probabilidades deben sumar 1
       while (randomNum > cumulativeProbability) {
         positionIndex++;
         cumulativeProbability += probabilities[positionIndex].probability; // faltaba el arreglo "probabilities" en esta línea
       }
 
       //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
+      console.log(positionIndex)
       return positionIndex;
     },
     testUpdateData() {
