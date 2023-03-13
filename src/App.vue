@@ -40,7 +40,7 @@ import RouletteCompoment from "./components/RouletteCompoment.vue";
 import WinRowComponent from "./components/WinRowComponent.vue";
 import ConfettiComponent from "./components/ConfettiComponent.vue";
 import { mapGetters, mapActions } from "vuex";
-import service from '@/services/totals.service'
+import service from "@/services/totals.service";
 
 export default {
   name: "App",
@@ -62,9 +62,27 @@ export default {
   mounted() {
     this.getOptions();
     this.getTotals();
+    this.getScheduleRange();
   },
   methods: {
-    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice","setTotalGiftCard","setTotalSpin"]),
+    ...mapActions([
+      "setOptions",
+      "setTotalReplay",
+      "setTotalSpecialPrice",
+      "setTotalSpecialSurprise",
+      "setTotalTopPrice",
+      "setTotalGiftCard",
+      "setTotalSpin",
+
+      "setGiftCardScheduleRangeA",
+      "setGiftCardScheduleRangeB",
+      "setGiftCardScheduleRangeC",
+      "setGiftCardScheduleRangeD",
+      "setGiftCardScheduleRangeE",
+
+      "setTopPriceScheduleRangeA",
+      "setTopPriceScheduleRangeB",
+    ]),
     showImg(value) {
       if (value.type === "loose") {
         this.isVisbleLooseImg = true;
@@ -76,19 +94,31 @@ export default {
     },
     async getOptions() {
       const options = await service.getOptions();
-      this.setOptions(options.sectors)
+      this.setOptions(options.sectors);
     },
     async getTotals() {
       const totals = await service.getTotals();
-      if(totals){
-        this.setTotalReplay(totals.totalReplay)
-        this.setTotalSpecialPrice(totals.totalSpecialPrice) ;
-        this.setTotalSpecialSurprise(totals.totalSpecialSurprice) ;
-        this.setTotalTopPrice(totals.totalTopPrice) ;
-        this.setTotalGiftCard(totals.totalGitfCard) ;
-        this.setTotalSpin(totals.totalSpin)
+      if (totals) {
+        this.setTotalReplay(totals.totalReplay);
+        this.setTotalSpecialPrice(totals.totalSpecialPrice);
+        this.setTotalSpecialSurprise(totals.totalSpecialSurprice);
+        this.setTotalTopPrice(totals.totalTopPrice);
+        this.setTotalGiftCard(totals.totalGitfCard);
+        this.setTotalSpin(totals.totalSpin);
       }
       //this.setTotalTopPrice(setTotalTopPrice)
+    },
+
+    async getScheduleRange() {
+      const response = await service.getHour();
+      this.setGiftCardScheduleRangeA(response.giftCardScheduleRangeA);
+      this.setGiftCardScheduleRangeB(response.giftCardScheduleRangeB);
+      this.setGiftCardScheduleRangeC(response.giftCardScheduleRangeC);
+      this.setGiftCardScheduleRangeD(response.giftCardScheduleRangeD);
+      this.setGiftCardScheduleRangeE(response.giftCardScheduleRangeE);
+
+      this.setTopPriceScheduleRangeA(response.topPriceScheduleRangeA);
+      this.setTopPriceScheduleRangeB(response.topPriceScheduleRangeB);
     },
   },
   watch: {

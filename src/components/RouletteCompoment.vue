@@ -2,7 +2,6 @@
   <div class="container text-center" style="height: 100%" ref="testRef">
     <canvas
       id="canvas"
-      @click="spin()"
       ref="myCanvas"
       :width="widthCircule"
       :height="heightCircule"
@@ -31,6 +30,8 @@ import service from "@/services/totals.service";
 export default {
   data: () => {
     return {
+      actualTime: "",
+      auxState: "",
       winner: null,
       screenWidth: window.innerWidth,
       screenHeight: window.innerHeight,
@@ -91,7 +92,10 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   mounted() {
-    document.addEventListener("click", this.handleClick);
+    setInterval(() => {
+      this.actualTime = this.obtenerHoraActual();
+    }, 1000);
+    document.addEventListener("keyup", this.spinRoulleteByEnter);
 
     this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight - 100;
@@ -99,7 +103,7 @@ export default {
     requestAnimationFrame(this.drawRouletteWheel);
   },
   beforeDestroy() {
-    document.removeEventListener("click", this.handleClick);
+    document.removeEventListener("keyup", this.spinRoulleteByEnter);
   },
   methods: {
     ...mapActions([
@@ -108,10 +112,33 @@ export default {
       "setTotalSpecialSurprise",
       "setTotalTopPrice",
       "setTotalGiftCard",
-      "setTotalSpin"
+      "setTotalSpin",
+
+      "setGiftCardScheduleRangeA",
+      "setGiftCardScheduleRangeB",
+      "setGiftCardScheduleRangeC",
+      "setGiftCardScheduleRangeD",
+      "setGiftCardScheduleRangeE",
+
+      "setTopPriceScheduleRangeA",
+      "setTopPriceScheduleRangeB",
     ]),
-    handleClick() {
-      this.spin();
+
+    obtenerHoraActual() {
+      const ahora = new Date();
+      const hora = ahora.getHours();
+      const minutos = ahora.getMinutes();
+
+      // Formatear hora en formato 24 horas
+      const hora24 = (hora < 10 ? "0" : "") + hora;
+      const minutos24 = (minutos < 10 ? "0" : "") + minutos;
+
+      return `${hora24}:${minutos24}`;
+    },
+    spinRoulleteByEnter(event) {
+      if (event.keyCode === 13 || event.keyCode === 32) {
+        this.spin();
+      }
     },
 
     validateSizeOfImg() {
@@ -319,13 +346,6 @@ export default {
     },
 
     spin() {
-      /*const winnerNumber = this.generateNumberToShow();
-      const path = this.nameToUpdate(winnerNumber);
-      const newVal = service.setNewTotal(path,winnerNumber)
-      console.log(newVal);*/
-      //const options = await service.getOptions();
-      //this.setOptions(options.sectors)
-
       if (this.spinRoullete) {
         const numberWinner = this.generateNumberToShow();
         this.winner = this.generateAnglesToWin(numberWinner);
@@ -389,7 +409,7 @@ export default {
       this.ctx.restore();
     },
     nameToUpdate(update) {
-      this.setTotalSpin(this.totalSpin + 1)
+      this.setTotalSpin(this.totalSpin + 1);
       switch (update) {
         case 0:
         case 3:
@@ -473,23 +493,16 @@ export default {
         totalSpecialPrice: this.selectedTotalSpecialPrice,
         totalTopPrice: this.selectedTotalTopPrice,
         totalGitfCard: this.selectedTotalGiftCard,
-        totalSpin: this.totalSpin
+        totalSpin: this.totalSpin,
       };
       const response = await service.setNewTotal(data);
-      console.log(response);
+      response === 0;
     },
     generateNumberToShow() {
-      const probabilities = this.options;
-      /*let probabilities = [
-        { opcion: "LAHJAKORTT", probability: 0.10 }, // 1 vez x dia
-        { opcion: "UUDESTAAN", probability: 0.10 }, //15-20%
-        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "LAHJAKORTTI", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "TUOTEPALKINTO", probability: 0.1 }, //10 % special prize
-        { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
-        { opcion: "UUDESTAAN", probability: 0.1 }, //15-20%
-        { opcion: "PÄÄPALKINTO", probability: 0.3 }, // 0% dependiendo la hrora
-      ];*/
+      const newProbabilitie = this.generateProbabilityPriceByScheduler();
+      const probabilities = newProbabilitie === null ? this.options : newProbabilitie;
+      console.log(probabilities);
+
 
       let randomNum = Math.random();
       let positionIndex = 0;
@@ -500,94 +513,208 @@ export default {
       }
 
       //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
-
+      console.log(positionIndex)
       return positionIndex;
     },
+    changeStateOfSchedulerWin(range) {
+      switch (range) {
+        case "cardA":
+          this.auxState = this.giftCardScheduleRangeA;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeA(this.auxState);
+          this.auxState = "";
+          break;
 
-    testUpdateData() {
-      let total = this.totalSpecialPrice.totalSpecialPrice;
-      if (total > 0) {
-        total = total - 10;
+        case "cardB":
+          this.auxState = this.giftCardScheduleRangeB;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeB(this.auxState);
+          this.auxState = "";
+
+          break;
+        case "cardC":
+          this.auxState = this.giftCardScheduleRangeC;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeC(this.auxState);
+          this.auxState = "";
+
+          break;
+        case "cardD":
+          this.auxState = this.giftCardScheduleRangeD;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeD(this.auxState);
+          this.auxState = "";
+          break;
+        case "cardE":
+          this.auxState = this.giftCardScheduleRangeE;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeE(this.auxState);
+          this.auxState = "";
+
+          break;
+
+        case "topPriceA":
+          this.auxState = this.topPriceScheduleRangeA;
+          this.auxState.given = true;
+          this.setTopPriceScheduleRangeA(this.auxState);
+          this.auxState = "";
+
+          break;
+        case "topPriceB":
+          this.auxState = this.topPriceScheduleRangeB;
+          this.auxState.given = true;
+          this.setTopPriceScheduleRangeB(this.auxState);
+          this.auxState = "";
+          break;
       }
       const data = {
-        id: 1,
-        total: 5,
+        giftCardScheduleRangeA: this.giftCardScheduleRangeA,
+        giftCardScheduleRangeB: this.giftCardScheduleRangeB,
+        giftCardScheduleRangeC: this.giftCardScheduleRangeC,
+        giftCardScheduleRangeD: this.giftCardScheduleRangeD,
+        giftCardScheduleRangeE: this.giftCardScheduleRangeE,
+
+        topPriceScheduleRangeA: this.topPriceScheduleRangeA,
+        topPriceScheduleRangeB: this.topPriceScheduleRangeB,
       };
-      const options = {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      };
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/gift-card.json",
-        options
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          console.log(`El usuario con ID ${data.id} ha sido actualizado`);
-        })
-        .catch((error) => {
-          console.error("Error al actualizar el usuario:", error);
-        });
+      service.setHour(data);
     },
-    add() {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/gift-card.json",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            id: 1,
-            total: 5,
-          }),
-        }
-      ).then(function (response) {
-        console.log(response);
-      });
-    },
-    sendData(payload) {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/roulette.json",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ payload }),
-        }
-      ).then(function (response) {
-        console.log(response);
-      });
-    },
-    reduce(num) {
-      fetch(
-        "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/time.json",
-        {}
-      )
-        .then((response) => {
-          console.log(response);
-          if (response.ok) {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          console.log(data);
-          const results = [];
-          for (const id in data) {
-            results.push({ id: id, name: data[id].rating });
-          }
-          this.result = results;
-        });
-      this.counter = this.counter - num;
+    generateProbabilityPriceByScheduler() {
+      if (
+        this.actualTime >= this.giftCardScheduleRangeA.rangeDown &&
+        this.actualTime <= this.giftCardScheduleRangeA.rangeTop &&
+        this.giftCardScheduleRangeA.given === false
+      ) {
+        console.log('cardA')
+        this.changeStateOfSchedulerWin("cardA");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.giftCardScheduleRangeB.rangeDown &&
+        this.actualTime <= this.giftCardScheduleRangeB.rangeTop &&
+        this.giftCardScheduleRangeB.given === false
+      ) {
+        this.changeStateOfSchedulerWin("cardB");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.giftCardScheduleRangeC.rangeDown &&
+        this.actualTime <= this.giftCardScheduleRangeC.rangeTop &&
+        this.giftCardScheduleRangeC.given === false
+      ) {
+        this.changeStateOfSchedulerWin("cardC");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.giftCardScheduleRangeD.rangeDown &&
+        this.actualTime <= this.giftCardScheduleRangeD.rangeTop &&
+        this.giftCardScheduleRangeD.given === false
+      ) {
+        this.changeStateOfSchedulerWin("cardD");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.giftCardScheduleRangeE.rangeDown &&
+        this.actualTime <= this.giftCardScheduleRangeE.rangeTop &&
+        this.giftCardScheduleRangeE.given === false
+      ) {
+        this.changeStateOfSchedulerWin("cardE");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.topPriceScheduleRangeA.rangeDown &&
+        this.actualTime <= this.topPriceScheduleRangeA.rangeTop &&
+        this.topPriceScheduleRangeA.given === false
+      ) {
+        this.changeStateOfSchedulerWin("topPriceA");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      if (
+        this.actualTime >= this.topPriceScheduleRangeB.rangeDown &&
+        this.actualTime <= this.topPriceScheduleRangeB.rangeTop &&
+        this.topPriceScheduleRangeB.given === false
+      ) {
+        this.changeStateOfSchedulerWin("topPriceB");
+        const probabilities = [
+          { opcion: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
+          { opcion: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
+        ];
+        return probabilities;
+      }
+
+      return null;
     },
   },
   computed: {
@@ -599,7 +726,16 @@ export default {
       "totalSpecialSurprise",
       "totalTopPrice",
       "totalGiftCard",
-      "totalSpin"
+      "totalSpin",
+
+      "giftCardScheduleRangeA",
+      "giftCardScheduleRangeB",
+      "giftCardScheduleRangeC",
+      "giftCardScheduleRangeD",
+      "giftCardScheduleRangeE",
+
+      "topPriceScheduleRangeA",
+      "topPriceScheduleRangeB",
     ]),
     selectedTotalReplay: {
       get() {
