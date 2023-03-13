@@ -11,7 +11,8 @@ export default new Vuex.Store({
     totalSpecialPrice:0,
     totalSpecialSurprise:0,
     totalTopPrice:0,
-    totalGiftCard:0
+    totalGiftCard:0,
+    totalSpin:0
   },
   getters: {
     options: (state) => state.options,
@@ -20,7 +21,8 @@ export default new Vuex.Store({
     totalSpecialPrice: (state) => state.totalSpecialPrice,
     totalSpecialSurprise: (state) => state.totalSpecialSurprise,
     totalTopPrice: (state) => state.totalTopPrice,
-    totalGiftCard: (state) => state.totalGiftCard
+    totalGiftCard: (state) => state.totalGiftCard,
+    totalSpin: (state) => state.totalSpin
   },
   mutations: {
     setOptions(state,payload){
@@ -40,6 +42,9 @@ export default new Vuex.Store({
     },
     setTotalGiftCard(state,payload){
       state.totalGiftCard = payload;
+    },
+    setTotalSpin(state,payload){
+      state.totalSpin = payload;
     }
   },
   actions: {
@@ -61,6 +66,9 @@ export default new Vuex.Store({
     setTotalGiftCard(context,payload){
       context.commit('setTotalGiftCard',payload)
     },
+    setTotalSpin(context,payload){
+      context.commit('setTotalSpin',payload)
+    }
   },
   modules: {
   }

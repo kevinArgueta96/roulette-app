@@ -61,14 +61,10 @@ export default {
   },
   mounted() {
     this.getOptions();
-    this.getTotalReplay();
-    this.getTotalSpecialPrice();
-    this.getTotalSurpriseWin();
-    this.getTopPrice();
-    this.getTotalGiftCard();
+    this.getTotals();
   },
   methods: {
-    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice","setTotalGiftCard"]),
+    ...mapActions(["setOptions","setTotalReplay","setTotalSpecialPrice","setTotalSpecialSurprise","setTotalTopPrice","setTotalGiftCard","setTotalSpin"]),
     showImg(value) {
       if (value.type === "loose") {
         this.isVisbleLooseImg = true;
@@ -80,27 +76,19 @@ export default {
     },
     async getOptions() {
       const options = await service.getOptions();
-      this.setOptions(options)
+      this.setOptions(options.sectors)
     },
-    async getTotalReplay() {
-      const replay = await service.getTotalReplay();
-      this.setTotalReplay(replay)
-    },
-    async getTotalGiftCard() {
-      const gitfCard = await service.getTotalGiftCard();
-      this.setTotalGiftCard(gitfCard)
-    },
-    async getTotalSpecialPrice() {
-      const totalSpecialPrice = await service.getTotalSpecialPrice();
-      this.setTotalSpecialPrice(totalSpecialPrice)
-    },
-    async getTotalSurpriseWin() {
-      const getTotalSurpriseWin = await service.getTotalSpecialPrice();
-      this.setTotalSpecialSurprise(getTotalSurpriseWin)
-    },
-    async getTopPrice() {
-      const setTotalTopPrice = await service.getTopPrice();
-      this.setTotalTopPrice(setTotalTopPrice)
+    async getTotals() {
+      const totals = await service.getTotals();
+      if(totals){
+        this.setTotalReplay(totals.totalReplay)
+        this.setTotalSpecialPrice(totals.totalSpecialPrice) ;
+        this.setTotalSpecialSurprise(totals.totalSpecialSurprice) ;
+        this.setTotalTopPrice(totals.totalTopPrice) ;
+        this.setTotalGiftCard(totals.totalGitfCard) ;
+        this.setTotalSpin(totals.totalSpin)
+      }
+      //this.setTotalTopPrice(setTotalTopPrice)
     },
   },
   watch: {

@@ -26,7 +26,7 @@
 
 <script>
 import { mapGetters, mapActions } from "vuex";
-//import service from '@/services/totals.service'
+import service from "@/services/totals.service";
 
 export default {
   data: () => {
@@ -79,7 +79,7 @@ export default {
       outsideRadius: 0, // radio del circulo, que tan grande sera
       textRadius: 0, // radio del tecto
       insideRadius: 0,
-      letterSize:0,
+      letterSize: 0,
       speedRoulette: 10,
     };
   },
@@ -92,8 +92,8 @@ export default {
   },
   mounted() {
     document.addEventListener("click", this.handleClick);
-    
-    this.widthCircule = this.$refs.testRef.offsetWidth ;
+
+    this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight - 100;
     this.validateSizeOfImg();
     requestAnimationFrame(this.drawRouletteWheel);
@@ -102,14 +102,25 @@ export default {
     document.removeEventListener("click", this.handleClick);
   },
   methods: {
-    ...mapActions(["increment"]),
-    handleClick(){
-      this.generateNumberToShow()
-      this.spin()
+    ...mapActions([
+      "setTotalReplay",
+      "setTotalSpecialPrice",
+      "setTotalSpecialSurprise",
+      "setTotalTopPrice",
+      "setTotalGiftCard",
+      "setTotalSpin"
+    ]),
+    handleClick() {
+      this.spin();
     },
 
     validateSizeOfImg() {
-      if ((this.screenWidth > 0 && this.screenWidth < 900 ) && this.screenHeight > 0 && this.screenHeight <=700 ) {
+      if (
+        this.screenWidth > 0 &&
+        this.screenWidth < 900 &&
+        this.screenHeight > 0 &&
+        this.screenHeight <= 700
+      ) {
         this.topCentralLogo = 30;
         this.rightCentralLogo = 42;
         this.widthCentralLogo = 12;
@@ -117,12 +128,17 @@ export default {
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 6;
 
-        this.outsideRadius= 100; // radio del circulo, que tan grande sera
-        this.textRadius= 100; // radio del tecto
-        this.insideRadius= 5;
-        this.letterSize=0.7;
+        this.outsideRadius = 100; // radio del circulo, que tan grande sera
+        this.textRadius = 100; // radio del tecto
+        this.insideRadius = 5;
+        this.letterSize = 0.7;
       }
-      if ((this.screenWidth > 0 && this.screenWidth <= 1280 ) && this.screenHeight > 0 && this.screenHeight <= 1000 ) {
+      if (
+        this.screenWidth > 0 &&
+        this.screenWidth <= 1280 &&
+        this.screenHeight > 0 &&
+        this.screenHeight <= 1000
+      ) {
         this.topCentralLogo = 30;
         this.rightCentralLogo = 42;
         this.widthCentralLogo = 12;
@@ -130,12 +146,12 @@ export default {
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 6;
 
-        this.outsideRadius= 210; // radio del circulo, que tan grande sera
-        this.textRadius= 140; // radio del tecto
-        this.insideRadius= 5;
-        this.letterSize=0.7;
+        this.outsideRadius = 210; // radio del circulo, que tan grande sera
+        this.textRadius = 140; // radio del tecto
+        this.insideRadius = 5;
+        this.letterSize = 0.7;
       }
-      if ((this.screenWidth < 1400 && this.screenHeight < 1000) ) {
+      if (this.screenWidth < 1400 && this.screenHeight < 1000) {
         this.topCentralLogo = 30;
         this.rightCentralLogo = 42;
         this.widthCentralLogo = 12;
@@ -143,12 +159,12 @@ export default {
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 6;
 
-        this.outsideRadius= 210; // radio del circulo, que tan grande sera
-        this.textRadius= 140; // radio del tecto
-        this.insideRadius= 5;
-        this.letterSize=0.7;
+        this.outsideRadius = 210; // radio del circulo, que tan grande sera
+        this.textRadius = 140; // radio del tecto
+        this.insideRadius = 5;
+        this.letterSize = 0.7;
       }
-      if ((this.screenWidth <= 1920 && this.screenHeight < 1080) ) {
+      if (this.screenWidth <= 1920 && this.screenHeight < 1080) {
         this.topCentralLogo = 34;
         this.rightCentralLogo = 42;
         this.widthCentralLogo = 12;
@@ -156,13 +172,18 @@ export default {
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 6;
 
-        this.outsideRadius= 210; // radio del circulo, que tan grande sera
-        this.textRadius= 140; // radio del tecto
-        this.insideRadius= 5;
-        this.letterSize=0.7;
+        this.outsideRadius = 210; // radio del circulo, que tan grande sera
+        this.textRadius = 140; // radio del tecto
+        this.insideRadius = 5;
+        this.letterSize = 0.7;
       }
-      
-      if ((this.screenWidth > 1280 && this.screenWidth < 1920 ) && this.screenHeight > 720 && this.screenHeight < 1080 ) {
+
+      if (
+        this.screenWidth > 1280 &&
+        this.screenWidth < 1920 &&
+        this.screenHeight > 720 &&
+        this.screenHeight < 1080
+      ) {
         this.topCentralLogo = 30;
         this.rightCentralLogo = 42;
         this.widthCentralLogo = 12;
@@ -170,12 +191,17 @@ export default {
         this.rightArrowLogo = 45;
         this.widthArrowLogo = 6;
 
-        this.outsideRadius= 230; // radio del circulo, que tan grande sera
-        this.textRadius= 150; // radio del tecto
-        this.insideRadius= 10;
-        this.letterSize=0.7;
+        this.outsideRadius = 230; // radio del circulo, que tan grande sera
+        this.textRadius = 150; // radio del tecto
+        this.insideRadius = 10;
+        this.letterSize = 0.7;
       }
-      if ((this.screenWidth >= 1920 && this.screenWidth  ) && this.screenHeight >= 600 && this.screenHeight <= 2160 ) {
+      if (
+        this.screenWidth >= 1920 &&
+        this.screenWidth &&
+        this.screenHeight >= 600 &&
+        this.screenHeight <= 2160
+      ) {
         this.topCentralLogo = 35;
         this.rightCentralLogo = 40;
         this.widthCentralLogo = 17;
@@ -183,12 +209,11 @@ export default {
         this.rightArrowLogo = 45;
         this.widthArrowLogo = 9;
 
-        this.outsideRadius= 300; // radio del circulo, que tan grande sera
-        this.textRadius= 200; // radio del tecto
-        this.insideRadius= 10;
-        this.letterSize=1;
+        this.outsideRadius = 300; // radio del circulo, que tan grande sera
+        this.textRadius = 200; // radio del tecto
+        this.insideRadius = 10;
+        this.letterSize = 1;
       }
-      
     },
     handleResize() {
       this.screenWidth = window.innerWidth;
@@ -300,9 +325,11 @@ export default {
       console.log(newVal);*/
       //const options = await service.getOptions();
       //this.setOptions(options.sectors)
+
       if (this.spinRoullete) {
         const numberWinner = this.generateNumberToShow();
         this.winner = this.generateAnglesToWin(numberWinner);
+        this.updateOptionRoulette(numberWinner);
         this.spinRoullete = false;
         this.spinTimeTotal = 100;
         this.spinTime = 0;
@@ -362,25 +389,27 @@ export default {
       this.ctx.restore();
     },
     nameToUpdate(update) {
-      const gifCard = "gift-card";
-      const replay = "replay";
-      const specialPrice = "special-price";
-      const surpriseWin = "surprise-win";
-      const topPrice = "top-price";
+      this.setTotalSpin(this.totalSpin + 1)
       switch (update) {
         case 0:
         case 3:
-          return gifCard;
+          this.setTotalGiftCard(this.totalGiftCard - 1);
+          break;
         case 1:
         case 6:
-          return replay;
+          this.setTotalReplay(this.totalReplay - 1);
+          break;
         case 2:
         case 5:
-          return surpriseWin;
+          this.setTotalSpecialSurprise(this.totalSpecialSurprise - 1);
+          break;
         case 4:
-          return specialPrice;
+          this.setTotalSpecialPrice(this.totalSpecialPrice - 1);
+
+          break;
         case 7:
-          return topPrice;
+          this.setTotalTopPrice(this.totalTopPrice - 1);
+          break;
       }
     },
 
@@ -435,8 +464,23 @@ export default {
       }
       return positionIndex;
     },
+    async updateOptionRoulette(index) {
+      this.nameToUpdate(index);
+
+      const data = {
+        totalReplay: this.selectedTotalReplay,
+        totalSpecialSurprice: this.selectedTotalSpecialSuprise,
+        totalSpecialPrice: this.selectedTotalSpecialPrice,
+        totalTopPrice: this.selectedTotalTopPrice,
+        totalGitfCard: this.selectedTotalGiftCard,
+        totalSpin: this.totalSpin
+      };
+      const response = await service.setNewTotal(data);
+      console.log(response);
+    },
     generateNumberToShow() {
-      let probabilities = [
+      const probabilities = this.options;
+      /*let probabilities = [
         { opcion: "LAHJAKORTT", probability: 0.10 }, // 1 vez x dia
         { opcion: "UUDESTAAN", probability: 0.10 }, //15-20%
         { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
@@ -445,7 +489,7 @@ export default {
         { opcion: "YLLÄTYSPALKINTO", probability: 0.1 }, // based on probability (surpise win)
         { opcion: "UUDESTAAN", probability: 0.1 }, //15-20%
         { opcion: "PÄÄPALKINTO", probability: 0.3 }, // 0% dependiendo la hrora
-      ];
+      ];*/
 
       let randomNum = Math.random();
       let positionIndex = 0;
@@ -456,9 +500,10 @@ export default {
       }
 
       //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
-      console.log(positionIndex)
+
       return positionIndex;
     },
+
     testUpdateData() {
       let total = this.totalSpecialPrice.totalSpecialPrice;
       if (total > 0) {
@@ -553,7 +598,58 @@ export default {
       "totalSpecialPrice",
       "totalSpecialSurprise",
       "totalTopPrice",
+      "totalGiftCard",
+      "totalSpin"
     ]),
+    selectedTotalReplay: {
+      get() {
+        return this.totalReplay;
+      },
+      set(value) {
+        const val = parseInt(value);
+        this.setTotalReplay(val);
+      },
+    },
+
+    selectedTotalSpecialPrice: {
+      get() {
+        return this.totalSpecialPrice;
+      },
+      set(value) {
+        const val = parseInt(value);
+        this.setTotalSpecialPrice(val);
+      },
+    },
+    selectedTotalSpecialSuprise: {
+      get() {
+        return this.totalSpecialSurprise;
+      },
+      set(value) {
+        const val = parseInt(value);
+        this.setTotalSpecialSurprise(val);
+      },
+    },
+
+    selectedTotalTopPrice: {
+      get() {
+        return this.totalTopPrice;
+      },
+      set(value) {
+        const val = parseInt(value);
+        this.setTotalTopPrice(val);
+      },
+    },
+
+    selectedTotalGiftCard: {
+      get() {
+        return this.totalGiftCard;
+      },
+      set(value) {
+        const val = parseInt(value);
+        this.setTotalGiftCard(val);
+      },
+    },
+
     arc() {
       return Math.PI / (this.sectors.length / 2); // valor de cada arco
     },
