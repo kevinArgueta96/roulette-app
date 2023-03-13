@@ -1,11 +1,7 @@
 <template>
   <div class="container text-center" style="height: 100%" ref="testRef">
-    <canvas
-      id="canvas"
-      ref="myCanvas"
-      :width="widthCircule"
-      :height="heightCircule"
-    ></canvas>
+    <p style="position: absolute; right: -20px;"></p>
+    <canvas id="canvas" ref="myCanvas" :width="widthCircule" :height="heightCircule"></canvas>
     <img
       src="/img/logo.png"
       style="position: absolute;"
@@ -160,6 +156,7 @@ export default {
         this.insideRadius = 5;
         this.letterSize = 0.7;
       }
+
       if (
         this.screenWidth > 0 &&
         this.screenWidth <= 1280 &&
@@ -240,6 +237,20 @@ export default {
         this.textRadius = 200; // radio del tecto
         this.insideRadius = 10;
         this.letterSize = 1;
+      }
+
+      if (this.screenWidth > 2000 && this.screenHeight > 1080) {
+        this.topCentralLogo = 36;
+        this.rightCentralLogo = 34;
+        this.widthCentralLogo = 28;
+        this.topArrowLogo = 8;
+        this.rightArrowLogo = 43;
+        this.widthArrowLogo = 13;
+
+        this.outsideRadius = 500; // radio del circulo, que tan grande sera
+        this.textRadius = 350; // radio del tecto
+        this.insideRadius = 10;
+        this.letterSize = 1.5;
       }
     },
     handleResize() {
@@ -500,9 +511,9 @@ export default {
     },
     generateNumberToShow() {
       const newProbabilitie = this.generateProbabilityPriceByScheduler();
-      const probabilities = newProbabilitie === null ? this.options : newProbabilitie;
+      const probabilities =
+        newProbabilitie === null ? this.options : newProbabilitie;
       console.log(probabilities);
-
 
       let randomNum = Math.random();
       let positionIndex = 0;
@@ -513,7 +524,7 @@ export default {
       }
 
       //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
-      console.log(positionIndex)
+      console.log(positionIndex);
       return positionIndex;
     },
     changeStateOfSchedulerWin(range) {
@@ -585,7 +596,7 @@ export default {
         this.actualTime <= this.giftCardScheduleRangeA.rangeTop &&
         this.giftCardScheduleRangeA.given === false
       ) {
-        console.log('cardA')
+        console.log("cardA");
         this.changeStateOfSchedulerWin("cardA");
         const probabilities = [
           { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia

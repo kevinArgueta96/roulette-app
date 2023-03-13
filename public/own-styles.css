@@ -47,6 +47,7 @@ header {
   position: absolute;
   height: 33.33%;
   position: relative;
+  right: 550px;
 }
 
 #null-column-top {
@@ -57,7 +58,7 @@ header {
 #null-column-rigth {
     height: 33.33%;
     position: relative;
-    right: 165%;
+    left: 150px;
 }
 
 .central-columns-middle{

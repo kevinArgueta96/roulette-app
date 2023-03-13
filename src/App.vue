@@ -20,7 +20,8 @@
         </div>
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
-          <div class="row" id="null-column-rigth">
+          <div class="row" id="null-column-rigth"
+           :style="{right:rigthImg + '%'}">
             <WinRowComponent srcImg="/img/win-image.png" :visible="isVisbleWinImg" />
           </div>
           <div class="row" id="null-column"></div>
@@ -54,16 +55,30 @@ export default {
       isVisbleWinImg: false,
       isVisbleLooseImg: false,
       isVisibleConfetti: false,
+      screenWidth: 0,
+      screenHeight:0,
+      rigthImg:0,
     };
   },
   computed: {
     ...mapGetters(["timeToShowOptions"]),
   },
   mounted() {
+    if(this.screenWidth > 2000 ){
+      this.rigthImg= 0;
+    }
     this.getOptions();
     this.getTotals();
     this.getScheduleRange();
   },
+  created() {
+    window.addEventListener("resize", this.handleResize);
+  },
+
+  destroyed() {
+    window.removeEventListener("resize", this.handleResize);
+  },
+  
   methods: {
     ...mapActions([
       "setOptions",
@@ -83,6 +98,10 @@ export default {
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
     ]),
+    handleResize() {
+    this.screenWidth = window.innerWidth;
+    this.screenHeight = window.innerHeight;
+  },
     showImg(value) {
       if (value.type === "loose") {
         this.isVisbleLooseImg = true;
