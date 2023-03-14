@@ -1,1 +1,1 @@
-export * from './getData.utils'
+export * from './time.utils'

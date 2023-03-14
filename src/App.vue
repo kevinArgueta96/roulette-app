@@ -64,12 +64,13 @@ export default {
     ...mapGetters(["timeToShowOptions"]),
   },
   mounted() {
+    this.getScheduleRange();
+    
     if(this.screenWidth > 2000 ){
       this.rigthImg= 0;
     }
     this.getOptions();
     this.getTotals();
-    this.getScheduleRange();
   },
   created() {
     window.addEventListener("resize", this.handleResize);
@@ -98,6 +99,22 @@ export default {
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
     ]),
+    obtenerHoraActual() {
+      const ahora = new Date();
+      const hora = ahora.getHours();
+      const minutos = ahora.getMinutes();
+
+      // Formatear hora en formato 24 horas
+      const hora24 = (hora < 10 ? "0" : "") + hora;
+      const minutos24 = (minutos < 10 ? "0" : "") + minutos;
+
+      return `${hora24}:${minutos24}`;
+    },
+    spinRoulleteByEnter(event) {
+      if (event.keyCode === 13 || event.keyCode === 32) {
+        this.spin();
+      }
+    },
     handleResize() {
     this.screenWidth = window.innerWidth;
     this.screenHeight = window.innerHeight;

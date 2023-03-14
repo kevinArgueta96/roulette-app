@@ -22,11 +22,11 @@
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
+import { obtenerHoraActual } from '@/utils';
 
 export default {
   data: () => {
     return {
-      actualTime: "",
       auxState: "",
       winner: null,
       screenWidth: window.innerWidth,
@@ -88,11 +88,10 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   mounted() {
-    setInterval(() => {
-      this.actualTime = this.obtenerHoraActual();
+    setTimeout(() => {
+      document.addEventListener("keyup", this.spinRoulleteByEnter);
+      
     }, 1000);
-    document.addEventListener("keyup", this.spinRoulleteByEnter);
-
     this.widthCircule = this.$refs.testRef.offsetWidth;
     this.heightCircule = this.$refs.testRef.offsetHeight - 100;
     this.validateSizeOfImg();
@@ -120,23 +119,11 @@ export default {
       "setTopPriceScheduleRangeB",
     ]),
 
-    obtenerHoraActual() {
-      const ahora = new Date();
-      const hora = ahora.getHours();
-      const minutos = ahora.getMinutes();
-
-      // Formatear hora en formato 24 horas
-      const hora24 = (hora < 10 ? "0" : "") + hora;
-      const minutos24 = (minutos < 10 ? "0" : "") + minutos;
-
-      return `${hora24}:${minutos24}`;
-    },
     spinRoulleteByEnter(event) {
       if (event.keyCode === 13 || event.keyCode === 32) {
         this.spin();
       }
     },
-
     validateSizeOfImg() {
       if (
         this.screenWidth > 0 &&
@@ -358,6 +345,7 @@ export default {
 
     spin() {
       if (this.spinRoullete) {
+        this.speedRoulette = false;
         const numberWinner = this.generateNumberToShow();
         this.winner = this.generateAnglesToWin(numberWinner);
         this.updateOptionRoulette(numberWinner);
@@ -424,22 +412,22 @@ export default {
       switch (update) {
         case 0:
         case 3:
-          this.setTotalGiftCard(this.totalGiftCard - 1);
+          this.setTotalGiftCard(this.totalGiftCard + 1);
           break;
         case 1:
         case 6:
-          this.setTotalReplay(this.totalReplay - 1);
+          this.setTotalReplay(this.totalReplay + 1);
           break;
         case 2:
         case 5:
-          this.setTotalSpecialSurprise(this.totalSpecialSurprise - 1);
+          this.setTotalSpecialSurprise(this.totalSpecialSurprise + 1);
           break;
         case 4:
-          this.setTotalSpecialPrice(this.totalSpecialPrice - 1);
+          this.setTotalSpecialPrice(this.totalSpecialPrice + 1);
 
           break;
         case 7:
-          this.setTotalTopPrice(this.totalTopPrice - 1);
+          this.setTotalTopPrice(this.totalTopPrice + 1);
           break;
       }
     },
@@ -511,21 +499,33 @@ export default {
     },
     generateNumberToShow() {
       const newProbabilitie = this.generateProbabilityPriceByScheduler();
-      const probabilities =
-        newProbabilitie === null ? this.options : newProbabilitie;
-      console.log(probabilities);
+      const probabilities = newProbabilitie === null ? this.options : newProbabilitie ;
 
-      let randomNum = Math.random();
+      const numeroAleatorio = Math.random();  
+      let sumaProbabilidades = 0;
+      for (let i = 0; i < probabilities.length; i++) {
+        const sector = probabilities[i];
+        sumaProbabilidades += sector.probability;
+        console.log(i)
+
+        if (sumaProbabilidades >= numeroAleatorio) {
+          console.log(i)
+          return i;
+        }
+      }
+
+
+      /*let randomNum = Math.random();
       let positionIndex = 0;
       let cumulativeProbability = 0; // Las probabilidades deben sumar 1
+
       while (randomNum > cumulativeProbability) {
         positionIndex++;
         cumulativeProbability += probabilities[positionIndex].probability; // faltaba el arreglo "probabilities" en esta línea
       }
 
       //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
-      console.log(positionIndex);
-      return positionIndex;
+      return positionIndex;*/
     },
     changeStateOfSchedulerWin(range) {
       switch (range) {
@@ -551,6 +551,7 @@ export default {
 
           break;
         case "cardD":
+          console.log(range)
           this.auxState = this.giftCardScheduleRangeD;
           this.auxState.given = true;
           this.setGiftCardScheduleRangeD(this.auxState);
@@ -591,138 +592,82 @@ export default {
       service.setHour(data);
     },
     generateProbabilityPriceByScheduler() {
-      if (
-        this.actualTime >= this.giftCardScheduleRangeA.rangeDown &&
-        this.actualTime <= this.giftCardScheduleRangeA.rangeTop &&
-        this.giftCardScheduleRangeA.given === false
-      ) {
-        console.log("cardA");
-        this.changeStateOfSchedulerWin("cardA");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
+      const time = obtenerHoraActual()
+      const down = [
+        this.giftCardScheduleRangeA.rangeDown,
+        this.giftCardScheduleRangeB.rangeDown,
+        this.giftCardScheduleRangeC.rangeDown,
+        this.giftCardScheduleRangeD.rangeDown,
+        this.giftCardScheduleRangeE.rangeDown,
+        this.topPriceScheduleRangeA.rangeDown,
+        this.topPriceScheduleRangeB.rangeDown,
+      ];
 
-      if (
-        this.actualTime >= this.giftCardScheduleRangeB.rangeDown &&
-        this.actualTime <= this.giftCardScheduleRangeB.rangeTop &&
-        this.giftCardScheduleRangeB.given === false
-      ) {
-        this.changeStateOfSchedulerWin("cardB");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
+      const top = [
+        this.giftCardScheduleRangeA.rangeTop,
+        this.giftCardScheduleRangeB.rangeTop,
+        this.giftCardScheduleRangeC.rangeTop,
+        this.giftCardScheduleRangeD.rangeTop,
+        this.giftCardScheduleRangeE.rangeTop,
+        this.topPriceScheduleRangeA.rangeTop,
+        this.topPriceScheduleRangeB.rangeTop,
+      ];
 
-      if (
-        this.actualTime >= this.giftCardScheduleRangeC.rangeDown &&
-        this.actualTime <= this.giftCardScheduleRangeC.rangeTop &&
-        this.giftCardScheduleRangeC.given === false
-      ) {
-        this.changeStateOfSchedulerWin("cardC");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
+      const card = [
+        "cardA",
+        "cardB",
+        "cardC",
+        "cardD",
+        "cardE",
+        "topPriceA",
+        "topPriceB",
+      ];
 
-      if (
-        this.actualTime >= this.giftCardScheduleRangeD.rangeDown &&
-        this.actualTime <= this.giftCardScheduleRangeD.rangeTop &&
-        this.giftCardScheduleRangeD.given === false
-      ) {
-        this.changeStateOfSchedulerWin("cardD");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
+      const givenS = [
+        this.giftCardScheduleRangeA.given,
+        this.giftCardScheduleRangeB.given,
+        this.giftCardScheduleRangeC.given,
+        this.giftCardScheduleRangeD.given,
+        this.giftCardScheduleRangeE.given,
+        this.topPriceScheduleRangeA.given,
+        this.topPriceScheduleRangeB.given,
+      ];
+      for (let position = 0; position < 7; position++) {
+        if (
+          
+        time >= down[position] &&
+        time <= top[position] &&
+          givenS[position] === false
+        ) {
+          this.changeStateOfSchedulerWin(card[position]);
+          if (position >= 0 && position <= 4) {
+            console.log({position})
+            const options = [
+              { option: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+              { option: "UUDESTAAN", probability: 0 }, //15-20%
+              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+              { option: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+              { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+              { option: "UUDESTAAN", probability: 0 }, //15-20%
+              { option: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+            ];
+            return options;
 
-      if (
-        this.actualTime >= this.giftCardScheduleRangeE.rangeDown &&
-        this.actualTime <= this.giftCardScheduleRangeE.rangeTop &&
-        this.giftCardScheduleRangeE.given === false
-      ) {
-        this.changeStateOfSchedulerWin("cardE");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
-
-      if (
-        this.actualTime >= this.topPriceScheduleRangeA.rangeDown &&
-        this.actualTime <= this.topPriceScheduleRangeA.rangeTop &&
-        this.topPriceScheduleRangeA.given === false
-      ) {
-        this.changeStateOfSchedulerWin("topPriceA");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
-      }
-
-      if (
-        this.actualTime >= this.topPriceScheduleRangeB.rangeDown &&
-        this.actualTime <= this.topPriceScheduleRangeB.rangeTop &&
-        this.topPriceScheduleRangeB.given === false
-      ) {
-        this.changeStateOfSchedulerWin("topPriceB");
-        const probabilities = [
-          { opcion: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-          { opcion: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-          { opcion: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-          { opcion: "UUDESTAAN", probability: 0 }, //15-20%
-          { opcion: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
-        ];
-        return probabilities;
+          } else if (position > 4 && position <= 6) {
+            const options = [
+              { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+              { option: "UUDESTAAN", probability: 0 }, //15-20%
+              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+              { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+              { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+              { option: "UUDESTAAN", probability: 0 }, //15-20%
+              { option: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
+            ];
+            return options;
+          }
+        }
       }
 
       return null;
@@ -747,6 +692,8 @@ export default {
 
       "topPriceScheduleRangeA",
       "topPriceScheduleRangeB",
+
+      "actualTime,"
     ]),
     selectedTotalReplay: {
       get() {

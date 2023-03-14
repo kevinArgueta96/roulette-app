@@ -21,7 +21,9 @@ export default new Vuex.Store({
     giftCardScheduleRangeE:[],
 
     topPriceScheduleRangeA:[],
-    topPriceScheduleRangeB:[]
+    topPriceScheduleRangeB:[],
+
+    actualTIme:'',
 
   },
   getters: {
@@ -42,6 +44,9 @@ export default new Vuex.Store({
 
     topPriceScheduleRangeA: (state) => state.topPriceScheduleRangeA,
     topPriceScheduleRangeB: (state) => state.topPriceScheduleRangeB,
+
+    actualTIme: (state) => state.actualTIme,
+    
   },
   mutations: {
     setOptions(state,payload){
@@ -88,6 +93,10 @@ export default new Vuex.Store({
     },
     setTopPriceScheduleRangeB(state,payload){
       state.topPriceScheduleRangeB = payload;
+    },
+
+    setActualTime(state,payload){
+      state.actualTIme = payload;
     },
   },
   actions: {
@@ -140,6 +149,11 @@ export default new Vuex.Store({
     },
     setTopPriceScheduleRangeB(context,payload){
       context.commit('setTopPriceScheduleRangeB',payload)
+
+    },
+
+    setActualTime(context,payload){
+      context.commit('setActualTime',payload)
 
     },
   },
