@@ -1,8 +1,8 @@
 <template>
   <div class="container text-center padre" ref="testRef" style="width: 100%; overflow: visible;">
     <div>
-    <canvas id="canvas" ref="myCanvas"  style="" :width="widthCircule" :height="heightCircule"></canvas>
-  </div>
+      <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
+    </div>
     <img
       src="/img/logo.png"
       class="central-img"
@@ -14,6 +14,7 @@
       style="position: absolute;"
       :style="{top: topArrowLogo + 'px' , right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
       class="central-img"
+      :class="{vibratingImage: showAnimation}"
       alt="Responsive image"
     />
   </div>
@@ -30,6 +31,7 @@ export default {
     return {
       auxState: "",
       winner: null,
+      showAnimation: false,
       screenWidth: window.innerWidth,
       screenHeight: window.innerHeight,
       topCentralLogo: 0,
@@ -169,7 +171,7 @@ export default {
         this.letterSize = 1.7;
       }
 
-      if (this.screenWidth > 3000) {
+      if (this.screenWidth > 3500) {
         this.topCentralLogo = 40;
         this.widthCentralLogo = 300;
         this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
@@ -183,7 +185,6 @@ export default {
         this.insideRadius = 5;
         this.letterSize = 1.7;
       }
-      
     },
     handleResize() {
       (this.canvas = null),
@@ -250,6 +251,21 @@ export default {
           false
         );
 
+        /*if (i === 7) {
+          let img = new Image();
+          img.src = "/img/winner.png";
+          const x = widthCircle - 100 + this.textRadius * Math.cos(angle + 0.3);
+          const y = heightCirlce - 100 + this.textRadius * Math.sin(angle + 0.3);
+
+          img.onload = () => {
+            this.ctx.save();
+            this.ctx.drawImage(img, x, y, 250, 300);
+            this.ctx.rotate((angle + this.arc) + this.arc / 2 + Math.PI / 2);
+
+            this.ctx.restore();
+          };
+        }*/
+
         this.ctx.stroke();
 
         this.ctx.shadowOffsetX = 0;
@@ -267,21 +283,14 @@ export default {
         }
 
         if (i === 7) {
+          let auxRadios = this.textRadius;
           this.ctx.translate(
             this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
+              Math.cos(angle + this.arc / 2) * auxRadios+10,
             this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
+              Math.sin(angle + this.arc / 2) * auxRadios+10
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-         
-          let img = new Image();
-          img.src = "/img/winner.png";
-          //const x = (widthCircle  ) + this.textRadius * Math.cos(angle) ;
-          //const y = (heightCirlce ) + this.textRadius * Math.sin(angle);
-          img.onload = () => {
-            //this.ctx.drawImage(img, x ,y, 250, 200);
-          };
         } else {
           this.ctx.translate(
             this.widthCircule / 2 +
@@ -303,6 +312,7 @@ export default {
     spin() {
       if (this.spinRoullete) {
         this.speedRoulette = false;
+        this.showAnimation = true;
         const numberWinner = this.generateNumberToShow();
         this.winner = this.generateAnglesToWin(numberWinner);
         this.updateOptionRoulette(numberWinner);
@@ -348,6 +358,7 @@ export default {
 
     stopRotateWheel() {
       clearTimeout(this.spinTimeout);
+      this.showAnimation = false;
       var degrees = (this.startAngle * 180) / Math.PI + 90;
       var arcd = (this.arc * 180) / Math.PI;
       var index = Math.floor((360 - (degrees % 360)) / arcd);
@@ -711,4 +722,26 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped></style>
+<style scoped>
+.vibratingImage {
+  animation: shake 0.5s linear infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+  50% {
+    transform: translateX(0) rotate(1deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(-1deg);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+</style>
