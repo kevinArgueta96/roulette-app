@@ -241,7 +241,7 @@ export default {
         this.ctx.beginPath();
 
         this.ctx.strokeStyle = "black";
-        this.ctx.lineWidth = 15;
+        this.ctx.lineWidth = 25;
         this.ctx.arc(
           widthCircle,
           heightCirlce,
