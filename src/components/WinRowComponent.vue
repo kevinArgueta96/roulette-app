@@ -40,7 +40,6 @@ export default {
   },
   methods: {
     handleResize() {
-      console.log("tets");
       this.screenWidth = window.innerWidth;
     },
   },
