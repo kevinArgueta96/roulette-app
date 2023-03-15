@@ -65,7 +65,6 @@ export default {
     ...mapGetters(["timeToShowOptions"]),
   },
   mounted() {
-    this.showImg()
     this.getScheduleRange();
     
     if(this.screenWidth > 2000 ){

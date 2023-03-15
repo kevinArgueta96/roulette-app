@@ -274,7 +274,7 @@ export default {
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-          //const imageRotation = 0;
+         
           let img = new Image();
           img.src = "/img/winner.png";
           //const x = (widthCircle  ) + this.textRadius * Math.cos(angle) ;
@@ -304,7 +304,6 @@ export default {
       if (this.spinRoullete) {
         this.speedRoulette = false;
         const numberWinner = this.generateNumberToShow();
-        console.log(numberWinner);
         this.winner = this.generateAnglesToWin(numberWinner);
         this.updateOptionRoulette(numberWinner);
         this.spinRoullete = false;
