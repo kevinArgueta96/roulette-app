@@ -1,28 +1,29 @@
 <template>
-  <div class="container text-center" style="height: 100%" ref="testRef">
-    <p style="position: absolute; right: -20px;"></p>
-    <canvas id="canvas" ref="myCanvas" :width="widthCircule" :height="heightCircule"></canvas>
+  <div class="container text-center padre" ref="testRef" style="width: 100%; overflow: visible;">
+    <div>
+    <canvas id="canvas" ref="myCanvas"  style="" :width="widthCircule" :height="heightCircule"></canvas>
+  </div>
     <img
       src="/img/logo.png"
-      style="position: absolute;"
-      :style="{top: topCentralLogo + '%' , right: rightCentralLogo + '%', width: widthCentralLogo + '%' }"
-      class="img-fluid win-text"
+      class="central-img"
+      :style="{top:topCentralLogo+'%',width: widthCentralLogo+'px'}"
       alt="Responsive image"
     />
     <img
       src="/img/storytel-flecha.png"
       style="position: absolute;"
-      :style="{top: topArrowLogo + '%' , right: rightArrowLogo + '%', width: widthArrowLogo + '%' }"
-      class="img-fluid win-text"
+      :style="{top: topArrowLogo + 'px' , right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
+      class="central-img"
       alt="Responsive image"
     />
   </div>
 </template>
-
+<!-- width: 300px;
+top: 38%; -->
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
-import { obtenerHoraActual } from '@/utils';
+import { obtenerHoraActual } from "@/utils";
 
 export default {
   data: () => {
@@ -90,11 +91,11 @@ export default {
   mounted() {
     setTimeout(() => {
       document.addEventListener("keyup", this.spinRoulleteByEnter);
-      
     }, 1000);
     this.widthCircule = this.$refs.testRef.offsetWidth;
-    this.heightCircule = this.$refs.testRef.offsetHeight - 100;
+    this.heightCircule = this.$refs.testRef.offsetHeight;
     this.validateSizeOfImg();
+    //this.drawRouletteWheel();
     requestAnimationFrame(this.drawRouletteWheel);
   },
   beforeDestroy() {
@@ -125,124 +126,72 @@ export default {
       }
     },
     validateSizeOfImg() {
-      if (
-        this.screenWidth > 0 &&
-        this.screenWidth < 900 &&
-        this.screenHeight > 0 &&
-        this.screenHeight <= 700
-      ) {
-        this.topCentralLogo = 30;
-        this.rightCentralLogo = 42;
-        this.widthCentralLogo = 12;
-        this.topArrowLogo = -1;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6;
+      this.topCentralLogo = 35;
+      this.widthCentralLogo = 300;
+      this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
 
-        this.outsideRadius = 100; // radio del circulo, que tan grande sera
-        this.textRadius = 100; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 0.7;
-      }
+      this.topArrowLogo = 5;
+      this.rightArrowLogo = 46;
+      this.widthArrowLogo = 10;
 
-      if (
-        this.screenWidth > 0 &&
-        this.screenWidth <= 1280 &&
-        this.screenHeight > 0 &&
-        this.screenHeight <= 1000
-      ) {
-        this.topCentralLogo = 30;
-        this.rightCentralLogo = 42;
-        this.widthCentralLogo = 12;
-        this.topArrowLogo = -1;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6;
+      this.outsideRadius = 250; // radio del circulo, que tan grande sera
+      this.textRadius = 175; // radio del tecto
+      this.insideRadius = 5;
+      this.letterSize = 0.7;
 
-        this.outsideRadius = 210; // radio del circulo, que tan grande sera
-        this.textRadius = 140; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 0.7;
-      }
-      if (this.screenWidth < 1400 && this.screenHeight < 1000) {
-        this.topCentralLogo = 30;
-        this.rightCentralLogo = 42;
-        this.widthCentralLogo = 12;
-        this.topArrowLogo = -1;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6;
-
-        this.outsideRadius = 210; // radio del circulo, que tan grande sera
-        this.textRadius = 140; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 0.7;
-      }
-      if (this.screenWidth <= 1920 && this.screenHeight < 1080) {
-        this.topCentralLogo = 34;
-        this.rightCentralLogo = 42;
-        this.widthCentralLogo = 12;
-        this.topArrowLogo = 8;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6;
-
-        this.outsideRadius = 210; // radio del circulo, que tan grande sera
-        this.textRadius = 140; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 0.7;
-      }
-
-      if (
-        this.screenWidth > 1280 &&
-        this.screenWidth < 1920 &&
-        this.screenHeight > 720 &&
-        this.screenHeight < 1080
-      ) {
-        this.topCentralLogo = 30;
-        this.rightCentralLogo = 42;
-        this.widthCentralLogo = 12;
-        this.topArrowLogo = 4;
-        this.rightArrowLogo = 45;
-        this.widthArrowLogo = 6;
-
-        this.outsideRadius = 230; // radio del circulo, que tan grande sera
-        this.textRadius = 150; // radio del tecto
-        this.insideRadius = 10;
-        this.letterSize = 0.7;
-      }
-      if (
-        this.screenWidth >= 1920 &&
-        this.screenWidth &&
-        this.screenHeight >= 600 &&
-        this.screenHeight <= 2160
-      ) {
+      if (this.screenWidth > 1000) {
         this.topCentralLogo = 35;
-        this.rightCentralLogo = 40;
-        this.widthCentralLogo = 17;
-        this.topArrowLogo = 0;
-        this.rightArrowLogo = 45;
-        this.widthArrowLogo = 9;
+        this.widthCentralLogo = 250;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
 
-        this.outsideRadius = 300; // radio del circulo, que tan grande sera
-        this.textRadius = 200; // radio del tecto
-        this.insideRadius = 10;
+        this.topArrowLogo = -30;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 8;
+
+        this.outsideRadius = 375; // radio del circulo, que tan grande sera
+        this.textRadius = 275; // radio del tecto
+        this.insideRadius = 5;
         this.letterSize = 1;
       }
 
-      if (this.screenWidth > 2000 && this.screenHeight > 1080) {
-        this.topCentralLogo = 36;
-        this.rightCentralLogo = 34;
-        this.widthCentralLogo = 28;
-        this.topArrowLogo = 8;
-        this.rightArrowLogo = 43;
-        this.widthArrowLogo = 13;
+      if (this.screenWidth > 2000) {
+        this.topCentralLogo = 35;
+        this.widthCentralLogo = 300;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
+        this.topArrowLogo = 5;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 10;
 
         this.outsideRadius = 500; // radio del circulo, que tan grande sera
         this.textRadius = 350; // radio del tecto
-        this.insideRadius = 10;
-        this.letterSize = 1.5;
+        this.insideRadius = 5;
+        this.letterSize = 1.7;
       }
+
+      if (this.screenWidth > 3000) {
+        this.topCentralLogo = 40;
+        this.widthCentralLogo = 300;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
+        this.topArrowLogo = 150;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 15;
+
+        this.outsideRadius = 512; // radio del circulo, que tan grande sera
+        this.textRadius = 350; // radio del tecto
+        this.insideRadius = 5;
+        this.letterSize = 1.7;
+      }
+      
     },
     handleResize() {
-      this.screenWidth = window.innerWidth;
+      (this.canvas = null),
+        (this.ctx = null),
+        (this.screenWidth = window.innerWidth);
       this.screenHeight = window.innerHeight;
+      this.widthCircule = this.$refs.testRef.offsetWidth;
+      this.heightCircule = this.$refs.testRef.offsetHeight;
     },
     drawRouletteWheel() {
       this.canvas = this.$refs.myCanvas;
@@ -325,6 +274,14 @@ export default {
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+          //const imageRotation = 0;
+          let img = new Image();
+          img.src = "/img/winner.png";
+          //const x = (widthCircle  ) + this.textRadius * Math.cos(angle) ;
+          //const y = (heightCirlce ) + this.textRadius * Math.sin(angle);
+          img.onload = () => {
+            //this.ctx.drawImage(img, x ,y, 250, 200);
+          };
         } else {
           this.ctx.translate(
             this.widthCircule / 2 +
@@ -347,10 +304,12 @@ export default {
       if (this.spinRoullete) {
         this.speedRoulette = false;
         const numberWinner = this.generateNumberToShow();
+        console.log(numberWinner);
         this.winner = this.generateAnglesToWin(numberWinner);
         this.updateOptionRoulette(numberWinner);
         this.spinRoullete = false;
         this.spinTimeTotal = 100;
+
         this.spinTime = 0;
         this.rotateWheel();
       }
@@ -397,10 +356,15 @@ export default {
       this.ctx.font = "bold 30px Helvetica, Arial";
 
       if (index === 1 || index === 6) {
-        this.$emit("showImg", { type: "loose" });
-      } else {
-        this.$emit("showImg", { type: "win" });
-        this.$emit("showImg", { type: "confetti" });
+        this.$emit("showImg", { type: "replay" });
+      } else if (index === 2 || index === 5) {
+        this.$emit("showImg", { type: "differentBoxes" });
+      } else if (index === 0 || index === 3) {
+        this.$emit("showImg", { type: "giftCard" });
+      } else if (index === 4) {
+        this.$emit("showImg", { type: "individualBox" });
+      } else if (index === 7) {
+        this.$emit("showImg", { type: "topPrice" });
       }
       setTimeout(() => {
         this.spinRoullete = true;
@@ -499,33 +463,19 @@ export default {
     },
     generateNumberToShow() {
       const newProbabilitie = this.generateProbabilityPriceByScheduler();
-      const probabilities = newProbabilitie === null ? this.options : newProbabilitie ;
+      const probabilities =
+        newProbabilitie === null ? this.options : newProbabilitie;
 
-      const numeroAleatorio = Math.random();  
+      const numeroAleatorio = Math.random();
       let sumaProbabilidades = 0;
       for (let i = 0; i < probabilities.length; i++) {
         const sector = probabilities[i];
         sumaProbabilidades += sector.probability;
-        console.log(i)
 
         if (sumaProbabilidades >= numeroAleatorio) {
-          console.log(i)
           return i;
         }
       }
-
-
-      /*let randomNum = Math.random();
-      let positionIndex = 0;
-      let cumulativeProbability = 0; // Las probabilidades deben sumar 1
-
-      while (randomNum > cumulativeProbability) {
-        positionIndex++;
-        cumulativeProbability += probabilities[positionIndex].probability; // faltaba el arreglo "probabilities" en esta línea
-      }
-
-      //let selectedOption = probabilities[positionIndex].opcion; // se selecciona la opción correspondiente al índice obtenido
-      return positionIndex;*/
     },
     changeStateOfSchedulerWin(range) {
       switch (range) {
@@ -551,7 +501,6 @@ export default {
 
           break;
         case "cardD":
-          console.log(range)
           this.auxState = this.giftCardScheduleRangeD;
           this.auxState.given = true;
           this.setGiftCardScheduleRangeD(this.auxState);
@@ -592,7 +541,7 @@ export default {
       service.setHour(data);
     },
     generateProbabilityPriceByScheduler() {
-      const time = obtenerHoraActual()
+      const time = obtenerHoraActual();
       const down = [
         this.giftCardScheduleRangeA.rangeDown,
         this.giftCardScheduleRangeB.rangeDown,
@@ -634,14 +583,12 @@ export default {
       ];
       for (let position = 0; position < 7; position++) {
         if (
-          
-        time >= down[position] &&
-        time <= top[position] &&
+          time >= down[position] &&
+          time <= top[position] &&
           givenS[position] === false
         ) {
           this.changeStateOfSchedulerWin(card[position]);
           if (position >= 0 && position <= 4) {
-            console.log({position})
             const options = [
               { option: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
               { option: "UUDESTAAN", probability: 0 }, //15-20%
@@ -653,7 +600,6 @@ export default {
               { option: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
             ];
             return options;
-
           } else if (position > 4 && position <= 6) {
             const options = [
               { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
@@ -693,7 +639,7 @@ export default {
       "topPriceScheduleRangeA",
       "topPriceScheduleRangeB",
 
-      "actualTime,"
+      "actualTime,",
     ]),
     selectedTotalReplay: {
       get() {
@@ -752,7 +698,16 @@ export default {
       return Math.floor(360 - (degrees % 360));
     },
   },
-  watch: {},
+  watch: {
+    widthCircule() {
+      this.validateSizeOfImg();
+      requestAnimationFrame(this.drawRouletteWheel);
+    },
+    heightCircule() {
+      this.validateSizeOfImg();
+      requestAnimationFrame(this.drawRouletteWheel);
+    },
+  },
 };
 </script>
 

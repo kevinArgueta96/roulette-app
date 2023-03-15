@@ -29,8 +29,12 @@ header {
 }
 
 .win-colmun {
-  height: 100%; 
-  
+  height: 100%;
+}
+
+.win-colmun-left{
+  position: relative;
+  right: 15%;
 }
 
 .win-central {
@@ -38,9 +42,8 @@ header {
   position: relative;
 }
 
-.win-text {
-  position: relative;
-  top: 50%;
+#canvas{
+  overflow: visible;
 }
 
 #null-column {
@@ -56,13 +59,35 @@ header {
 }
 
 #null-column-rigth {
-    height: 33.33%;
-    position: relative;
-    left: 150px;
+  height: 33.33%;
+  position: relative;
+  left: 150px;
 }
 
-.central-columns-middle{
+.central-columns-middle {
   position: relative;
   height: 5%;
   background-color: cadetblue;
+}
+
+.padre {
+  position: relative;
+  height: 100%;
+}
+
+.arrow-img {
+  position: absolute; /* se usa en caso de este div, donde tiene la altura y el ancho definido, sin esto top, right y left no funcionarían */
+  width: 150px;
+  top: 38%; /* sirve en caso de un div como este, donde tiene una altura definida, en caso de que la altura no este definida esta edición no se pone ; */
+  right: 0%; /* se debe usar para que margin 0 auto funcione */
+  left: 4%; /* se debe usar para que margin 0 auto funcione */
+  margin: 0 auto; /* Esto lo centra */
+}
+
+.central-img {
+  position: absolute; /* se usa en caso de este div, donde tiene la altura y el ancho definido, sin esto top, right y left no funcionarían */
+ /* sirve en caso de un div como este, donde tiene una altura definida, en caso de que la altura no este definida esta edición no se pone ; */
+  right: 0%; /* se debe usar para que margin 0 auto funcione */
+  left: 4%; /* se debe usar para que margin 0 auto funcione */
+  margin: 0 auto; /* Esto lo centra */
 }

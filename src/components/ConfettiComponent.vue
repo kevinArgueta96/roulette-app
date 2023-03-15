@@ -1,5 +1,5 @@
 <template>
-  <canvas id="confetti-container"></canvas>
+  <canvas id="confetti-container" style="background-color: #fdf1f0; z-index: -1;"></canvas>
 </template>
 
 <script>

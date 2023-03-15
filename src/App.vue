@@ -3,26 +3,26 @@
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
     <div class="container text-center" id="container-objects">
       <div class="col-sm-12">
-        <div class="row" id="null-column">
-          <WinRowComponent srcImg="/img/loose-image.png" :visible="isVisbleLooseImg" />
-        </div>
+        <!-- <div class="row" id="null-column">
+          <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
+        </div> -->
       </div>
       <div class="row" style="height: 100%;">
-        <div class="col-sm-1 win-colmun">
+        <div class="col-sm-1 win-colmun-left">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent srcImg="/img/win-image.png" :visible="isVisbleWinImg" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
-        <div class="col-sm-10 win-central">
+        <div class="col-sm-10 win-central" style="overflow: visible;">
           <RouletteCompoment @showImg="showImg" />
         </div>
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-rigth"
            :style="{right:rigthImg + '%'}">
-            <WinRowComponent srcImg="/img/win-image.png" :visible="isVisbleWinImg" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -58,12 +58,14 @@ export default {
       screenWidth: 0,
       screenHeight:0,
       rigthImg:0,
+      srcImg:''
     };
   },
   computed: {
     ...mapGetters(["timeToShowOptions"]),
   },
   mounted() {
+    this.showImg()
     this.getScheduleRange();
     
     if(this.screenWidth > 2000 ){
@@ -120,13 +122,42 @@ export default {
     this.screenHeight = window.innerHeight;
   },
     showImg(value) {
-      if (value.type === "loose") {
-        this.isVisbleLooseImg = true;
-      } else if (value.type === "win") {
-        this.isVisbleWinImg = true;
-      } else {
-        this.isVisibleConfetti = !this.isVisibleConfetti;
-      }
+      //console.log(value)
+      const { type } = value; 
+      //const type = "topPrice";
+      switch(type){
+        case ("replay"):
+          this.srcImg = "gift/replay.gif"
+          this.isVisbleWinImg = false;
+          this.isVisbleLooseImg  = true;
+          
+          break;
+          case ("individualBox"):
+          this.srcImg = "gift/gifts_storytel_individual.gif"
+          this.isVisbleWinImg = true;
+          this.isVisbleLooseImg  = false;
+          this.isVisibleConfetti = !this.isVisibleConfetti;
+
+          break;
+          case ("giftCard"):
+          this.srcImg = "gift/gift_card.gif"
+          this.isVisbleWinImg = true;
+          this.isVisbleLooseImg  = false;
+          this.isVisibleConfetti = !this.isVisibleConfetti;
+          break;
+          case ("differentBoxes"):
+          this.srcImg = "gift/gifts_storytel_boxes.gif"
+          this.isVisbleWinImg = true;
+          this.isVisbleLooseImg  = false;
+          this.isVisibleConfetti = !this.isVisibleConfetti;
+          break;
+          case ("topPrice"):
+          this.srcImg = "gift/gifts_storytel_boxes.gif"
+          this.isVisbleWinImg = true;
+          this.isVisbleLooseImg  = true;
+          this.isVisibleConfetti = !this.isVisibleConfetti;
+          break;
+      }      
     },
     async getOptions() {
       const options = await service.getOptions();

@@ -6,7 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     options:[],
-    timeToShowOptions:5000,
+    timeToShowOptions:7000,
     totalReplay:0,
     totalSpecialPrice:0,
     totalSpecialSurprise:0,
