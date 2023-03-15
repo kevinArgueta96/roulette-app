@@ -283,12 +283,11 @@ export default {
         }
 
         if (i === 7) {
-          let auxRadios = this.textRadius;
           this.ctx.translate(
             this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * auxRadios+10,
+              Math.cos(angle + this.arc / 2) * this.textRadius,
             this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * auxRadios+10
+              Math.sin(angle + this.arc / 2) * this.textRadius
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
         } else {
