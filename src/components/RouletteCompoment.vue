@@ -225,8 +225,8 @@ export default {
       const heightCirlce = this.heightCircule / 2;
 
       this.ctx.clearRect(
-        -this.widthCircule / 2,
-        -widthCircle / 2,
+        -this.widthCircule,
+        -widthCircle ,
         this.heightCircule,
         heightCirlce
       ); // Borra todo el contenido del canvas
