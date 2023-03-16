@@ -197,7 +197,7 @@ export default {
       };
     },
 
-    drawPhone(angle,arc) {
+    drawPhone(angle, arc) {
       const img = new Image();
       img.src = "/img/winner.png";
       const widthCircle = this.widthCircule / 2;
@@ -207,9 +207,12 @@ export default {
 
       img.onload = () => {
         this.ctx.save();
-        this.ctx.translate(widthCircle, heightCirlce-200 );
-        this.ctx.rotate(angle,arc);
-        this.ctx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
+        this.ctx.translate(
+          widthCircle + Math.cos(angle + this.arc / 2) * this.textRadius,
+          heightCirlce + Math.sin(angle + this.arc / 2) * this.textRadius
+        );
+        this.ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        this.ctx.drawImage(img, -img.width / 2.3, -img.height / 9, 400, 400);
 
         this.ctx.restore();
       };
@@ -240,10 +243,6 @@ export default {
         let angle = this.startAngle + i * this.arc;
         if (i === 0) {
           this.drawCircule(angle - 5.1);
-        }
-
-        if (i === 7) {
-          this.drawPhone(angle+2, 10);
         }
 
         this.ctx.strokeStyle = "transparent";
@@ -292,6 +291,9 @@ export default {
         this.ctx.shadowOffsetX = 0;
         this.ctx.shadowOffsetY = 0;
         this.ctx.shadowBlur = 0;
+        if (i === 7) {
+          this.drawPhone(angle, this.arc);
+        }
 
         if (i === 0 || i === 2 || i === 3 || i === 5) {
           this.ctx.shadowColor = "white";
@@ -302,7 +304,6 @@ export default {
           this.ctx.shadowColor = "black";
           this.ctx.fillStyle = "black";
         }
-
         if (i === 2 || i === 4 || i == 5) {
           //const auxTextRadius = this.textRadius -20
           this.ctx.translate(
