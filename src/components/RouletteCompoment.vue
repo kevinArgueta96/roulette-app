@@ -156,7 +156,7 @@ export default {
         this.outsideRadius = 500; // radio del circulo, que tan grande sera
         this.textRadius = 400; // radio del tecto
         this.insideRadius = 5;
-        this.letterSize = 1.7;
+        this.letterSize = 2;
       }
 
       if (this.screenWidth > 3500) {
@@ -167,7 +167,7 @@ export default {
         this.outsideRadius = 512; // radio del circulo, que tan grande sera
         this.textRadius = 50; // radio del tecto
         this.insideRadius = 5;
-        this.letterSize = 1.7;
+        this.letterSize = 2;
       }
     },
 
@@ -304,8 +304,7 @@ export default {
           this.ctx.shadowColor = "black";
           this.ctx.fillStyle = "black";
         }
-        if (i === 2 || i === 4 || i == 5) {
-          //const auxTextRadius = this.textRadius -20
+        if (i === 2 || i == 5) {
           this.ctx.translate(
             this.widthCircule / 2 +
               Math.cos(angle + this.arc / 2) * this.textRadius,
@@ -318,6 +317,24 @@ export default {
           const textPart2 = this.sectors[i][1];
 
           this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
+          this.ctx.fillText(
+            textPart2,
+            -this.ctx.measureText(text).width / 2.0,
+            40
+          );
+        } else if (i === 4) {
+          this.ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+
+          const text = this.sectors[i][0];
+          const textPart2 = this.sectors[i][1];
+
+          this.ctx.fillText(text, -this.ctx.measureText(text).width / 4, 0);
           this.ctx.fillText(
             textPart2,
             -this.ctx.measureText(text).width / 2.0,
