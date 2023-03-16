@@ -53,7 +53,7 @@ export default {
   data: () => {
     return {
       isVisbleWinImg: false,
-      isVisbleLooseImg: true,
+      isVisbleLooseImg: false,
       isVisibleConfetti: false,
       screenWidth: 0,
       screenHeight:0,
