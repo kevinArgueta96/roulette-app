@@ -16,16 +16,27 @@ body {
 header {
   width: 100%;
   background-color: black;
-  height: 5rem;
+  height: 10rem;
 }
 
+.div{
+
+}
 .footer {
-  width: 500px;
-  height: 180px;
-  position: absolute;
-  bottom: 0;
+  min-height: 70px;
+  width: 25%;
+  height: 360px;
   right: 0;
-  margin: 1%;
+  position: fixed;
+  bottom: 0;     
+}
+
+.footer-img{
+  position: absolute;
+  bottom: 40%;
+  right: 0;
+  width: 30%;
+  height: 20%;
 }
 
 .win-colmun {
@@ -34,7 +45,7 @@ header {
 
 .win-colmun-left{
   position: relative;
-  right: 15%;
+  right: 50px;
 }
 
 .win-central {
@@ -61,7 +72,7 @@ header {
 #null-column-rigth {
   height: 33.33%;
   position: relative;
-  left: 150px;
+  left: 50px;
 }
 
 .central-columns-middle {

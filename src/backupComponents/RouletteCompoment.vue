@@ -1,14 +1,16 @@
 <template>
-  <div class="container text-center padre" ref="testRef" style="width: 100%; overflow: visible;">
+  <div class="container text-center padre" ref="rouletteDiv" style="width: 100%; overflow: visible;">
+    <button @click="spingImg" style="position: absolute; right: 100px;">
+    test</button>
     <div>
       <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
     </div>
-    <!-- <img
+    <img
       src="/img/logo.png"
       class="central-img"
       :style="{top:topCentralLogo+'%',width: widthCentralLogo+'px'}"
       alt="Responsive image"
-    />-->
+    />
     <img
       src="/img/storytel-flecha.png"
       style="position: absolute;"
@@ -41,20 +43,21 @@ export default {
       rightArrowLogo: 0,
       widthArrowLogo: 0,
       result: [],
+      angleCircule:0,
       counter: 0,
       name: "",
       sectors: [
         "LAHJAKORTTI", // 1 vez x dia
         "UUDESTAAN", //15-20%
-        { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
-        "LAHJAKORTTI",
-        { 0: "TUOTE", 1: "PALKINTO" }, // based on probability (surpise win) //10 % special prize
-        { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
+        "YLLÄTYSPALKINTO", // based on probability (surpise win)
+        "LAHJAKORTTI", // based on probability (surpise win)
+        "TUOTEPALKINTO", //10 % special prize
+        "YLLÄTYSPALKINTO", // based on probability (surpise win)
         "UUDESTAAN", //15-20%
         "PÄÄPALKINTO", // 0% dependiendo la hrora
       ],
       colors: [
-        "#2B353A",
+        "#000000",
         "#C9ECFF",
         "#FF501C",
         "#2B353A",
@@ -81,6 +84,11 @@ export default {
       insideRadius: 0,
       letterSize: 0,
       speedRoulette: 10,
+
+      
+      
+      testAngle:0,
+    imgRoulette: null,
     };
   },
   created() {
@@ -91,19 +99,50 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   mounted() {
-    setTimeout(() => {
+    this.canvas = this.$refs.myCanvas;
+
+    this.widthCircule = this.$refs.rouletteDiv.offsetWidth;
+    this.heightCircule = this.$refs.rouletteDiv.offsetHeight;
+
+    this.ctx = this.canvas.getContext("2d");
+
+  this.imgRoulette = new Image();
+  this.imgRoulette.src = "img/ruleta.png";
+  
+ 
+
+  this.imgRoulette.onload  = () => {
+  // Aquí puedes llamar a la función para dibujar la ruleta
+  
+  
+  
+
+  this.dibujarRuleta(0);
+}
+
+
+
+
+
+    /*setTimeout(() => {
       document.addEventListener("keyup", this.spinRoulleteByEnter);
     }, 1000);
-    this.widthCircule = this.$refs.testRef.offsetWidth;
-    this.heightCircule = this.$refs.testRef.offsetHeight;
+    this.widthCircule = this.$refs.rouletteDiv.offsetWidth;
+    this.heightCircule = this.$refs.rouletteDiv.offsetHeight;
     this.validateSizeOfImg();
-    //this.drawRouletteWheel();
-    requestAnimationFrame(this.drawRouletteWheel);
+    this.drawImageCircule()
+    //requestAnimationFrame(this.drawRouletteWheel);*/
   },
   beforeDestroy() {
     document.removeEventListener("keyup", this.spinRoulleteByEnter);
   },
   methods: {
+    
+    spingImg(){
+  // Aquí puedes llamar a la función para dibujar la ruleta
+  this.spin();
+  },
+  
     ...mapActions([
       "setTotalReplay",
       "setTotalSpecialPrice",
@@ -127,139 +166,182 @@ export default {
         this.spin();
       }
     },
+    
+    dibujarRuleta(angulo) {
+  // Calcula el centro de la ruleta
+
+
+      const widthCircule = this.widthCircule;
+      const heightCirlce = this.heightCircule;
+
+      const factorEscala = Math.min(widthCircule/ this.imgRoulette.width, heightCirlce / this.imgRoulette.height);
+
+  // Ajusta el tamaño de la imagen al tamaño del contenedor
+  const anchoImagen = this.imgRoulette.width * factorEscala ;
+ const  altoImagen = this.imgRoulette.height * factorEscala;
+ this.imgRoulette.width = anchoImagen;
+ this.imgRoulette.height = altoImagen;
+
+ 
+
+  // Dibuja la ruleta con rotación
+  this.ctx.save();
+  this.ctx.translate(this.imgRoulette.width /2 ,this.imgRoulette.height / 2);
+  this.ctx.rotate(angulo);
+  //this.ctx.drawImage(this.imgRoulette, (this.imgRoulette.width - anchoImagen) / 2, (this.imgRoulette.height - altoImagen) / 2, anchoImagen, altoImagen);
+  this.ctx.drawImage(this.imgRoulette, -anchoImagen / 2, -altoImagen / 2, anchoImagen, altoImagen); // Dibuja la imagen en el centro del Canvas
+  //this.ctx.drawImage(this.imgRoulette, -this.imgRoulette.width / 2, -this.imgRoulette.height / 2);
+  this.ctx.restore();
+},
+
+animarRuleta() {
+  // Limpia el canvas antes de dibujar la ruleta
+  console.log(this.ctx)
+  this.ctx.clearRect(0, 0,  this.widthCircule, this.heightCircule);
+
+  // Dibuja la ruleta con el ángulo actual
+  this.dibujarRuleta(this.testAngle);
+
+  // Incrementa el ángulo actual en cada fotograma para hacer girar la ruleta
+  this.testAngle += 0.10;
+
+  // Si el ángulo actual es mayor que 360 grados, reinícialo a 0
+  if (this.testAngle >= 360) {
+    this.testAngle = 0;
+  }
+
+  // Pide el próximo fotograma de animación
+  //requestAnimationFrame(this.animarRuleta());
+},
+
+
+
+
+
+
+
+
+
     validateSizeOfImg() {
+      this.topCentralLogo = 35;
+      this.widthCentralLogo = 300;
+      this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
       this.topArrowLogo = 5;
       this.rightArrowLogo = 46;
       this.widthArrowLogo = 10;
 
       this.outsideRadius = 250; // radio del circulo, que tan grande sera
-      this.textRadius = 200; // radio del tecto
-      this.insideRadius = 5;
-      this.letterSize = 0.9;
+      this.textRadius = 175; // radio del tecto
+      this.insideRadius = 1;
+      this.letterSize = 0.7;
 
       if (this.screenWidth > 1000) {
+        this.topCentralLogo = 35;
+        this.widthCentralLogo = 250;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
         this.topArrowLogo = -30;
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 8;
 
         this.outsideRadius = 375; // radio del circulo, que tan grande sera
-        this.textRadius = 300; // radio del tecto
+        this.textRadius = 275; // radio del tecto
         this.insideRadius = 5;
-        this.letterSize = 1.8;
+        this.letterSize = 1;
       }
 
       if (this.screenWidth > 2000) {
+        this.topCentralLogo = 35;
+        this.widthCentralLogo = 300;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
         this.topArrowLogo = 5;
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 10;
 
         this.outsideRadius = 500; // radio del circulo, que tan grande sera
-        this.textRadius = 400; // radio del tecto
+        this.textRadius = 350; // radio del tecto
         this.insideRadius = 5;
         this.letterSize = 1.7;
       }
 
       if (this.screenWidth > 3500) {
+        this.topCentralLogo = 40;
+        this.widthCentralLogo = 300;
+        this.rightCentralLogo = this.widthArrowLogo / 2.1; // YA NO SE USA
+
         this.topArrowLogo = 150;
         this.rightArrowLogo = 46;
         this.widthArrowLogo = 15;
 
         this.outsideRadius = 512; // radio del circulo, que tan grande sera
-        this.textRadius = 50; // radio del tecto
+        this.textRadius = 350; // radio del tecto
         this.insideRadius = 5;
         this.letterSize = 1.7;
       }
     },
-
     handleResize() {
       (this.canvas = null),
         (this.ctx = null),
         (this.screenWidth = window.innerWidth);
       this.screenHeight = window.innerHeight;
-      this.widthCircule = this.$refs.testRef.offsetWidth;
-      this.heightCircule = this.$refs.testRef.offsetHeight;
+      this.widthCircule = this.$refs.rouletteDiv.offsetWidth;
+      this.heightCircule = this.$refs.rouletteDiv.offsetHeight;
     },
-    drawCircule(angle) {
-      const img = new Image();
-      img.src = "/img/logo.png";
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
-      //const x = widthCircle + this.textRadius * Math.cos(angle );
-      //const y = heightCirlce  + this.textRadius * Math.sin(angle );
+    drawImageCircule() {
+      
+      this.canvas = this.$refs.myCanvas;
+
+      this.ctx = this.canvas.getContext("2d");
+      this.ctx.beginPath();
+      let img = new Image();
+      img.src = "/img/ruleta.png";
+      
+      
+      //const x = widthCircle   + this.textRadius * Math.cos(angle );
+      //const y = heightCirlce + this.textRadius * Math.sin(angle  );
 
       img.onload = () => {
+        console.log(this.angleCircule)
         this.ctx.save();
-        this.ctx.translate(widthCircle, heightCirlce);
-        this.ctx.rotate(angle);
-        this.ctx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
-
+        this.ctx.translate(0, 0);
+        this.ctx.rotate(this.angleCircule * Math.PI / 45);
+        this.ctx.drawImage(img, 0, 0, 1000, 1000);
         this.ctx.restore();
       };
     },
-
-    drawPhone(angle,arc) {
-      const img = new Image();
-      img.src = "/img/winner.png";
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
-      //const x = widthCircle + this.textRadius * Math.cos(angle );
-      //const y = heightCirlce  + this.textRadius * Math.sin(angle );
-
-      img.onload = () => {
-        this.ctx.save();
-        this.ctx.translate(widthCircle, heightCirlce-200 );
-        this.ctx.rotate(angle,arc);
-        this.ctx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
-
-        this.ctx.restore();
-      };
-    },
-
     drawRouletteWheel() {
       this.canvas = this.$refs.myCanvas;
+
       this.ctx = this.canvas.getContext("2d");
       const widthCircle = this.widthCircule / 2;
       const heightCirlce = this.heightCircule / 2;
 
-      this.ctx.clearRect(
-        -this.widthCircule / 2,
-        -widthCircle / 2,
-        this.heightCircule,
-        heightCirlce
-      ); // Borra todo el contenido del canvas
+      this.ctx.strokeStyle = "white";
+      this.ctx.lineWidth = 1;
 
       this.ctx = this.canvas.getContext("2d");
 
+      
       // determina el color de la line externa
-      this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
-      this.ctx.beginPath();
+      //this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
 
-      this.ctx.font = `700 ${this.letterSize}rem Helvetica, Arial`;
+      this.ctx.font = `bold ${this.letterSize}rem Helvetica, Arial`;
 
       for (let i = 0; i < this.sectors.length; i++) {
         let angle = this.startAngle + i * this.arc;
-        if (i === 0) {
-          this.drawCircule(angle - 5.1);
-        }
-
-        if (i === 7) {
-          this.drawPhone(angle+2, 10);
-        }
-
-        this.ctx.strokeStyle = "transparent";
+        this.angleCircule = angle;
         this.ctx.fillStyle = this.colors[i];
         this.ctx.beginPath();
         this.ctx.arc(
           widthCircle,
           heightCirlce,
-          this.outsideRadius - 20,
+          this.outsideRadius,
           angle,
           angle + this.arc,
           false
         );
-
-        this.ctx.fill();
-        this.ctx.save();
 
         this.ctx.arc(
           widthCircle,
@@ -271,7 +353,9 @@ export default {
         );
 
         this.ctx.stroke();
+        this.drawImageCircule()
         this.ctx.fill();
+
         this.ctx.save();
 
         this.ctx.beginPath();
@@ -286,6 +370,9 @@ export default {
           angle + this.arc,
           false
         );
+
+        //if (i === 7) {
+        //}
 
         this.ctx.stroke();
 
@@ -302,9 +389,7 @@ export default {
           this.ctx.shadowColor = "black";
           this.ctx.fillStyle = "black";
         }
-
-        if (i === 2 || i === 4 || i == 5) {
-          //const auxTextRadius = this.textRadius -20
+        if (i === 7) {
           this.ctx.translate(
             this.widthCircule / 2 +
               Math.cos(angle + this.arc / 2) * this.textRadius,
@@ -312,28 +397,19 @@ export default {
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
           this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i][0];
-          const textPart2 = this.sectors[i][1];
-
-          this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
-          this.ctx.fillText(
-            textPart2,
-            -this.ctx.measureText(text).width / 2.0,
-            40
-          );
         } else {
           this.ctx.translate(
             this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
+              Math.cos(angle + this.arc / 2) * this.textRadius +
+              20,
             this.heightCircule / 2 +
               Math.sin(angle + this.arc / 2) * this.textRadius
           );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i];
-          this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
+          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 180);
         }
+
+        var text = this.sectors[i];
+        this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
 
         this.ctx.restore();
       }
@@ -364,7 +440,7 @@ export default {
         this.actualPosition <= winner.topAngle &&
         this.actualPosition >= winner.downAngle
       ) {
-        this.spinTime += 2.4;
+        this.spinTime += 2.5;
         if (this.spinTime >= this.spinTimeTotal) {
           this.stopRotateWheel();
           return;
@@ -376,7 +452,9 @@ export default {
         this.easeOut(this.spinTime, 0, this.spinArcStart, this.spinTimeTotal);
 
       this.startAngle += (spinAngle * 2 * Math.PI) / 180;
-      this.drawRouletteWheel();
+      //this.drawRouletteWheel();
+      //this.drawImageCircule();
+      this.dibujarRuleta(this.startAngle);
       this.spinTimeout = setTimeout(this.rotateWheel, 30);
     },
 
@@ -741,11 +819,11 @@ export default {
   watch: {
     widthCircule() {
       this.validateSizeOfImg();
-      requestAnimationFrame(this.drawRouletteWheel);
+      //requestAnimationFrame(this.drawRouletteWheel);
     },
     heightCircule() {
       this.validateSizeOfImg();
-      requestAnimationFrame(this.drawRouletteWheel);
+      //requestAnimationFrame(this.drawRouletteWheel);
     },
   },
 };
