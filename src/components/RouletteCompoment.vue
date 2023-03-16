@@ -132,43 +132,10 @@ export default {
       this.rightArrowLogo = 46;
       this.widthArrowLogo = 10;
 
-      this.outsideRadius = 250; // radio del circulo, que tan grande sera
-      this.textRadius = 200; // radio del tecto
+      this.outsideRadius = 500; // radio del circulo, que tan grande sera
+      this.textRadius = 400; // radio del tecto
       this.insideRadius = 5;
-      this.letterSize = 0.9;
-
-      if (this.screenWidth > 1000) {
-        this.topArrowLogo = -30;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 8;
-
-        this.outsideRadius = 375; // radio del circulo, que tan grande sera
-        this.textRadius = 300; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 1.8;
-      }
-
-      if (this.screenWidth > 2000) {
-        this.topArrowLogo = 5;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 10;
-
-        this.outsideRadius = 500; // radio del circulo, que tan grande sera
-        this.textRadius = 400; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 2;
-      }
-
-      if (this.screenWidth > 3500) {
-        this.topArrowLogo = 150;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 15;
-
-        this.outsideRadius = 512; // radio del circulo, que tan grande sera
-        this.textRadius = 50; // radio del tecto
-        this.insideRadius = 5;
-        this.letterSize = 2;
-      }
+      this.letterSize = 2;
     },
 
     handleResize() {
@@ -226,7 +193,7 @@ export default {
 
       this.ctx.clearRect(
         -this.widthCircule,
-        -widthCircle ,
+        -widthCircle,
         this.heightCircule,
         heightCirlce
       ); // Borra todo el contenido del canvas
