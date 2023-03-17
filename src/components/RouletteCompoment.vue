@@ -349,7 +349,7 @@ export default {
         this.actualPosition <= winner.topAngle &&
         this.actualPosition >= winner.downAngle
       ) {
-        this.spinTime += 2.4;
+        this.spinTime += 3;
         if (this.spinTime >= this.spinTimeTotal) {
           this.stopRotateWheel();
           return;
