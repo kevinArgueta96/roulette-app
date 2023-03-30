@@ -44,31 +44,31 @@ export default {
       counter: 0,
       name: "",
       sectors: [
-        "LAHJAKORTTI", // 1 vez x dia
+        { 0: "TUOTE", 1: "PALKINTO" }, // 1 vez x dia
         "UUDESTAAN", //15-20%
         { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
         "LAHJAKORTTI",
         { 0: "TUOTE", 1: "PALKINTO" }, // based on probability (surpise win) //10 % special prize
         { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
         "UUDESTAAN", //15-20%
-        "PÄÄPALKINTO", // 0% dependiendo la hrora
+        "PÄÄPALKINTO" // 0% dependiendo la hrora
       ],
       colors: [
-        "#2B353A",
+        "#FFF2F1",
         "#C9ECFF",
         "#FF501C",
         "#2B353A",
         "#FFF2F1",
         "#FF501C",
         "#C9ECFF",
-        "#FFEDA3",
+        "#FFEDA3"
       ],
 
-      spinRoullete: true,
       heightCircule: 0,
       widthCircule: 0,
-      startAngle: 5.1,
+      startAngle: 0,
       spinTimeout: null,
+      drawRouletteTime: null,
       spinArcStart: 15, // para decir cuanto girara el arco
       spinTime: 0,
       spinTimeTotal: 0,
@@ -80,7 +80,7 @@ export default {
       textRadius: 0, // radio del tecto
       insideRadius: 0,
       letterSize: 0,
-      speedRoulette: 10,
+      speedRoulette: 10
     };
   },
   created() {
@@ -91,6 +91,7 @@ export default {
     window.removeEventListener("resize", this.handleResize);
   },
   mounted() {
+    this.startAngle = this.initialStartAngle;
     setTimeout(() => {
       document.addEventListener("keyup", this.spinRoulleteByEnter);
     }, 1000);
@@ -120,6 +121,9 @@ export default {
 
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
+
+      "setInitialAngle",
+      "setSpinRoullete"
     ]),
 
     spinRoulleteByEnter(event) {
@@ -149,40 +153,166 @@ export default {
     drawCircule(angle) {
       const img = new Image();
       img.src = "/img/logo.png";
+      const buffer = this.$refs.myCanvas;
+      const bufferCtx = buffer.getContext("2d");
       const widthCircle = this.widthCircule / 2;
       const heightCirlce = this.heightCircule / 2;
       //const x = widthCircle + this.textRadius * Math.cos(angle );
       //const y = heightCirlce  + this.textRadius * Math.sin(angle );
 
       img.onload = () => {
-        this.ctx.save();
-        this.ctx.translate(widthCircle, heightCirlce);
-        this.ctx.rotate(angle);
-        this.ctx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
+        requestAnimationFrame(draw);
+      };
+      const draw = () => {
+        bufferCtx.clearRect(-img.width, -img.height, 200, 200);
+        bufferCtx.save();
+        bufferCtx.translate(widthCircle, heightCirlce);
+        bufferCtx.rotate(angle);
+        bufferCtx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
+        bufferCtx.restore();
 
-        this.ctx.restore();
+        bufferCtx.drawImage(buffer, 0, 0);
+
+        bufferCtx.restore();
       };
     },
 
     drawPhone(angle, arc) {
       const img = new Image();
       img.src = "/img/winner.png";
+      const buffer = this.$refs.myCanvas;
+      const bufferCtx = buffer.getContext("2d");
       const widthCircle = this.widthCircule / 2;
       const heightCirlce = this.heightCircule / 2;
-      //const x = widthCircle + this.textRadius * Math.cos(angle );
-      //const y = heightCirlce  + this.textRadius * Math.sin(angle );
 
       img.onload = () => {
-        this.ctx.save();
-        this.ctx.translate(
+        requestAnimationFrame(draw);
+      };
+
+      const draw = () => {
+        bufferCtx.clearRect(-img.width, -img.height, 400, 400);
+        bufferCtx.save();
+        bufferCtx.translate(
           widthCircle + Math.cos(angle + this.arc / 2) * this.textRadius,
           heightCirlce + Math.sin(angle + this.arc / 2) * this.textRadius
         );
-        this.ctx.rotate(angle + arc / 2 + Math.PI / 2);
-        this.ctx.drawImage(img, -img.width / 2.3, -img.height / 9, 400, 400);
+        bufferCtx.rotate(angle + arc / 2 + Math.PI / 2);
+        bufferCtx.drawImage(img, -img.width / 2.3, -img.height / 9, 400, 400);
 
-        this.ctx.restore();
+        bufferCtx.restore();
       };
+    },
+
+    drawEachSector(ctx, widthCircle, heightCirlce) {
+      for (let i = 0; i < this.sectors.length; i++) {
+        let angle = this.startAngle + i * this.arc;
+        if (i === 0) {
+          this.drawCircule(angle - 5.1);
+        }
+
+        ctx.strokeStyle = "transparent";
+        ctx.fillStyle = this.colors[i];
+        ctx.beginPath();
+        ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius - 20,
+          angle,
+          angle + this.arc,
+          false
+        );
+
+        ctx.fill();
+        ctx.save();
+
+        ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.insideRadius,
+          angle + this.arc,
+          angle,
+          true
+        );
+
+        ctx.stroke();
+        ctx.fill();
+        ctx.save();
+
+        ctx.beginPath();
+
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 25;
+        ctx.arc(
+          widthCircle,
+          heightCirlce,
+          this.outsideRadius + 20,
+          angle,
+          angle + this.arc,
+          false
+        );
+
+        ctx.stroke();
+
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.shadowBlur = 0;
+
+        if (i === 7) {
+          this.drawPhone(angle, this.arc);
+        }
+
+        if (i === 2 || i === 3 || i === 5) {
+          ctx.shadowColor = "white";
+          ctx.fillStyle = "white";
+        }
+
+        if (i === 0 || i === 1 || i === 4 || i === 6 || i === 7) {
+          ctx.shadowColor = "black";
+          ctx.fillStyle = "black";
+        }
+        if (i === 2 || i == 5) {
+          ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+
+          const text = this.sectors[i][0];
+          const textPart2 = this.sectors[i][1];
+
+          ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+          ctx.fillText(textPart2, -ctx.measureText(text).width / 2.0, 40);
+        } else if (i === 0 || i === 4) {
+          ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+
+          const text = this.sectors[i][0];
+          const textPart2 = this.sectors[i][1];
+
+          ctx.fillText(text, -this.ctx.measureText(text).width / 4, 0);
+          ctx.fillText(textPart2, -ctx.measureText(text).width / 2.0, 40);
+        } else {
+          ctx.translate(
+            this.widthCircule / 2 +
+              Math.cos(angle + this.arc / 2) * this.textRadius,
+            this.heightCircule / 2 +
+              Math.sin(angle + this.arc / 2) * this.textRadius
+          );
+          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+
+          const text = this.sectors[i];
+          ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+        }
+        ctx.restore();
+        ctx.save();
+      }
     },
 
     drawRouletteWheel() {
@@ -192,13 +322,11 @@ export default {
       const heightCirlce = this.heightCircule / 2;
 
       this.ctx.clearRect(
-        -this.widthCircule,
-        -widthCircle,
+        this.widthCircule,
+        widthCircle,
         this.heightCircule,
         heightCirlce
       ); // Borra todo el contenido del canvas
-
-      this.ctx = this.canvas.getContext("2d");
 
       // determina el color de la line externa
       this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
@@ -206,135 +334,22 @@ export default {
 
       this.ctx.font = `700 ${this.letterSize}rem Helvetica, Arial`;
 
-      for (let i = 0; i < this.sectors.length; i++) {
-        let angle = this.startAngle + i * this.arc;
-        if (i === 0) {
-          this.drawCircule(angle - 5.1);
-        }
-
-        this.ctx.strokeStyle = "transparent";
-        this.ctx.fillStyle = this.colors[i];
-        this.ctx.beginPath();
-        this.ctx.arc(
-          widthCircle,
-          heightCirlce,
-          this.outsideRadius - 20,
-          angle,
-          angle + this.arc,
-          false
-        );
-
-        this.ctx.fill();
-        this.ctx.save();
-
-        this.ctx.arc(
-          widthCircle,
-          heightCirlce,
-          this.insideRadius,
-          angle + this.arc,
-          angle,
-          true
-        );
-
-        this.ctx.stroke();
-        this.ctx.fill();
-        this.ctx.save();
-
-        this.ctx.beginPath();
-
-        this.ctx.strokeStyle = "black";
-        this.ctx.lineWidth = 25;
-        this.ctx.arc(
-          widthCircle,
-          heightCirlce,
-          this.outsideRadius + 20,
-          angle,
-          angle + this.arc,
-          false
-        );
-
-        this.ctx.stroke();
-
-        this.ctx.shadowOffsetX = 0;
-        this.ctx.shadowOffsetY = 0;
-        this.ctx.shadowBlur = 0;
-        if (i === 7) {
-          this.drawPhone(angle, this.arc);
-        }
-
-        if (i === 0 || i === 2 || i === 3 || i === 5) {
-          this.ctx.shadowColor = "white";
-          this.ctx.fillStyle = "white";
-        }
-
-        if (i === 1 || i === 4 || i === 6 || i === 7) {
-          this.ctx.shadowColor = "black";
-          this.ctx.fillStyle = "black";
-        }
-        if (i === 2 || i == 5) {
-          this.ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
-          );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i][0];
-          const textPart2 = this.sectors[i][1];
-
-          this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
-          this.ctx.fillText(
-            textPart2,
-            -this.ctx.measureText(text).width / 2.0,
-            40
-          );
-        } else if (i === 4) {
-          this.ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
-          );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i][0];
-          const textPart2 = this.sectors[i][1];
-
-          this.ctx.fillText(text, -this.ctx.measureText(text).width / 4, 0);
-          this.ctx.fillText(
-            textPart2,
-            -this.ctx.measureText(text).width / 2.0,
-            40
-          );
-        } else {
-          this.ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
-          );
-          this.ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i];
-          this.ctx.fillText(text, -this.ctx.measureText(text).width / 2, 0);
-        }
-
-        this.ctx.restore();
-      }
+      this.drawEachSector(this.ctx, widthCircle, heightCirlce);
     },
 
     spin() {
       if (this.spinRoullete) {
+        this.setSpinRoullete(false);
         this.speedRoulette = false;
         this.showAnimation = true;
         const numberWinner = this.generateNumberToShow();
         this.winner = this.generateAnglesToWin(numberWinner);
         this.updateOptionRoulette(numberWinner);
-        this.spinRoullete = false;
         this.spinTimeTotal = 100;
 
         this.spinTime = 0;
+        this.spinTimeout = 0;
+
         this.rotateWheel();
       }
     },
@@ -355,14 +370,16 @@ export default {
           return;
         }
       }
-
+      this.obtainSpinAngle();
+      this.spinTimeout = requestAnimationFrame(this.rotateWheel);
+      this.drawRouletteTime = requestAnimationFrame(this.drawRouletteWheel);
+    },
+    obtainSpinAngle() {
       const spinAngle =
         this.spinArcStart -
         this.easeOut(this.spinTime, 0, this.spinArcStart, this.spinTimeTotal);
 
       this.startAngle += (spinAngle * 2 * Math.PI) / 180;
-      this.drawRouletteWheel();
-      this.spinTimeout = setTimeout(this.rotateWheel, 30);
     },
 
     easeOut(spinTime, b, spinArcStart, spinTimeTotal) {
@@ -372,7 +389,11 @@ export default {
     },
 
     stopRotateWheel() {
-      clearTimeout(this.spinTimeout);
+      this.setInitialAngle(this.startAngle);
+      cancelAnimationFrame(this.drawRouletteTime);
+      cancelAnimationFrame(this.spinTimeout);
+      this.drawRouletteTime = null;
+      this.drawRouletteTime = null;
       this.showAnimation = false;
       var degrees = (this.startAngle * 180) / Math.PI + 90;
       var arcd = (this.arc * 180) / Math.PI;
@@ -384,22 +405,21 @@ export default {
         this.$emit("showImg", { type: "replay" });
       } else if (index === 2 || index === 5) {
         this.$emit("showImg", { type: "differentBoxes" });
-      } else if (index === 0 || index === 3) {
+      } else if (index === 3) {
         this.$emit("showImg", { type: "giftCard" });
-      } else if (index === 4) {
+      } else if (index === 0 || index === 4) {
         this.$emit("showImg", { type: "individualBox" });
       } else if (index === 7) {
         this.$emit("showImg", { type: "topPrice" });
       }
-      setTimeout(() => {
-        this.spinRoullete = true;
-      }, this.timeToShowOptions);
+      /*setTimeout(() => {
+        this.setSpinRoullete(true);
+      }, this.timeToShowOptions);*/
       this.ctx.restore();
     },
     nameToUpdate(update) {
       this.setTotalSpin(this.totalSpin + 1);
       switch (update) {
-        case 0:
         case 3:
           this.setTotalGiftCard(this.totalGiftCard + 1);
           break;
@@ -411,6 +431,7 @@ export default {
         case 5:
           this.setTotalSpecialSurprise(this.totalSpecialSurprise + 1);
           break;
+        case 0:
         case 4:
           this.setTotalSpecialPrice(this.totalSpecialPrice + 1);
 
@@ -426,48 +447,48 @@ export default {
         case 0:
           return {
             topAngle: 45,
-            downAngle: 0,
+            downAngle: 0
           };
         case 1:
           return {
             topAngle: 90,
-            downAngle: 46,
+            downAngle: 46
           };
 
         case 2:
           return {
             topAngle: 135,
-            downAngle: 91,
+            downAngle: 91
           };
 
         case 3:
           return {
             topAngle: 180,
-            downAngle: 136,
+            downAngle: 136
           };
 
         case 4:
           return {
             topAngle: 225,
-            downAngle: 181,
+            downAngle: 181
           };
 
         case 5:
           return {
             topAngle: 270,
-            downAngle: 226,
+            downAngle: 226
           };
 
         case 6:
           return {
             topAngle: 315,
-            downAngle: 271,
+            downAngle: 271
           };
 
         case 7:
           return {
             topAngle: 360,
-            downAngle: 316,
+            downAngle: 316
           };
       }
       return positionIndex;
@@ -481,7 +502,7 @@ export default {
         totalSpecialPrice: this.selectedTotalSpecialPrice,
         totalTopPrice: this.selectedTotalTopPrice,
         totalGitfCard: this.selectedTotalGiftCard,
-        totalSpin: this.totalSpin,
+        totalSpin: this.totalSpin
       };
       const response = await service.setNewTotal(data);
       response === 0;
@@ -561,7 +582,7 @@ export default {
         giftCardScheduleRangeE: this.giftCardScheduleRangeE,
 
         topPriceScheduleRangeA: this.topPriceScheduleRangeA,
-        topPriceScheduleRangeB: this.topPriceScheduleRangeB,
+        topPriceScheduleRangeB: this.topPriceScheduleRangeB
       };
       service.setHour(data);
     },
@@ -574,7 +595,7 @@ export default {
         this.giftCardScheduleRangeD.rangeDown,
         this.giftCardScheduleRangeE.rangeDown,
         this.topPriceScheduleRangeA.rangeDown,
-        this.topPriceScheduleRangeB.rangeDown,
+        this.topPriceScheduleRangeB.rangeDown
       ];
 
       const top = [
@@ -584,7 +605,7 @@ export default {
         this.giftCardScheduleRangeD.rangeTop,
         this.giftCardScheduleRangeE.rangeTop,
         this.topPriceScheduleRangeA.rangeTop,
-        this.topPriceScheduleRangeB.rangeTop,
+        this.topPriceScheduleRangeB.rangeTop
       ];
 
       const card = [
@@ -594,7 +615,7 @@ export default {
         "cardD",
         "cardE",
         "topPriceA",
-        "topPriceB",
+        "topPriceB"
       ];
 
       const givenS = [
@@ -604,7 +625,7 @@ export default {
         this.giftCardScheduleRangeD.given,
         this.giftCardScheduleRangeE.given,
         this.topPriceScheduleRangeA.given,
-        this.topPriceScheduleRangeB.given,
+        this.topPriceScheduleRangeB.given
       ];
       for (let position = 0; position < 7; position++) {
         if (
@@ -622,7 +643,7 @@ export default {
               { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
               { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
               { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "PÄÄPALKINTO", probability: 0 }, // 0% dependiendo la hrora
+              { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
             ];
             return options;
           } else if (position > 4 && position <= 6) {
@@ -634,7 +655,7 @@ export default {
               { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
               { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
               { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "PÄÄPALKINTO", probability: 1 }, // 0% dependiendo la hrora
+              { option: "PÄÄPALKINTO", probability: 1 } // 0% dependiendo la hrora
             ];
             return options;
           }
@@ -642,7 +663,7 @@ export default {
       }
 
       return null;
-    },
+    }
   },
   computed: {
     ...mapGetters([
@@ -664,7 +685,9 @@ export default {
       "topPriceScheduleRangeA",
       "topPriceScheduleRangeB",
 
-      "actualTime,",
+      "actualTime",
+      "initialAngle",
+      "spinRoullete"
     ]),
     selectedTotalReplay: {
       get() {
@@ -673,7 +696,7 @@ export default {
       set(value) {
         const val = parseInt(value);
         this.setTotalReplay(val);
-      },
+      }
     },
 
     selectedTotalSpecialPrice: {
@@ -683,7 +706,7 @@ export default {
       set(value) {
         const val = parseInt(value);
         this.setTotalSpecialPrice(val);
-      },
+      }
     },
     selectedTotalSpecialSuprise: {
       get() {
@@ -692,7 +715,7 @@ export default {
       set(value) {
         const val = parseInt(value);
         this.setTotalSpecialSurprise(val);
-      },
+      }
     },
 
     selectedTotalTopPrice: {
@@ -702,7 +725,13 @@ export default {
       set(value) {
         const val = parseInt(value);
         this.setTotalTopPrice(val);
-      },
+      }
+    },
+
+    initialStartAngle: {
+      get() {
+        return this.initialAngle;
+      }
     },
 
     selectedTotalGiftCard: {
@@ -712,7 +741,7 @@ export default {
       set(value) {
         const val = parseInt(value);
         this.setTotalGiftCard(val);
-      },
+      }
     },
 
     arc() {
@@ -721,7 +750,7 @@ export default {
     actualPosition() {
       var degrees = (this.startAngle * 180) / Math.PI + 90;
       return Math.floor(360 - (degrees % 360));
-    },
+    }
   },
   watch: {
     widthCircule() {
@@ -731,8 +760,8 @@ export default {
     heightCircule() {
       this.validateSizeOfImg();
       requestAnimationFrame(this.drawRouletteWheel);
-    },
-  },
+    }
+  }
 };
 </script>
 

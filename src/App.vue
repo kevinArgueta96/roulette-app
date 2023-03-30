@@ -5,7 +5,7 @@
       <div class="col-sm-12">
         <!-- <div class="row" id="null-column">
           <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
-        </div> -->
+        </div>-->
       </div>
       <div class="row" style="height: 100%;">
         <div class="col-sm-1 win-colmun-left">
@@ -15,13 +15,12 @@
           </div>
           <div class="row" id="null-column"></div>
         </div>
-        <div class="col-sm-10 win-central" style="overflow: visible;">
+        <div class="col-sm-10 win-central" style="overflow: visible;" v-if="showRoulette">
           <RouletteCompoment @showImg="showImg" />
         </div>
         <div class="col-sm-1 win-colmun">
           <div class="row" id="null-column-top"></div>
-          <div class="row" id="null-column-rigth"
-           :style="{right:rigthImg + '%'}">
+          <div class="row" id="null-column-rigth" :style="{right:rigthImg + '%'}">
             <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
           </div>
           <div class="row" id="null-column"></div>
@@ -48,7 +47,7 @@ export default {
   components: {
     RouletteCompoment,
     WinRowComponent,
-    ConfettiComponent,
+    ConfettiComponent
   },
   data: () => {
     return {
@@ -56,19 +55,21 @@ export default {
       isVisbleLooseImg: false,
       isVisibleConfetti: false,
       screenWidth: 0,
-      screenHeight:0,
-      rigthImg:0,
-      srcImg:''
+      screenHeight: 0,
+      rigthImg: 0,
+      srcImg: "",
+      
+      showRoulette:true
     };
   },
   computed: {
-    ...mapGetters(["timeToShowOptions"]),
+    ...mapGetters(["timeToShowOptions"])
   },
   mounted() {
     this.getScheduleRange();
-    
-    if(this.screenWidth > 2000 ){
-      this.rigthImg= 0;
+
+    if (this.screenWidth > 2000) {
+      this.rigthImg = 0;
     }
     this.getOptions();
     this.getTotals();
@@ -80,7 +81,7 @@ export default {
   destroyed() {
     window.removeEventListener("resize", this.handleResize);
   },
-  
+
   methods: {
     ...mapActions([
       "setOptions",
@@ -99,6 +100,8 @@ export default {
 
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
+
+      "setSpinRoullete"
     ]),
     spinRoulleteByEnter(event) {
       if (event.keyCode === 13 || event.keyCode === 32) {
@@ -106,54 +109,59 @@ export default {
       }
     },
     handleResize() {
-    this.screenWidth = window.innerWidth;
-    this.screenHeight = window.innerHeight;
-  },
+      this.screenWidth = window.innerWidth;
+      this.screenHeight = window.innerHeight;
+    },
     showImg(value) {
       //console.log(value)
-      const { type } = value; 
+
+      const { type } = value;
       //const type = "topPrice";
-      switch(type){
-        case ("replay"):
-          this.srcImg = "gift/replay.gif"
+      switch (type) {
+        case "replay":
+          this.srcImg = "gift/replay.gif";
           this.isVisbleWinImg = false;
-          this.isVisbleLooseImg  = true;
-          
+          this.isVisbleLooseImg = true;
+
           break;
-          case ("individualBox"):
-          this.srcImg = "gift/gifts_storytel_individual.gif"
+        case "individualBox":
+          this.srcImg = "gift/gifts_storytel_individual.gif";
           this.isVisbleWinImg = true;
-          this.isVisbleLooseImg  = false;
+          this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
 
           break;
-          case ("giftCard"):
-          this.srcImg = "gift/gift_card.gif"
+        case "giftCard":
+          this.srcImg = "gift/gift_card.gif";
           this.isVisbleWinImg = true;
-          this.isVisbleLooseImg  = false;
+          this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
           break;
-          case ("differentBoxes"):
-          this.srcImg = "gift/gifts_storytel_boxes.gif"
+        case "differentBoxes":
+          this.srcImg = "gift/gifts_storytel_boxes.gif";
           this.isVisbleWinImg = true;
-          this.isVisbleLooseImg  = false;
+          this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
           break;
-          case ("topPrice"):
-          this.srcImg = "gift/gifts_storytel_boxes.gif"
+        case "topPrice":
+          this.srcImg = "gift/gifts_storytel_boxes.gif";
           this.isVisbleWinImg = true;
-          this.isVisbleLooseImg  = true;
+          this.isVisbleLooseImg = true;
           this.isVisibleConfetti = !this.isVisibleConfetti;
           break;
-      }      
+      }
+
+      this.showRoulette = false;
     },
     async getOptions() {
       const options = await service.getOptions();
-      this.setOptions(options.sectors);
+      if (options !== "error") {
+        this.setOptions(options.sectors);
+      }
     },
     async getTotals() {
       const totals = await service.getTotals();
-      if (totals) {
+      if (totals !== "error") {
         this.setTotalReplay(totals.totalReplay);
         this.setTotalSpecialPrice(totals.totalSpecialPrice);
         this.setTotalSpecialSurprise(totals.totalSpecialSurprice);
@@ -166,21 +174,24 @@ export default {
 
     async getScheduleRange() {
       const response = await service.getHour();
-      this.setGiftCardScheduleRangeA(response.giftCardScheduleRangeA);
-      this.setGiftCardScheduleRangeB(response.giftCardScheduleRangeB);
-      this.setGiftCardScheduleRangeC(response.giftCardScheduleRangeC);
-      this.setGiftCardScheduleRangeD(response.giftCardScheduleRangeD);
-      this.setGiftCardScheduleRangeE(response.giftCardScheduleRangeE);
+      if (response !== "error") {
+        this.setGiftCardScheduleRangeA(response.giftCardScheduleRangeA);
+        this.setGiftCardScheduleRangeB(response.giftCardScheduleRangeB);
+        this.setGiftCardScheduleRangeC(response.giftCardScheduleRangeC);
+        this.setGiftCardScheduleRangeD(response.giftCardScheduleRangeD);
+        this.setGiftCardScheduleRangeE(response.giftCardScheduleRangeE);
 
-      this.setTopPriceScheduleRangeA(response.topPriceScheduleRangeA);
-      this.setTopPriceScheduleRangeB(response.topPriceScheduleRangeB);
-    },
+        this.setTopPriceScheduleRangeA(response.topPriceScheduleRangeA);
+        this.setTopPriceScheduleRangeB(response.topPriceScheduleRangeB);
+      }
+    }
   },
   watch: {
     isVisbleWinImg(value) {
       if (value) {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
+          this.setSpinRoullete(true);
         }, this.timeToShowOptions);
       }
     },
@@ -188,6 +199,7 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
+          this.setSpinRoullete(true);
         }, this.timeToShowOptions);
       }
     },
@@ -195,10 +207,19 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisibleConfetti = !this.isVisibleConfetti;
+          this.setSpinRoullete(true);
         }, this.timeToShowOptions);
       }
     },
-  },
+    showRoulette(value){
+      if(!value){
+        setTimeout(() => {
+        this.showRoulette = true;
+        }, 10);
+        
+      }
+    }
+  }
 };
 </script>
 

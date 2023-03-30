@@ -5,25 +5,30 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    options:[],
-    timeToShowOptions:7000,
-    totalReplay:0,
-    totalSpecialPrice:0,
-    totalSpecialSurprise:0,
-    totalTopPrice:0,
-    totalGiftCard:0,
-    totalSpin:0,
+    options: [
+      { "option": "LAHJAKORTT", "probability": 0.425 }, { "opcion": "UUDESTAAN", "probability": 0.025 }, { "opcion": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "opcion": "LAHJAKORTTI", "probability": 0 }, { "opcion": "TUOTEPALKINTO", "probability": 0.425 }, { "opcion": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "opcion": "UUDESTAAN", "probability": 0.025 }, { "opcion": "PÄÄPALKINTO", "probability": 0 }
+    ],
+    timeToShowOptions: 7000,
+    totalReplay: 0,
+    totalSpecialPrice: 0,
+    totalSpecialSurprise: 0,
+    totalTopPrice: 0,
+    totalGiftCard: 0,
+    totalSpin: 0,
 
-    giftCardScheduleRangeA:[],
-    giftCardScheduleRangeB:[],
-    giftCardScheduleRangeC:[],
-    giftCardScheduleRangeD:[],
-    giftCardScheduleRangeE:[],
+    giftCardScheduleRangeA: [],
+    giftCardScheduleRangeB: [],
+    giftCardScheduleRangeC: [],
+    giftCardScheduleRangeD: [],
+    giftCardScheduleRangeE: [],
 
-    topPriceScheduleRangeA:[],
-    topPriceScheduleRangeB:[],
+    topPriceScheduleRangeA: [],
+    topPriceScheduleRangeB: [],
 
-    actualTIme:'',
+    actualTIme: '',
+
+    initialAngle: 5.1,
+    spinRoullete: true,
 
   },
   getters: {
@@ -46,115 +51,134 @@ export default new Vuex.Store({
     topPriceScheduleRangeB: (state) => state.topPriceScheduleRangeB,
 
     actualTIme: (state) => state.actualTIme,
-    
+
+    initialAngle: (state) => state.initialAngle,
+    spinRoullete: (state) => state.spinRoullete,
+
+
   },
   mutations: {
-    setOptions(state,payload){
+    setOptions(state, payload) {
       state.options = payload;
     },
-    setTotalReplay(state,payload){
+    setTotalReplay(state, payload) {
       state.totalReplay = payload;
     },
-    setTotalSpecialPrice(state,payload){
+    setTotalSpecialPrice(state, payload) {
       state.totalSpecialPrice = payload;
     },
-    setTotalSpecialSurprise(state,payload){
+    setTotalSpecialSurprise(state, payload) {
       state.totalSpecialSurprise = payload;
     },
-    setTotalTopPrice(state,payload){
+    setTotalTopPrice(state, payload) {
       state.totalTopPrice = payload;
     },
-    setTotalGiftCard(state,payload){
+    setTotalGiftCard(state, payload) {
       state.totalGiftCard = payload;
     },
-    setTotalSpin(state,payload){
+    setTotalSpin(state, payload) {
       state.totalSpin = payload;
     },
 
-    setGiftCardScheduleRangeA(state,payload){
+    setGiftCardScheduleRangeA(state, payload) {
       state.giftCardScheduleRangeA = payload;
     },
-    setGiftCardScheduleRangeB(state,payload){
+    setGiftCardScheduleRangeB(state, payload) {
       state.giftCardScheduleRangeB = payload;
     },
-    setGiftCardScheduleRangeC(state,payload){
+    setGiftCardScheduleRangeC(state, payload) {
       state.giftCardScheduleRangeC = payload;
     },
-    setGiftCardScheduleRangeD(state,payload){
+    setGiftCardScheduleRangeD(state, payload) {
       state.giftCardScheduleRangeD = payload;
     },
-    setGiftCardScheduleRangeE(state,payload){
+    setGiftCardScheduleRangeE(state, payload) {
       state.giftCardScheduleRangeE = payload;
     },
-    
 
-    setTopPriceScheduleRangeA(state,payload){
+
+    setTopPriceScheduleRangeA(state, payload) {
       state.topPriceScheduleRangeA = payload;
     },
-    setTopPriceScheduleRangeB(state,payload){
+    setTopPriceScheduleRangeB(state, payload) {
       state.topPriceScheduleRangeB = payload;
     },
 
-    setActualTime(state,payload){
+    setActualTime(state, payload) {
       state.actualTIme = payload;
+    },
+
+    setInitialAngle(state, payload) {
+      state.initialAngle = payload;
+    },
+
+    setSpinRoullete(state, payload) {
+      state.spinRoullete = payload;
     },
   },
   actions: {
-    setOptions(context,payload){
-      context.commit('setOptions',payload)
+    setOptions(context, payload) {
+      context.commit('setOptions', payload)
     },
-    setTotalReplay(context,payload){
-      context.commit('setTotalReplay',payload)
+    setTotalReplay(context, payload) {
+      context.commit('setTotalReplay', payload)
     },
-    setTotalSpecialPrice(context,payload){
-      context.commit('setTotalSpecialPrice',payload)
+    setTotalSpecialPrice(context, payload) {
+      context.commit('setTotalSpecialPrice', payload)
     },
-    setTotalSpecialSurprise(context,payload){
-      context.commit('setTotalSpecialSurprise',payload)
+    setTotalSpecialSurprise(context, payload) {
+      context.commit('setTotalSpecialSurprise', payload)
     },
-    setTotalTopPrice(context,payload){
-      context.commit('setTotalTopPrice',payload)
+    setTotalTopPrice(context, payload) {
+      context.commit('setTotalTopPrice', payload)
     },
-    setTotalGiftCard(context,payload){
-      context.commit('setTotalGiftCard',payload)
+    setTotalGiftCard(context, payload) {
+      context.commit('setTotalGiftCard', payload)
     },
-    setTotalSpin(context,payload){
-      context.commit('setTotalSpin',payload)
-    },
-
-    setGiftCardScheduleRangeA(context,payload){
-      context.commit('setGiftCardScheduleRangeA',payload)
-
-    },
-    setGiftCardScheduleRangeB(context,payload){
-      context.commit('setGiftCardScheduleRangeB',payload)
-
-    },
-    setGiftCardScheduleRangeC(context,payload){
-      context.commit('setGiftCardScheduleRangeC',payload)
-
-    },
-    setGiftCardScheduleRangeD(context,payload){
-      context.commit('setGiftCardScheduleRangeD',payload)
-
-    },
-    setGiftCardScheduleRangeE(context,payload){
-      context.commit('setGiftCardScheduleRangeE',payload)
-
+    setTotalSpin(context, payload) {
+      context.commit('setTotalSpin', payload)
     },
 
-    setTopPriceScheduleRangeA(context,payload){
-      context.commit('setTopPriceScheduleRangeA',payload)
+    setGiftCardScheduleRangeA(context, payload) {
+      context.commit('setGiftCardScheduleRangeA', payload)
 
     },
-    setTopPriceScheduleRangeB(context,payload){
-      context.commit('setTopPriceScheduleRangeB',payload)
+    setGiftCardScheduleRangeB(context, payload) {
+      context.commit('setGiftCardScheduleRangeB', payload)
+
+    },
+    setGiftCardScheduleRangeC(context, payload) {
+      context.commit('setGiftCardScheduleRangeC', payload)
+
+    },
+    setGiftCardScheduleRangeD(context, payload) {
+      context.commit('setGiftCardScheduleRangeD', payload)
+
+    },
+    setGiftCardScheduleRangeE(context, payload) {
+      context.commit('setGiftCardScheduleRangeE', payload)
 
     },
 
-    setActualTime(context,payload){
-      context.commit('setActualTime',payload)
+    setTopPriceScheduleRangeA(context, payload) {
+      context.commit('setTopPriceScheduleRangeA', payload)
 
+    },
+    setTopPriceScheduleRangeB(context, payload) {
+      context.commit('setTopPriceScheduleRangeB', payload)
+
+    },
+
+    setActualTime(context, payload) {
+      context.commit('setActualTime', payload)
+    },
+
+    setInitialAngle(context, payload) {
+      context.commit('setInitialAngle', payload)
+    },
+
+    setSpinRoullete(context, payload) {
+      context.commit('setSpinRoullete', payload)
     },
   },
   modules: {
