@@ -636,10 +636,10 @@ export default {
           this.changeStateOfSchedulerWin(card[position]);
           if (position >= 0 && position <= 4) {
             const options = [
-              { option: "LAHJAKORTTI", probability: 0.5 }, // 1 vez x dia
+              { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
               { option: "UUDESTAAN", probability: 0 }, //15-20%
               { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-              { option: "LAHJAKORTTI", probability: 0.5 }, // based on probability (surpise win)
+              { option: "LAHJAKORTTI", probability: 1 }, // based on probability (surpise win)
               { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
               { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
               { option: "UUDESTAAN", probability: 0 }, //15-20%
