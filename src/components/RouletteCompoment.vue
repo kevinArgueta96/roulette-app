@@ -1,22 +1,22 @@
 <template>
   <div class="container text-center padre" ref="testRef" style="width: 100%; overflow: visible;">
-    <div>
+    <div style="position: relative;" >
       <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
+      <img
+        src="/img/storytel-flecha.png"
+        style="position: absolute; "
+        :style="{top: topArrowLogo + '%' , right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
+        class="central-img"
+        :class="{vibratingImage: showAnimation}"
+        alt="Responsive image"
+      />
     </div>
     <!-- <img
       src="/img/logo.png"
       class="central-img"
       :style="{top:topCentralLogo+'%',width: widthCentralLogo+'px'}"
       alt="Responsive image"
-    />-->
-    <img
-      src="/img/storytel-flecha.png"
-      style="position: absolute;"
-      :style="{top: topArrowLogo + 'px' , right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
-      class="central-img"
-      :class="{vibratingImage: showAnimation}"
-      alt="Responsive image"
-    />
+    />--> 
   </div>
 </template>
 <!-- width: 300px;
@@ -132,12 +132,12 @@ export default {
       }
     },
     validateSizeOfImg() {
-      this.topArrowLogo = 5;
+      this.topArrowLogo = (11.5)
       this.rightArrowLogo = 46;
       this.widthArrowLogo = 10;
-
-      this.outsideRadius = 500; // radio del circulo, que tan grande sera
-      this.textRadius = 400; // radio del tecto
+      
+      this.outsideRadius = (this.heightCircule * 0.35); // radio del circulo, que tan grande sera
+      this.textRadius = (this.heightCircule * 0.25); // radio del tecto
       this.insideRadius = 5;
       this.letterSize = 2;
     },
@@ -197,7 +197,7 @@ export default {
           heightCirlce + Math.sin(angle + this.arc / 2) * this.textRadius
         );
         bufferCtx.rotate(angle + arc / 2 + Math.PI / 2);
-        bufferCtx.drawImage(img, -img.width / 2.3, -img.height / 9, 400, 400);
+        bufferCtx.drawImage(img, -img.width / 3, -img.height / 12, 300, 300);
 
         bufferCtx.restore();
       };

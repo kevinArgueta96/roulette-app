@@ -6,7 +6,7 @@
       style="height: 100%; "
       :style="{width:sizeOfWinImg+'rem'}"
     >
-      <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" />
+      <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" ref="gifImg" />
       <!--:style="{height: f+'%'}"/>-->
     </div>
   </div>
@@ -18,18 +18,22 @@ export default {
   data: () => {
     return {
       screenWidth: 0,
-      sizeOfWinImg: 0,
+      sizeOfWinImg: 0
     };
   },
   props: {
     srcImg: String,
     visible: {
       type: Boolean,
-      default: false,
+      default: false
     },
+    winType: {
+      type: String,
+      default: ""
+    }
   },
   mounted() {
-    this.sizeOfWinImg = 50;
+    this.sizeOfWinImg = 37;
   },
   created() {
     window.addEventListener("resize", this.handleResize);
@@ -41,15 +45,20 @@ export default {
   methods: {
     handleResize() {
       this.screenWidth = window.innerWidth;
-    },
+    }
   },
   watch: {
+    winType(value){
+      if (value === "differentBoxes") {
+        this.sizeOfWinImg = 35;
+      }
+    },
     screenWidth(val) {
       if (val > 2000) {
         this.sizeOfWinImg = 60;
       }
-    },
-  },
+    }
+  }
 };
 </script>
 

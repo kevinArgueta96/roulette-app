@@ -11,7 +11,7 @@
         <div class="col-sm-1 win-colmun-left">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -58,7 +58,8 @@ export default {
       screenHeight: 0,
       rigthImg: 0,
       srcImg: "",
-      
+      winType: "",
+
       showRoulette:true
     };
   },
@@ -101,7 +102,9 @@ export default {
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
 
-      "setSpinRoullete"
+      "setSpinRoullete",
+
+      "setTimeToShowOptions"
     ]),
     spinRoulleteByEnter(event) {
       if (event.keyCode === 13 || event.keyCode === 32) {
@@ -122,6 +125,8 @@ export default {
           this.srcImg = "gift/replay.gif";
           this.isVisbleWinImg = false;
           this.isVisbleLooseImg = true;
+          this.winType = "replay";
+          this.setTimeToShowOptions(2500)
 
           break;
         case "individualBox":
@@ -129,25 +134,34 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-
+          this.setTimeToShowOptions(7000);
+          this.winType = "individualBox";
           break;
         case "giftCard":
           this.srcImg = "gift/gift_card.gif";
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
+          this.setTimeToShowOptions(7000)
+          this.winType = "giftCard";
           break;
         case "differentBoxes":
           this.srcImg = "gift/gifts_storytel_boxes.gif";
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
+          this.setTimeToShowOptions(7000);
+          this.winType = "differentBoxes";
+
           break;
         case "topPrice":
           this.srcImg = "gift/gifts_storytel_boxes.gif";
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = true;
           this.isVisibleConfetti = !this.isVisibleConfetti;
+          this.setTimeToShowOptions(7000)
+          this.winType = "topPrice";
+
           break;
       }
 
@@ -192,6 +206,8 @@ export default {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
           this.setSpinRoullete(true);
+          this.srcImg = "";
+          this.winType = "";
         }, this.timeToShowOptions);
       }
     },
@@ -200,6 +216,7 @@ export default {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
           this.setSpinRoullete(true);
+          this.srcImg = "";
         }, this.timeToShowOptions);
       }
     },

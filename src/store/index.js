@@ -115,6 +115,10 @@ export default new Vuex.Store({
     setSpinRoullete(state, payload) {
       state.spinRoullete = payload;
     },
+
+    setTimeToShowOptions(state, payload){
+      state.timeToShowOptions = payload;
+    }
   },
   actions: {
     setOptions(context, payload) {
@@ -179,6 +183,10 @@ export default new Vuex.Store({
 
     setSpinRoullete(context, payload) {
       context.commit('setSpinRoullete', payload)
+    },
+
+    setTimeToShowOptions(context, payload) {
+      context.commit('setTimeToShowOptions', payload)
     },
   },
   modules: {
