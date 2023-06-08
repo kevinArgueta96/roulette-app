@@ -8,7 +8,7 @@
         </div>-->
       </div>
       <div class="row" style="height: 100%;">
-        <div class="col-sm-1 win-colmun-left">
+        <div class="col-sm-1 win-colmun" :style="{right:leftImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
             <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" />
@@ -18,9 +18,9 @@
         <div class="col-sm-10 win-central" style="overflow: visible;" v-if="showRoulette">
           <RouletteCompoment @showImg="showImg" />
         </div>
-        <div class="col-sm-1 win-colmun">
+        <div class="col-sm-1 win-colmun" :style="{right:rightImg + 'px'}">
           <div class="row" id="null-column-top"></div>
-          <div class="row" id="null-column-rigth" :style="{right:rigthImg + '%'}">
+          <div class="row" id="null-column-right">
             <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
           </div>
           <div class="row" id="null-column"></div>
@@ -56,11 +56,13 @@ export default {
       isVisibleConfetti: false,
       screenWidth: 0,
       screenHeight: 0,
-      rigthImg: 0,
       srcImg: "",
       winType: "",
 
-      showRoulette:true
+      showRoulette: true,
+
+      rightImg: 0,
+      leftImg: 0
     };
   },
   computed: {
@@ -68,10 +70,7 @@ export default {
   },
   mounted() {
     this.getScheduleRange();
-
-    if (this.screenWidth > 2000) {
-      this.rigthImg = 0;
-    }
+    this.controlGift();
     this.getOptions();
     this.getTotals();
   },
@@ -111,22 +110,35 @@ export default {
         this.spin();
       }
     },
+    controlGift() {
+      if (window.innerWidth <= 1366) {
+        this.rightImg = 100;
+        this.leftImg = 100;
+      } else if (window.innerWidth <= 1444) {
+        this.rightImg = 100;
+        this.leftImg = 50;
+      } else if (window.innerWidth <= 1980) {
+        this.rightImg = 50;
+        this.leftImg = 100;
+      } else {
+        this.rightImg = 10;
+        this.leftImg = 100;
+      }
+    },
     handleResize() {
+      this.controlGift();
       this.screenWidth = window.innerWidth;
       this.screenHeight = window.innerHeight;
     },
     showImg(value) {
-      //console.log(value)
-
       const { type } = value;
-      //const type = "topPrice";
       switch (type) {
         case "replay":
           this.srcImg = "gift/replay.gif";
           this.isVisbleWinImg = false;
           this.isVisbleLooseImg = true;
           this.winType = "replay";
-          this.setTimeToShowOptions(2500)
+          this.setTimeToShowOptions(2500);
 
           break;
         case "individualBox":
@@ -142,7 +154,7 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000)
+          this.setTimeToShowOptions(7000);
           this.winType = "giftCard";
           break;
         case "differentBoxes":
@@ -159,7 +171,7 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = true;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000)
+          this.setTimeToShowOptions(7000);
           this.winType = "topPrice";
 
           break;
@@ -228,12 +240,11 @@ export default {
         }, this.timeToShowOptions);
       }
     },
-    showRoulette(value){
-      if(!value){
+    showRoulette(value) {
+      if (!value) {
         setTimeout(() => {
-        this.showRoulette = true;
+          this.showRoulette = true;
         }, 10);
-        
       }
     }
   }

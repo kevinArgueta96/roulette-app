@@ -22,9 +22,9 @@ header {
   min-height: 70px;
   width: 30%;
   height: 360px;
-  right: 0;
+  right: -150px;
   position: fixed;
-  bottom: 0;     
+  bottom: -25px;     
 }
 
 .footer-img{
@@ -36,12 +36,8 @@ header {
 }
 
 .win-colmun {
-  height: 100%;
-}
-
-.win-colmun-left{
   position: relative;
-  right: 50px;
+  height: 100%;
 }
 
 .win-central {
@@ -54,10 +50,8 @@ header {
 }
 
 #null-column {
-  position: absolute;
-  height: 33.33%;
   position: relative;
-  right: 550px;
+  height: 33.33%;
 }
 
 #null-column-top {
@@ -65,13 +59,19 @@ header {
   position: relative;
 }
 
-#null-column-rigth {
+#null-column-right {
   height: 33.33%;
   position: relative;
-  bottom: 5%;
-  left: 20px;
 }
 
+#null-column-right img{
+  position: relative;
+}
+
+.img-fluid{
+  position: relative;
+  right: 100px;
+}
 .central-columns-middle {
   position: relative;
   height: 5%;

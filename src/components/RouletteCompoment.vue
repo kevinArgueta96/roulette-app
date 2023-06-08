@@ -1,6 +1,10 @@
 <template>
-  <div class="container text-center padre" ref="testRef" style="width: 100%; overflow: visible;">
-    <div style="position: relative;" >
+  <div
+    class="container text-center padre"
+    ref="containerCircule"
+    style="width: 100%; overflow: visible;"
+  >
+    <div style="position: relative;">
       <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
       <img
         src="/img/storytel-flecha.png"
@@ -16,7 +20,7 @@
       class="central-img"
       :style="{top:topCentralLogo+'%',width: widthCentralLogo+'px'}"
       alt="Responsive image"
-    />--> 
+    />-->
   </div>
 </template>
 <!-- width: 300px;
@@ -24,7 +28,7 @@ top: 38%; -->
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
-import { obtenerHoraActual } from "@/utils";
+import { obtenerHoraActual, calculateEaseOut, calculateIndex } from "@/utils";
 
 export default {
   data: () => {
@@ -34,15 +38,19 @@ export default {
       showAnimation: false,
       screenWidth: window.innerWidth,
       screenHeight: window.innerHeight,
-      topCentralLogo: 0,
-      rightCentralLogo: 0,
-      widthCentralLogo: 0,
+
+      // position roulette
       topArrowLogo: 0,
       rightArrowLogo: 0,
       widthArrowLogo: 0,
-      result: [],
-      counter: 0,
-      name: "",
+      restOutsideRadius: 0,
+      sizePhone: 0,
+      positionPhone: [],
+      sizeMiddleCircle: 0,
+      positionMiddleCircle: [],
+
+      lineWidth: 0,
+
       sectors: [
         { 0: "TUOTE", 1: "PALKINTO" }, // 1 vez x dia
         "UUDESTAAN", //15-20%
@@ -80,7 +88,12 @@ export default {
       textRadius: 0, // radio del tecto
       insideRadius: 0,
       letterSize: 0,
-      speedRoulette: 10
+      speedRoulette: 10,
+
+      globalWidthCircle: 0,
+      globalHeightCircle: 0,
+
+      halfPi: 0
     };
   },
   created() {
@@ -90,20 +103,26 @@ export default {
   destroyed() {
     window.removeEventListener("resize", this.handleResize);
   },
+
   mounted() {
+    this.globalWidthCircle = this.$refs.containerCircule.offsetWidth / 2;
+    this.globalHeightCircle = this.$refs.containerCircule.offsetHeight / 2;
+    this.halfPi = Math.PI / 2;
+
     this.startAngle = this.initialStartAngle;
     setTimeout(() => {
       document.addEventListener("keyup", this.spinRoulleteByEnter);
     }, 1000);
-    this.widthCircule = this.$refs.testRef.offsetWidth;
-    this.heightCircule = this.$refs.testRef.offsetHeight;
+    this.widthCircule = this.$refs.containerCircule.offsetWidth;
+    this.heightCircule = this.$refs.containerCircule.offsetHeight;
     this.validateSizeOfImg();
-    //this.drawRouletteWheel();
     requestAnimationFrame(this.drawRouletteWheel);
   },
+
   beforeDestroy() {
     document.removeEventListener("keyup", this.spinRoulleteByEnter);
   },
+
   methods: {
     ...mapActions([
       "setTotalReplay",
@@ -132,14 +151,100 @@ export default {
       }
     },
     validateSizeOfImg() {
-      this.topArrowLogo = (11.5)
-      this.rightArrowLogo = 46;
-      this.widthArrowLogo = 10;
-      
-      this.outsideRadius = (this.heightCircule * 0.35); // radio del circulo, que tan grande sera
-      this.textRadius = (this.heightCircule * 0.25); // radio del tecto
-      this.insideRadius = 5;
-      this.letterSize = 2;
+      if (this.screenWidth <= 1366) {
+        this.topArrowLogo = 4;
+        this.rightArrowLogo = 46;
+        this.widthArrowLogo = 6.6;
+
+        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
+        this.textRadius = this.heightCircule * 0.33; // radio del tecto
+        this.insideRadius = 1;
+        this.letterSize = 1;
+        this.restOutsideRadius = 10;
+
+        this.sizePhone = 220;
+        const widthPhone = 4;
+        const heightPhone = 35;
+        this.positionPhone["x"] = widthPhone;
+        this.positionPhone["y"] = heightPhone;
+
+        this.sizeMiddleCircle = 150;
+        const widthCircule = 7;
+        const heightCircule = 6;
+        this.positionMiddleCircle["x"] = widthCircule;
+        this.positionMiddleCircle["y"] = heightCircule;
+        this.lineWidth = 15;
+      } else if (this.screenWidth <= 1444) {
+        this.topArrowLogo = -2;
+        this.rightArrowLogo = 30;
+        this.widthArrowLogo = 7.5;
+
+        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
+        this.textRadius = this.heightCircule * 0.33; // radio del los textos
+        this.insideRadius = 1;
+        this.letterSize = 1;
+        this.restOutsideRadius = 10;
+
+        this.sizePhone = 220;
+        const widthPhone = 4;
+        const heightPhone = 35;
+        this.positionPhone["x"] = widthPhone;
+        this.positionPhone["y"] = heightPhone;
+
+        this.sizeMiddleCircle = 150;
+        const widthCircule = 7;
+        const heightCircule = 6;
+        this.positionMiddleCircle["x"] = widthCircule;
+        this.positionMiddleCircle["y"] = heightCircule;
+
+        this.lineWidth = 21;
+      } else if (this.screenWidth <= 1980) {
+        this.topArrowLogo = 2;
+        this.rightArrowLogo = 30;
+        this.widthArrowLogo = 8;
+
+        this.outsideRadius = this.heightCircule * 0.46; // radio del circulo, que tan grande sera
+        this.textRadius = this.heightCircule * 0.35; // radio del tecto
+        this.insideRadius = 1;
+        this.letterSize = 1;
+        this.restOutsideRadius = 10;
+
+        this.sizePhone = 300;
+        const xPhone = 2.9;
+        const yPhone = 35;
+        this.positionPhone["x"] = xPhone;
+        this.positionPhone["y"] = yPhone;
+
+        this.sizeMiddleCircle = 200;
+        const xCircule = 5.5;
+        const yCircule = 5;
+        this.positionMiddleCircle["x"] = xCircule;
+        this.positionMiddleCircle["y"] = yCircule;
+        this.lineWidth = 20;
+      } else {
+        this.topArrowLogo = 1;
+        this.rightArrowLogo = 30;
+        this.widthArrowLogo = 8;
+
+        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
+        this.textRadius = this.heightCircule * 0.35; // radio del tecto
+        this.insideRadius = 1;
+        this.letterSize = 1;
+        this.restOutsideRadius = 10;
+
+        this.sizePhone = 350;
+        const xPhone = 2.5;
+        const yPhone = 100;
+        this.positionPhone["x"] = xPhone;
+        this.positionPhone["y"] = yPhone;
+
+        this.sizeMiddleCircle = 220;
+        const xCircule = 5;
+        const yCircule = 5;
+        this.positionMiddleCircle["x"] = xCircule;
+        this.positionMiddleCircle["y"] = yCircule;
+        this.lineWidth = 20;
+      }
     },
 
     handleResize() {
@@ -147,28 +252,37 @@ export default {
         (this.ctx = null),
         (this.screenWidth = window.innerWidth);
       this.screenHeight = window.innerHeight;
-      this.widthCircule = this.$refs.testRef.offsetWidth;
-      this.heightCircule = this.$refs.testRef.offsetHeight;
+      this.widthCircule = this.$refs.containerCircule.offsetWidth;
+      this.heightCircule = this.$refs.containerCircule.offsetHeight;
     },
+
     drawCircule(angle) {
       const img = new Image();
       img.src = "/img/logo.png";
       const buffer = this.$refs.myCanvas;
       const bufferCtx = buffer.getContext("2d");
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
-      //const x = widthCircle + this.textRadius * Math.cos(angle );
-      //const y = heightCirlce  + this.textRadius * Math.sin(angle );
 
       img.onload = () => {
         requestAnimationFrame(draw);
       };
+
       const draw = () => {
-        bufferCtx.clearRect(-img.width, -img.height, 200, 200);
+        bufferCtx.clearRect(
+          -img.width,
+          -img.height,
+          this.sizeMiddleCircle,
+          this.sizeMiddleCircle
+        );
         bufferCtx.save();
-        bufferCtx.translate(widthCircle, heightCirlce);
+        bufferCtx.translate(this.globalWidthCircle, this.globalHeightCircle);
         bufferCtx.rotate(angle);
-        bufferCtx.drawImage(img, -img.width / 5, -img.height / 5, 200, 200);
+        bufferCtx.drawImage(
+          img,
+          -img.width / this.positionMiddleCircle.x,
+          -img.height / this.positionMiddleCircle.y,
+          this.sizeMiddleCircle,
+          this.sizeMiddleCircle
+        );
         bufferCtx.restore();
 
         bufferCtx.drawImage(buffer, 0, 0);
@@ -182,29 +296,45 @@ export default {
       img.src = "/img/winner.png";
       const buffer = this.$refs.myCanvas;
       const bufferCtx = buffer.getContext("2d");
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
+      const halfArc = arc / 2;
 
       img.onload = () => {
         requestAnimationFrame(draw);
       };
 
       const draw = () => {
-        bufferCtx.clearRect(-img.width, -img.height, 400, 400);
+        bufferCtx.clearRect(
+          -img.width,
+          -img.height,
+          this.sizePhone,
+          this.sizePhone
+        );
         bufferCtx.save();
         bufferCtx.translate(
-          widthCircle + Math.cos(angle + this.arc / 2) * this.textRadius,
-          heightCirlce + Math.sin(angle + this.arc / 2) * this.textRadius
+          this.globalWidthCircle + Math.cos(angle + halfArc) * this.textRadius,
+          this.globalHeightCircle + Math.sin(angle + halfArc) * this.textRadius
         );
-        bufferCtx.rotate(angle + arc / 2 + Math.PI / 2);
-        bufferCtx.drawImage(img, -img.width / 3, -img.height / 12, 300, 300);
+        bufferCtx.rotate(angle + halfArc + this.halfPi);
+        bufferCtx.drawImage(
+          img,
+          -img.width / this.positionPhone.x,
+          -img.height / this.positionPhone.y,
+          this.sizePhone,
+          this.sizePhone
+        );
 
         bufferCtx.restore();
       };
     },
 
-    drawEachSector(ctx, widthCircle, heightCirlce) {
+    drawEachSector(ctx, widthCircle, heightCircule) {
+      const halfArc = this.arc / 2;
+
       for (let i = 0; i < this.sectors.length; i++) {
+        const text = this.sectors[i][0];
+        const textPart2 = this.sectors[i][1];
+        const halfMeasureTextWidth = -ctx.measureText(text).width / 2;
+
         let angle = this.startAngle + i * this.arc;
         if (i === 0) {
           this.drawCircule(angle - 5.1);
@@ -215,8 +345,8 @@ export default {
         ctx.beginPath();
         ctx.arc(
           widthCircle,
-          heightCirlce,
-          this.outsideRadius - 20,
+          heightCircule,
+          this.outsideRadius - this.restOutsideRadius,
           angle,
           angle + this.arc,
           false
@@ -227,7 +357,7 @@ export default {
 
         ctx.arc(
           widthCircle,
-          heightCirlce,
+          heightCircule,
           this.insideRadius,
           angle + this.arc,
           angle,
@@ -241,10 +371,10 @@ export default {
         ctx.beginPath();
 
         ctx.strokeStyle = "black";
-        ctx.lineWidth = 25;
+        ctx.lineWidth = this.lineWidth;
         ctx.arc(
           widthCircle,
-          heightCirlce,
+          heightCircule,
           this.outsideRadius + 20,
           angle,
           angle + this.arc,
@@ -272,43 +402,37 @@ export default {
         }
         if (i === 2 || i == 5) {
           ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
+            this.globalWidthCircle +
+              Math.cos(angle + halfArc) * this.textRadius,
+            this.globalHeightCircle +
+              Math.sin(angle + halfArc) * this.textRadius
           );
-          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+          ctx.rotate(angle + halfArc + this.halfPi);
 
-          const text = this.sectors[i][0];
-          const textPart2 = this.sectors[i][1];
-
-          ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
-          ctx.fillText(textPart2, -ctx.measureText(text).width / 2.0, 40);
+          ctx.fillText(text, halfMeasureTextWidth, 0);
+          ctx.fillText(textPart2, halfMeasureTextWidth, 40);
         } else if (i === 0 || i === 4) {
           ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
+            this.globalWidthCircle +
+              Math.cos(angle + halfArc) * this.textRadius,
+            this.globalHeightCircle +
+              Math.sin(angle + halfArc) * this.textRadius
           );
-          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
-
-          const text = this.sectors[i][0];
-          const textPart2 = this.sectors[i][1];
+          ctx.rotate(angle + halfArc + this.halfPi);
 
           ctx.fillText(text, -this.ctx.measureText(text).width / 4, 0);
-          ctx.fillText(textPart2, -ctx.measureText(text).width / 2.0, 40);
+          ctx.fillText(textPart2, halfMeasureTextWidth, 40);
         } else {
           ctx.translate(
-            this.widthCircule / 2 +
-              Math.cos(angle + this.arc / 2) * this.textRadius,
-            this.heightCircule / 2 +
-              Math.sin(angle + this.arc / 2) * this.textRadius
+            this.globalWidthCircle +
+              Math.cos(angle + halfArc) * this.textRadius,
+            this.globalHeightCircle +
+              Math.sin(angle + halfArc) * this.textRadius
           );
-          ctx.rotate(angle + this.arc / 2 + Math.PI / 2);
+          ctx.rotate(angle + halfArc + this.halfPi);
 
-          const text = this.sectors[i];
-          ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+          const textAux = this.sectors[i];
+          ctx.fillText(textAux, -ctx.measureText(textAux).width / 2, 0);
         }
         ctx.restore();
         ctx.save();
@@ -318,23 +442,25 @@ export default {
     drawRouletteWheel() {
       this.canvas = this.$refs.myCanvas;
       this.ctx = this.canvas.getContext("2d");
-      const widthCircle = this.widthCircule / 2;
-      const heightCirlce = this.heightCircule / 2;
 
       this.ctx.clearRect(
         this.widthCircule,
-        widthCircle,
+        this.globalWidthCircle,
         this.heightCircule,
-        heightCirlce
+        this.globalHeightCircle
       ); // Borra todo el contenido del canvas
 
       // determina el color de la line externa
-      this.ctx.clearRect(0, 0, widthCircle, heightCirlce); // elimina una porcion enviando psicion y tamaño del rectangulo
+      this.ctx.clearRect(0, 0, this.globalWidthCircle, this.globalHeightCircle); // elimina una porcion enviando psicion y tamaño del rectangulo
       this.ctx.beginPath();
 
       this.ctx.font = `700 ${this.letterSize}rem Helvetica, Arial`;
 
-      this.drawEachSector(this.ctx, widthCircle, heightCirlce);
+      this.drawEachSector(
+        this.ctx,
+        this.globalWidthCircle,
+        this.globalHeightCircle
+      );
     },
 
     spin() {
@@ -374,18 +500,18 @@ export default {
       this.spinTimeout = requestAnimationFrame(this.rotateWheel);
       this.drawRouletteTime = requestAnimationFrame(this.drawRouletteWheel);
     },
+
     obtainSpinAngle() {
-      const spinAngle =
-        this.spinArcStart -
-        this.easeOut(this.spinTime, 0, this.spinArcStart, this.spinTimeTotal);
+      const dataRoulette = {
+        spinTime: this.spinTime,
+        b: 0,
+        spinArcStart: this.spinArcStart,
+        spinTimeTotal: this.spinTimeTotal
+      };
+
+      const spinAngle = this.spinArcStart - calculateEaseOut(dataRoulette);
 
       this.startAngle += (spinAngle * 2 * Math.PI) / 180;
-    },
-
-    easeOut(spinTime, b, spinArcStart, spinTimeTotal) {
-      const ts = (spinTime /= spinTimeTotal) * spinTime;
-      const tc = ts * spinTime;
-      return b + spinArcStart * (tc + -2 * ts + 2 * spinTime);
     },
 
     stopRotateWheel() {
@@ -395,9 +521,14 @@ export default {
       this.drawRouletteTime = null;
       this.drawRouletteTime = null;
       this.showAnimation = false;
-      var degrees = (this.startAngle * 180) / Math.PI + 90;
-      var arcd = (this.arc * 180) / Math.PI;
-      var index = Math.floor((360 - (degrees % 360)) / arcd);
+
+      const dataRoulette = {
+        startAngle: this.startAngle,
+        arc: this.arc
+      };
+
+      const index = calculateIndex(dataRoulette);
+
       this.ctx.save();
       this.ctx.font = "bold 30px Helvetica, Arial";
 
@@ -412,11 +543,10 @@ export default {
       } else if (index === 7) {
         this.$emit("showImg", { type: "topPrice" });
       }
-      /*setTimeout(() => {
-        this.setSpinRoullete(true);
-      }, this.timeToShowOptions);*/
+
       this.ctx.restore();
     },
+
     nameToUpdate(update) {
       this.setTotalSpin(this.totalSpin + 1);
       switch (update) {
@@ -493,6 +623,7 @@ export default {
       }
       return positionIndex;
     },
+
     async updateOptionRoulette(index) {
       this.nameToUpdate(index);
 

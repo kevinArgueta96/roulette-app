@@ -3,11 +3,9 @@
     <div
       class="container"
       :class="{ fadeInImage: visible, notShowImg: !visible } "
-      style="height: 100%; "
       :style="{width:sizeOfWinImg+'rem'}"
     >
       <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" ref="gifImg" />
-      <!--:style="{height: f+'%'}"/>-->
     </div>
   </div>
 </template>
@@ -33,7 +31,7 @@ export default {
     }
   },
   mounted() {
-    this.sizeOfWinImg = 37;
+    this.sizeOfWinImg = 30;
   },
   created() {
     window.addEventListener("resize", this.handleResize);
@@ -50,12 +48,7 @@ export default {
   watch: {
     winType(value){
       if (value === "differentBoxes") {
-        this.sizeOfWinImg = 35;
-      }
-    },
-    screenWidth(val) {
-      if (val > 2000) {
-        this.sizeOfWinImg = 60;
+        this.sizeOfWinImg = 30;
       }
     }
   }
