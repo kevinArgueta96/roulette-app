@@ -1,8 +1,9 @@
+import { CONFIG } from '../../env.config'
+
 async function getOptions() {
   try {
-    const response = await fetch(
-      "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/roulette.json"
-    );
+    const url = CONFIG.apiUrlQA+"roulette.json";
+    const response = await fetch(url);
     return response.json();
   } catch (error) {
     return 'error';
@@ -11,9 +12,8 @@ async function getOptions() {
 
 async function getTotals() {
   try {
-    const response = await fetch(
-      "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/total-prices.json"
-    );
+    const url = CONFIG.apiUrlQA+"total-prices.json";
+    const response = await fetch(url);
     return response.json();
   } catch (error) {
     return 'error';
@@ -22,7 +22,7 @@ async function getTotals() {
 
 async function setNewTotal(data) {
   try {
-    const url = `https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/total-prices.json`;
+    const url = CONFIG.apiUrlQA+"total-prices.json";
     const options = {
       method: "PUT",
       headers: {
@@ -38,10 +38,9 @@ async function setNewTotal(data) {
 }
 
 async function getHour() {
-  try {
-    const response = await fetch(
-      "https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/schedule-range.json"
-    );
+  try { 
+    const url =  CONFIG.apiUrlQA+"schedule-range.json";
+    const response = await fetch(url);
     return response.json();
   } catch (error) {
     return 'error';
@@ -51,7 +50,7 @@ async function getHour() {
 
 async function setHour(data) {
   try {
-    const url = `https://rouletee-app-default-rtdb.europe-west1.firebasedatabase.app/schedule-range.json`;
+    const url = CONFIG.apiUrlQA+"schedule-range.json";
     const options = {
       method: "PUT",
       headers: {

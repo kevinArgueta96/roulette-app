@@ -47,7 +47,9 @@ export default {
   },
   watch: {
     winType(value){
-      if (value === "differentBoxes") {
+      if (value === "topPrice") {
+        this.sizeOfWinImg = 25;
+      }else{
         this.sizeOfWinImg = 30;
       }
     }

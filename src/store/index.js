@@ -21,6 +21,9 @@ export default new Vuex.Store({
     giftCardScheduleRangeC: [],
     giftCardScheduleRangeD: [],
     giftCardScheduleRangeE: [],
+    giftCardScheduleRangeF: [],
+    giftCardScheduleRangeG: [],
+    giftCardScheduleRangeH: [],
 
     topPriceScheduleRangeA: [],
     topPriceScheduleRangeB: [],
@@ -46,6 +49,10 @@ export default new Vuex.Store({
     giftCardScheduleRangeC: (state) => state.giftCardScheduleRangeC,
     giftCardScheduleRangeD: (state) => state.giftCardScheduleRangeD,
     giftCardScheduleRangeE: (state) => state.giftCardScheduleRangeE,
+    giftCardScheduleRangeF: (state) => state.giftCardScheduleRangeF,
+    giftCardScheduleRangeG: (state) => state.giftCardScheduleRangeG,
+    giftCardScheduleRangeH: (state) => state.giftCardScheduleRangeH,
+
 
     topPriceScheduleRangeA: (state) => state.topPriceScheduleRangeA,
     topPriceScheduleRangeB: (state) => state.topPriceScheduleRangeB,
@@ -54,7 +61,6 @@ export default new Vuex.Store({
 
     initialAngle: (state) => state.initialAngle,
     spinRoullete: (state) => state.spinRoullete,
-
 
   },
   mutations: {
@@ -94,6 +100,15 @@ export default new Vuex.Store({
     },
     setGiftCardScheduleRangeE(state, payload) {
       state.giftCardScheduleRangeE = payload;
+    },
+    setGiftCardScheduleRangeF(state, payload) {
+      state.giftCardScheduleRangeF = payload;
+    },
+    setGiftCardScheduleRangeG(state, payload) {
+      state.giftCardScheduleRangeG = payload;
+    },
+    setGiftCardScheduleRangeH(state, payload) {
+      state.giftCardScheduleRangeH = payload;
     },
 
 
@@ -161,17 +176,25 @@ export default new Vuex.Store({
     },
     setGiftCardScheduleRangeE(context, payload) {
       context.commit('setGiftCardScheduleRangeE', payload)
-
     },
+    setGiftCardScheduleRangeF(context, payload) {
+      context.commit('setGiftCardScheduleRangeF', payload)
+    },
+    setGiftCardScheduleRangeG(context, payload) {
+      context.commit('setGiftCardScheduleRangeG', payload)
+    },
+    setGiftCardScheduleRangeH(context, payload) {
+      context.commit('setGiftCardScheduleRangeH', payload)
+    },
+
 
     setTopPriceScheduleRangeA(context, payload) {
       context.commit('setTopPriceScheduleRangeA', payload)
-
     },
     setTopPriceScheduleRangeB(context, payload) {
       context.commit('setTopPriceScheduleRangeB', payload)
-
     },
+
 
     setActualTime(context, payload) {
       context.commit('setActualTime', payload)

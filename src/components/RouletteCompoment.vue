@@ -137,6 +137,9 @@ export default {
       "setGiftCardScheduleRangeC",
       "setGiftCardScheduleRangeD",
       "setGiftCardScheduleRangeE",
+      "setGiftCardScheduleRangeF",
+      "setGiftCardScheduleRangeG",
+      "setGiftCardScheduleRangeH",
 
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
@@ -688,7 +691,24 @@ export default {
           this.auxState.given = true;
           this.setGiftCardScheduleRangeE(this.auxState);
           this.auxState = "";
-
+          break;
+        case "cardF":
+          this.auxState = this.giftCardScheduleRangeF;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeF(this.auxState);
+          this.auxState = "";
+          break;
+        case "cardG":
+          this.auxState = this.giftCardScheduleRangeG;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeG(this.auxState);
+          this.auxState = "";
+          break;
+        case "cardH":
+          this.auxState = this.giftCardScheduleRangeH;
+          this.auxState.given = true;
+          this.setGiftCardScheduleRangeH(this.auxState);
+          this.auxState = "";
           break;
 
         case "topPriceA":
@@ -711,6 +731,9 @@ export default {
         giftCardScheduleRangeC: this.giftCardScheduleRangeC,
         giftCardScheduleRangeD: this.giftCardScheduleRangeD,
         giftCardScheduleRangeE: this.giftCardScheduleRangeE,
+        giftCardScheduleRangeF: this.giftCardScheduleRangeF,
+        giftCardScheduleRangeG: this.giftCardScheduleRangeG,
+        giftCardScheduleRangeH: this.giftCardScheduleRangeH,
 
         topPriceScheduleRangeA: this.topPriceScheduleRangeA,
         topPriceScheduleRangeB: this.topPriceScheduleRangeB
@@ -725,6 +748,9 @@ export default {
         this.giftCardScheduleRangeC.rangeDown,
         this.giftCardScheduleRangeD.rangeDown,
         this.giftCardScheduleRangeE.rangeDown,
+        this.giftCardScheduleRangeF.rangeDown,
+        this.giftCardScheduleRangeG.rangeDown,
+        this.giftCardScheduleRangeH.rangeDown,
         this.topPriceScheduleRangeA.rangeDown,
         this.topPriceScheduleRangeB.rangeDown
       ];
@@ -735,6 +761,9 @@ export default {
         this.giftCardScheduleRangeC.rangeTop,
         this.giftCardScheduleRangeD.rangeTop,
         this.giftCardScheduleRangeE.rangeTop,
+        this.giftCardScheduleRangeF.rangeTop,
+        this.giftCardScheduleRangeG.rangeTop,
+        this.giftCardScheduleRangeH.rangeTop,
         this.topPriceScheduleRangeA.rangeTop,
         this.topPriceScheduleRangeB.rangeTop
       ];
@@ -745,6 +774,9 @@ export default {
         "cardC",
         "cardD",
         "cardE",
+        "cardF",
+        "cardG",
+        "cardH",
         "topPriceA",
         "topPriceB"
       ];
@@ -755,17 +787,20 @@ export default {
         this.giftCardScheduleRangeC.given,
         this.giftCardScheduleRangeD.given,
         this.giftCardScheduleRangeE.given,
+        this.giftCardScheduleRangeF.given,
+        this.giftCardScheduleRangeG.given,
+        this.giftCardScheduleRangeH.given,
         this.topPriceScheduleRangeA.given,
         this.topPriceScheduleRangeB.given
       ];
-      for (let position = 0; position < 7; position++) {
+      for (let position = 0; position < 10; position++) {
         if (
           time >= down[position] &&
           time <= top[position] &&
           givenS[position] === false
         ) {
           this.changeStateOfSchedulerWin(card[position]);
-          if (position >= 0 && position <= 4) {
+          if (position >= 0 && position <= 7) {
             const options = [
               { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
               { option: "UUDESTAAN", probability: 0 }, //15-20%
@@ -777,7 +812,7 @@ export default {
               { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
             ];
             return options;
-          } else if (position > 4 && position <= 6) {
+          } else if (position > 7 && position <= 10) {
             const options = [
               { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
               { option: "UUDESTAAN", probability: 0 }, //15-20%
@@ -812,6 +847,9 @@ export default {
       "giftCardScheduleRangeC",
       "giftCardScheduleRangeD",
       "giftCardScheduleRangeE",
+      "giftCardScheduleRangeF",
+      "giftCardScheduleRangeG",
+      "giftCardScheduleRangeH",
 
       "topPriceScheduleRangeA",
       "topPriceScheduleRangeB",

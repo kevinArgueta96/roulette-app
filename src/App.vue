@@ -21,7 +21,7 @@
         <div class="col-sm-1 win-colmun" :style="{right:rightImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-right">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -97,6 +97,9 @@ export default {
       "setGiftCardScheduleRangeC",
       "setGiftCardScheduleRangeD",
       "setGiftCardScheduleRangeE",
+      "setGiftCardScheduleRangeF",
+      "setGiftCardScheduleRangeG",
+      "setGiftCardScheduleRangeH",
 
       "setTopPriceScheduleRangeA",
       "setTopPriceScheduleRangeB",
@@ -206,6 +209,9 @@ export default {
         this.setGiftCardScheduleRangeC(response.giftCardScheduleRangeC);
         this.setGiftCardScheduleRangeD(response.giftCardScheduleRangeD);
         this.setGiftCardScheduleRangeE(response.giftCardScheduleRangeE);
+        this.setGiftCardScheduleRangeF(response.giftCardScheduleRangeF);
+        this.setGiftCardScheduleRangeG(response.giftCardScheduleRangeG);
+        this.setGiftCardScheduleRangeH(response.giftCardScheduleRangeH);
 
         this.setTopPriceScheduleRangeA(response.topPriceScheduleRangeA);
         this.setTopPriceScheduleRangeB(response.topPriceScheduleRangeB);
