@@ -37,20 +37,19 @@ async function setNewTotal(data) {
   }
 }
 
-async function getHour() {
+async function getGiftCards() {
   try { 
-    const url =  CONFIG.apiUrlQA+"schedule-range.json";
+    const url =  CONFIG.apiUrlQA+"gift-cards.json";
     const response = await fetch(url);
     return response.json();
   } catch (error) {
     return 'error';
   }
-
 }
 
-async function setHour(data) {
+async function setGiftCards(data) {
   try {
-    const url = CONFIG.apiUrlQA+"schedule-range.json";
+    const url = CONFIG.apiUrlQA+"gift-cards.json";
     const options = {
       method: "PUT",
       headers: {
@@ -63,7 +62,33 @@ async function setHour(data) {
   } catch (error) {
     return 'error';
   }
+}
 
+async function setTopPrices(data) {
+  try {
+    const url = CONFIG.apiUrlQA+"top-prices.json";
+    const options = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    };
+    const response = await fetch(url, options);
+    return response.json();
+  } catch (error) {
+    return 'error';
+  }
+}
+
+async function getTopPrices() {
+  try { 
+    const url =  CONFIG.apiUrlQA+"top-prices.json";
+    const response = await fetch(url);
+    return response.json();
+  } catch (error) {
+    return 'error';
+  }
 }
 
 
@@ -71,6 +96,10 @@ export default {
   getOptions,
   getTotals,
   setNewTotal,
-  getHour,
-  setHour
+
+  getGiftCards,
+  getTopPrices,
+
+  setGiftCards,
+  setTopPrices
 };

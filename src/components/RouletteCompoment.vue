@@ -132,17 +132,8 @@ export default {
       "setTotalGiftCard",
       "setTotalSpin",
 
-      "setGiftCardScheduleRangeA",
-      "setGiftCardScheduleRangeB",
-      "setGiftCardScheduleRangeC",
-      "setGiftCardScheduleRangeD",
-      "setGiftCardScheduleRangeE",
-      "setGiftCardScheduleRangeF",
-      "setGiftCardScheduleRangeG",
-      "setGiftCardScheduleRangeH",
-
-      "setTopPriceScheduleRangeA",
-      "setTopPriceScheduleRangeB",
+      "setGiftCards",
+      "setTopPrices",
 
       "setInitialAngle",
       "setSpinRoullete"
@@ -638,8 +629,7 @@ export default {
         totalGitfCard: this.selectedTotalGiftCard,
         totalSpin: this.totalSpin
       };
-      const response = await service.setNewTotal(data);
-      response === 0;
+      await service.setNewTotal(data);
     },
     generateNumberToShow() {
       const newProbabilitie = this.generateProbabilityPriceByScheduler();
@@ -657,149 +647,46 @@ export default {
         }
       }
     },
-    changeStateOfSchedulerWin(range) {
-      switch (range) {
-        case "cardA":
-          this.auxState = this.giftCardScheduleRangeA;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeA(this.auxState);
-          this.auxState = "";
-          break;
+    async updateWinnerChoice(winner) {
+      const {typeWinner,position,giftCardsLength} = winner;
+      
+     switch (typeWinner) {
+        case "card":
+          this.giftCards[position].given = true;
+          await service.setGiftCards(this.giftCards);
+          return;
 
-        case "cardB":
-          this.auxState = this.giftCardScheduleRangeB;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeB(this.auxState);
-          this.auxState = "";
-
-          break;
-        case "cardC":
-          this.auxState = this.giftCardScheduleRangeC;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeC(this.auxState);
-          this.auxState = "";
-
-          break;
-        case "cardD":
-          this.auxState = this.giftCardScheduleRangeD;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeD(this.auxState);
-          this.auxState = "";
-          break;
-        case "cardE":
-          this.auxState = this.giftCardScheduleRangeE;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeE(this.auxState);
-          this.auxState = "";
-          break;
-        case "cardF":
-          this.auxState = this.giftCardScheduleRangeF;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeF(this.auxState);
-          this.auxState = "";
-          break;
-        case "cardG":
-          this.auxState = this.giftCardScheduleRangeG;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeG(this.auxState);
-          this.auxState = "";
-          break;
-        case "cardH":
-          this.auxState = this.giftCardScheduleRangeH;
-          this.auxState.given = true;
-          this.setGiftCardScheduleRangeH(this.auxState);
-          this.auxState = "";
-          break;
-
-        case "topPriceA":
-          this.auxState = this.topPriceScheduleRangeA;
-          this.auxState.given = true;
-          this.setTopPriceScheduleRangeA(this.auxState);
-          this.auxState = "";
-
-          break;
-        case "topPriceB":
-          this.auxState = this.topPriceScheduleRangeB;
-          this.auxState.given = true;
-          this.setTopPriceScheduleRangeB(this.auxState);
-          this.auxState = "";
-          break;
+        case "topPrice":
+          this.topPrices[position-(giftCardsLength+1)].given = true;
+          await service.setTopPrices(this.topPrices);
+          return;
+          
+        default:
+            return;
       }
-      const data = {
-        giftCardScheduleRangeA: this.giftCardScheduleRangeA,
-        giftCardScheduleRangeB: this.giftCardScheduleRangeB,
-        giftCardScheduleRangeC: this.giftCardScheduleRangeC,
-        giftCardScheduleRangeD: this.giftCardScheduleRangeD,
-        giftCardScheduleRangeE: this.giftCardScheduleRangeE,
-        giftCardScheduleRangeF: this.giftCardScheduleRangeF,
-        giftCardScheduleRangeG: this.giftCardScheduleRangeG,
-        giftCardScheduleRangeH: this.giftCardScheduleRangeH,
-
-        topPriceScheduleRangeA: this.topPriceScheduleRangeA,
-        topPriceScheduleRangeB: this.topPriceScheduleRangeB
-      };
-      service.setHour(data);
     },
+    
     generateProbabilityPriceByScheduler() {
+      const totalData = this.giftCards.concat(this.topPrices);
+
       const time = obtenerHoraActual();
-      const down = [
-        this.giftCardScheduleRangeA.rangeDown,
-        this.giftCardScheduleRangeB.rangeDown,
-        this.giftCardScheduleRangeC.rangeDown,
-        this.giftCardScheduleRangeD.rangeDown,
-        this.giftCardScheduleRangeE.rangeDown,
-        this.giftCardScheduleRangeF.rangeDown,
-        this.giftCardScheduleRangeG.rangeDown,
-        this.giftCardScheduleRangeH.rangeDown,
-        this.topPriceScheduleRangeA.rangeDown,
-        this.topPriceScheduleRangeB.rangeDown
-      ];
+      const down = totalData.map(obj => obj.rangeDown);
+      const top = totalData.map(obj => obj.rangeTop);
+      const givenS = totalData.map(obj => obj.given);
 
-      const top = [
-        this.giftCardScheduleRangeA.rangeTop,
-        this.giftCardScheduleRangeB.rangeTop,
-        this.giftCardScheduleRangeC.rangeTop,
-        this.giftCardScheduleRangeD.rangeTop,
-        this.giftCardScheduleRangeE.rangeTop,
-        this.giftCardScheduleRangeF.rangeTop,
-        this.giftCardScheduleRangeG.rangeTop,
-        this.giftCardScheduleRangeH.rangeTop,
-        this.topPriceScheduleRangeA.rangeTop,
-        this.topPriceScheduleRangeB.rangeTop
-      ];
-
-      const card = [
-        "cardA",
-        "cardB",
-        "cardC",
-        "cardD",
-        "cardE",
-        "cardF",
-        "cardG",
-        "cardH",
-        "topPriceA",
-        "topPriceB"
-      ];
-
-      const givenS = [
-        this.giftCardScheduleRangeA.given,
-        this.giftCardScheduleRangeB.given,
-        this.giftCardScheduleRangeC.given,
-        this.giftCardScheduleRangeD.given,
-        this.giftCardScheduleRangeE.given,
-        this.giftCardScheduleRangeF.given,
-        this.giftCardScheduleRangeG.given,
-        this.giftCardScheduleRangeH.given,
-        this.topPriceScheduleRangeA.given,
-        this.topPriceScheduleRangeB.given
-      ];
-      for (let position = 0; position < 10; position++) {
+      for (let position = 0; position < totalData.length; position++) {
         if (
           time >= down[position] &&
           time <= top[position] &&
           givenS[position] === false
         ) {
-          this.changeStateOfSchedulerWin(card[position]);
+          const typeWinner = position > this.giftCards.length -1 ? 'topPrice': 'card';
+          const winner = {
+            typeWinner,
+            position,
+            giftCardsLength: this.giftCards.length -1
+          }
+          this.updateWinnerChoice(winner);
           if (position >= 0 && position <= 7) {
             const options = [
               { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
@@ -812,7 +699,7 @@ export default {
               { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
             ];
             return options;
-          } else if (position > 7 && position <= 10) {
+          } else if (position > 7 && position <= 9) {
             const options = [
               { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
               { option: "UUDESTAAN", probability: 0 }, //15-20%
@@ -842,19 +729,9 @@ export default {
       "totalGiftCard",
       "totalSpin",
 
-      "giftCardScheduleRangeA",
-      "giftCardScheduleRangeB",
-      "giftCardScheduleRangeC",
-      "giftCardScheduleRangeD",
-      "giftCardScheduleRangeE",
-      "giftCardScheduleRangeF",
-      "giftCardScheduleRangeG",
-      "giftCardScheduleRangeH",
+      "giftCards",
+      "topPrices",
 
-      "topPriceScheduleRangeA",
-      "topPriceScheduleRangeB",
-
-      "actualTime",
       "initialAngle",
       "spinRoullete"
     ]),

@@ -69,10 +69,11 @@ export default {
     ...mapGetters(["timeToShowOptions"])
   },
   mounted() {
-    this.getScheduleRange();
     this.controlGift();
     this.getOptions();
     this.getTotals();
+    this.getGiftCards();
+    this.getTopPrices();
   },
   created() {
     window.addEventListener("resize", this.handleResize);
@@ -92,17 +93,10 @@ export default {
       "setTotalGiftCard",
       "setTotalSpin",
 
-      "setGiftCardScheduleRangeA",
-      "setGiftCardScheduleRangeB",
-      "setGiftCardScheduleRangeC",
-      "setGiftCardScheduleRangeD",
-      "setGiftCardScheduleRangeE",
-      "setGiftCardScheduleRangeF",
-      "setGiftCardScheduleRangeG",
       "setGiftCardScheduleRangeH",
 
-      "setTopPriceScheduleRangeA",
-      "setTopPriceScheduleRangeB",
+      "setGiftCards",
+      "setTopPrices",
 
       "setSpinRoullete",
 
@@ -188,6 +182,20 @@ export default {
         this.setOptions(options.sectors);
       }
     },
+    async getGiftCards() {
+      const response = await service.getGiftCards();
+      if (response !== "error") {
+        this.setGiftCards(Object.values(response));
+      }
+    },
+
+    async getTopPrices() {
+      const response = await service.getTopPrices();
+      if (response !== "error") {
+        this.setTopPrices(Object.values(response));
+      }
+    },
+
     async getTotals() {
       const totals = await service.getTotals();
       if (totals !== "error") {
@@ -201,22 +209,6 @@ export default {
       //this.setTotalTopPrice(setTotalTopPrice)
     },
 
-    async getScheduleRange() {
-      const response = await service.getHour();
-      if (response !== "error") {
-        this.setGiftCardScheduleRangeA(response.giftCardScheduleRangeA);
-        this.setGiftCardScheduleRangeB(response.giftCardScheduleRangeB);
-        this.setGiftCardScheduleRangeC(response.giftCardScheduleRangeC);
-        this.setGiftCardScheduleRangeD(response.giftCardScheduleRangeD);
-        this.setGiftCardScheduleRangeE(response.giftCardScheduleRangeE);
-        this.setGiftCardScheduleRangeF(response.giftCardScheduleRangeF);
-        this.setGiftCardScheduleRangeG(response.giftCardScheduleRangeG);
-        this.setGiftCardScheduleRangeH(response.giftCardScheduleRangeH);
-
-        this.setTopPriceScheduleRangeA(response.topPriceScheduleRangeA);
-        this.setTopPriceScheduleRangeB(response.topPriceScheduleRangeB);
-      }
-    }
   },
   watch: {
     isVisbleWinImg(value) {

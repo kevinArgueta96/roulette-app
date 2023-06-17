@@ -16,19 +16,8 @@ export default new Vuex.Store({
     totalGiftCard: 0,
     totalSpin: 0,
 
-    giftCardScheduleRangeA: [],
-    giftCardScheduleRangeB: [],
-    giftCardScheduleRangeC: [],
-    giftCardScheduleRangeD: [],
-    giftCardScheduleRangeE: [],
-    giftCardScheduleRangeF: [],
-    giftCardScheduleRangeG: [],
-    giftCardScheduleRangeH: [],
-
-    topPriceScheduleRangeA: [],
-    topPriceScheduleRangeB: [],
-
-    actualTIme: '',
+    giftCards: [],
+    topPrices: [],
 
     initialAngle: 5.1,
     spinRoullete: true,
@@ -44,21 +33,9 @@ export default new Vuex.Store({
     totalGiftCard: (state) => state.totalGiftCard,
     totalSpin: (state) => state.totalSpin,
 
-    giftCardScheduleRangeA: (state) => state.giftCardScheduleRangeA,
-    giftCardScheduleRangeB: (state) => state.giftCardScheduleRangeB,
-    giftCardScheduleRangeC: (state) => state.giftCardScheduleRangeC,
-    giftCardScheduleRangeD: (state) => state.giftCardScheduleRangeD,
-    giftCardScheduleRangeE: (state) => state.giftCardScheduleRangeE,
-    giftCardScheduleRangeF: (state) => state.giftCardScheduleRangeF,
-    giftCardScheduleRangeG: (state) => state.giftCardScheduleRangeG,
-    giftCardScheduleRangeH: (state) => state.giftCardScheduleRangeH,
-
-
-    topPriceScheduleRangeA: (state) => state.topPriceScheduleRangeA,
-    topPriceScheduleRangeB: (state) => state.topPriceScheduleRangeB,
-
-    actualTIme: (state) => state.actualTIme,
-
+    giftCards: (state) => state.giftCards,
+    topPrices: (state) => state.topPrices,
+  
     initialAngle: (state) => state.initialAngle,
     spinRoullete: (state) => state.spinRoullete,
 
@@ -86,42 +63,15 @@ export default new Vuex.Store({
       state.totalSpin = payload;
     },
 
-    setGiftCardScheduleRangeA(state, payload) {
-      state.giftCardScheduleRangeA = payload;
+    
+
+    setGiftCards(state, payload) {
+      state.giftCards = payload;
     },
-    setGiftCardScheduleRangeB(state, payload) {
-      state.giftCardScheduleRangeB = payload;
-    },
-    setGiftCardScheduleRangeC(state, payload) {
-      state.giftCardScheduleRangeC = payload;
-    },
-    setGiftCardScheduleRangeD(state, payload) {
-      state.giftCardScheduleRangeD = payload;
-    },
-    setGiftCardScheduleRangeE(state, payload) {
-      state.giftCardScheduleRangeE = payload;
-    },
-    setGiftCardScheduleRangeF(state, payload) {
-      state.giftCardScheduleRangeF = payload;
-    },
-    setGiftCardScheduleRangeG(state, payload) {
-      state.giftCardScheduleRangeG = payload;
-    },
-    setGiftCardScheduleRangeH(state, payload) {
-      state.giftCardScheduleRangeH = payload;
+    setTopPrices(state, payload) {
+      state.topPrices = payload;
     },
 
-
-    setTopPriceScheduleRangeA(state, payload) {
-      state.topPriceScheduleRangeA = payload;
-    },
-    setTopPriceScheduleRangeB(state, payload) {
-      state.topPriceScheduleRangeB = payload;
-    },
-
-    setActualTime(state, payload) {
-      state.actualTIme = payload;
-    },
 
     setInitialAngle(state, payload) {
       state.initialAngle = payload;
@@ -158,47 +108,15 @@ export default new Vuex.Store({
       context.commit('setTotalSpin', payload)
     },
 
-    setGiftCardScheduleRangeA(context, payload) {
-      context.commit('setGiftCardScheduleRangeA', payload)
+    
 
+    setGiftCards(context, payload) {
+      context.commit('setGiftCards', payload)
     },
-    setGiftCardScheduleRangeB(context, payload) {
-      context.commit('setGiftCardScheduleRangeB', payload)
-
-    },
-    setGiftCardScheduleRangeC(context, payload) {
-      context.commit('setGiftCardScheduleRangeC', payload)
-
-    },
-    setGiftCardScheduleRangeD(context, payload) {
-      context.commit('setGiftCardScheduleRangeD', payload)
-
-    },
-    setGiftCardScheduleRangeE(context, payload) {
-      context.commit('setGiftCardScheduleRangeE', payload)
-    },
-    setGiftCardScheduleRangeF(context, payload) {
-      context.commit('setGiftCardScheduleRangeF', payload)
-    },
-    setGiftCardScheduleRangeG(context, payload) {
-      context.commit('setGiftCardScheduleRangeG', payload)
-    },
-    setGiftCardScheduleRangeH(context, payload) {
-      context.commit('setGiftCardScheduleRangeH', payload)
+    setTopPrices(context, payload) {
+      context.commit('setTopPrices', payload)
     },
 
-
-    setTopPriceScheduleRangeA(context, payload) {
-      context.commit('setTopPriceScheduleRangeA', payload)
-    },
-    setTopPriceScheduleRangeB(context, payload) {
-      context.commit('setTopPriceScheduleRangeB', payload)
-    },
-
-
-    setActualTime(context, payload) {
-      context.commit('setActualTime', payload)
-    },
 
     setInitialAngle(context, payload) {
       context.commit('setInitialAngle', payload)
