@@ -91,12 +91,11 @@ async function getTopPrices() {
   }
 }
 
-
 export default {
   getOptions,
   getTotals,
   setNewTotal,
-
+  
   getGiftCards,
   getTopPrices,
 

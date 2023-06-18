@@ -15,16 +15,8 @@
         alt="Responsive image"
       />
     </div>
-    <!-- <img
-      src="/img/logo.png"
-      class="central-img"
-      :style="{top:topCentralLogo+'%',width: widthCentralLogo+'px'}"
-      alt="Responsive image"
-    />-->
   </div>
 </template>
-<!-- width: 300px;
-top: 38%; -->
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
@@ -248,6 +240,9 @@ export default {
       this.screenHeight = window.innerHeight;
       this.widthCircule = this.$refs.containerCircule.offsetWidth;
       this.heightCircule = this.$refs.containerCircule.offsetHeight;
+
+      this.globalWidthCircle = this.$refs.containerCircule.offsetWidth / 2;
+      this.globalHeightCircle = this.$refs.containerCircule.offsetHeight / 2;
     },
 
     drawCircule(angle) {
@@ -648,24 +643,24 @@ export default {
       }
     },
     async updateWinnerChoice(winner) {
-      const {typeWinner,position,giftCardsLength} = winner;
-      
-     switch (typeWinner) {
+      const { typeWinner, position, giftCardsLength } = winner;
+
+      switch (typeWinner) {
         case "card":
           this.giftCards[position].given = true;
           await service.setGiftCards(this.giftCards);
           return;
 
         case "topPrice":
-          this.topPrices[position-(giftCardsLength+1)].given = true;
+          this.topPrices[position - (giftCardsLength + 1)].given = true;
           await service.setTopPrices(this.topPrices);
           return;
-          
+
         default:
-            return;
+          return;
       }
     },
-    
+
     generateProbabilityPriceByScheduler() {
       const totalData = this.giftCards.concat(this.topPrices);
 
@@ -680,12 +675,13 @@ export default {
           time <= top[position] &&
           givenS[position] === false
         ) {
-          const typeWinner = position > this.giftCards.length -1 ? 'topPrice': 'card';
+          const typeWinner =
+            position > this.giftCards.length - 1 ? "topPrice" : "card";
           const winner = {
             typeWinner,
             position,
-            giftCardsLength: this.giftCards.length -1
-          }
+            giftCardsLength: this.giftCards.length - 1
+          };
           this.updateWinnerChoice(winner);
           if (position >= 0 && position <= 7) {
             const options = [

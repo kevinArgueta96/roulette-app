@@ -11,7 +11,7 @@
         <div class="col-sm-1 win-colmun" :style="{right:leftImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette"/>
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -21,7 +21,7 @@
         <div class="col-sm-1 win-colmun" :style="{right:rightImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-right">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
