@@ -11,7 +11,7 @@
         <div class="col-sm-1 win-colmun" :style="{right:leftImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette"/>
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette" :sizeGift="sizeGift"/>
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -21,7 +21,7 @@
         <div class="col-sm-1 win-colmun" :style="{right:rightImg + 'px'}">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-right">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette" />
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette" :sizeGift="sizeGift"/>
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -62,7 +62,9 @@ export default {
       showRoulette: true,
 
       rightImg: 0,
-      leftImg: 0
+      leftImg: 0,
+
+      sizeGift: 0
     };
   },
   computed: {
@@ -136,7 +138,7 @@ export default {
           this.isVisbleLooseImg = true;
           this.winType = "replay";
           this.setTimeToShowOptions(2500);
-
+          this.sizeGift = 30;
           break;
         case "individualBox":
           this.srcImg = "gift/gifts_storytel_individual.gif";
@@ -145,6 +147,7 @@ export default {
           this.isVisibleConfetti = !this.isVisibleConfetti;
           this.setTimeToShowOptions(7000);
           this.winType = "individualBox";
+          this.sizeGift = 30;
           break;
         case "giftCard":
           this.srcImg = "gift/gift_card.gif";
@@ -153,6 +156,7 @@ export default {
           this.isVisibleConfetti = !this.isVisibleConfetti;
           this.setTimeToShowOptions(7000);
           this.winType = "giftCard";
+          this.sizeGift = 30;
           break;
         case "differentBoxes":
           this.srcImg = "gift/gifts_storytel_boxes.gif";
@@ -161,7 +165,7 @@ export default {
           this.isVisibleConfetti = !this.isVisibleConfetti;
           this.setTimeToShowOptions(7000);
           this.winType = "differentBoxes";
-
+          this.sizeGift = 30;
           break;
         case "topPrice":
           this.srcImg = "gift/gifts_storytel_boxes.gif";
@@ -170,7 +174,7 @@ export default {
           this.isVisibleConfetti = !this.isVisibleConfetti;
           this.setTimeToShowOptions(7000);
           this.winType = "topPrice";
-
+          this.sizeGift = 25;
           break;
       }
 

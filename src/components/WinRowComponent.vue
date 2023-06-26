@@ -3,7 +3,7 @@
     <div
       class="container"
       :class="{ fadeInImage: visible, notShowImg: !visible } "
-      :style="{width:sizeOfWinImg+'rem'}"
+      :style="{width:sizeGift+'rem'}"
     >
       <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" ref="gifImg" />
     </div>
@@ -16,7 +16,6 @@ export default {
   data: () => {
     return {
       screenWidth: 0,
-      sizeOfWinImg: 0
     };
   },
   props: {
@@ -28,10 +27,13 @@ export default {
     winType: {
       type: String,
       default: ""
+    },
+    sizeGift: {
+      type: Number,
+      default: 0
     }
   },
   mounted() {
-    this.sizeOfWinImg = 30;
   },
   created() {
     window.addEventListener("resize", this.handleResize);
@@ -43,15 +45,6 @@ export default {
   methods: {
     handleResize() {
       this.screenWidth = window.innerWidth;
-    }
-  },
-  watch: {
-    winType(value){
-      if (value === "topPrice") {
-        this.sizeOfWinImg = 25;
-      }else{
-        this.sizeOfWinImg = 30;
-      }
     }
   }
 };
