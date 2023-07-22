@@ -19,7 +19,7 @@ export default new Vuex.Store({
     giftCards: [],
     topPrices: [],
 
-    initialAngle: 5.1,
+    initialAngle: 0,
     spinRoullete: true,
 
   },
@@ -86,6 +86,11 @@ export default new Vuex.Store({
     }
   },
   actions: {
+    initializeRandomAngle({commit}) {
+      const positions = [5.1,1.16,4.3,3.5,5.9,0.35,2.75]
+      const randomNumber = Math.floor(Math.random() * 6) +1;
+      commit('setInitialAngle', positions[randomNumber])
+    },
     setOptions(context, payload) {
       context.commit('setOptions', payload)
     },

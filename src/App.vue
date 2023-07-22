@@ -78,6 +78,7 @@ export default {
     this.getTopPrices();
   },
   created() {
+    this.initializeRandomAngle();
     window.addEventListener("resize", this.handleResize);
   },
 
@@ -102,7 +103,9 @@ export default {
 
       "setSpinRoullete",
 
-      "setTimeToShowOptions"
+      "setTimeToShowOptions",
+
+      "initializeRandomAngle"
     ]),
     spinRoulleteByEnter(event) {
       if (event.keyCode === 13 || event.keyCode === 32) {
