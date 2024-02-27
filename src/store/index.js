@@ -6,7 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     options: [
-      { "option": "LAHJAKORTT", "probability": 0.425 }, { "opcion": "UUDESTAAN", "probability": 0.025 }, { "opcion": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "opcion": "LAHJAKORTTI", "probability": 0 }, { "opcion": "TUOTEPALKINTO", "probability": 0.425 }, { "opcion": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "opcion": "UUDESTAAN", "probability": 0.025 }, { "opcion": "PÄÄPALKINTO", "probability": 0 }
+      { "option": "LAHJAKORTT", "probability": 0.425 }, { "option": "UUDESTAAN", "probability": 0.025 }, { "option": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "option": "LAHJAKORTTI", "probability": 0 }, { "option": "TUOTEPALKINTO", "probability": 0.425 }, { "option": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "option": "UUDESTAAN", "probability": 0.025 }, { "option": "PÄÄPALKINTO", "probability": 0 }
     ],
     timeToShowOptions: 7000,
     totalReplay: 0,

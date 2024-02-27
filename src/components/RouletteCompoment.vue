@@ -1,19 +1,10 @@
 <template>
-  <div
-    class="container text-center padre"
-    ref="containerCircule"
-    style="width: 100%; overflow: visible;"
-  >
+  <div class="container text-center padre" ref="containerCircule" style="width: 100%;">
     <div style="position: relative;">
       <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
-      <img
-        src="/img/storytel-flecha.png"
-        style="position: absolute; "
-        :style="{top: topArrowLogo + '%' , right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
-        class="central-img"
-        :class="{vibratingImage: showAnimation}"
-        alt="Responsive image"
-      />
+      <img src="/img/storytel-flecha.png" style="position: absolute; "
+        :style="{ top: topArrowLogo + '%', right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
+        class="central-img" :class="{ vibratingImage: showAnimation }" alt="Responsive image" />
     </div>
   </div>
 </template>
@@ -21,11 +12,13 @@
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import { obtenerHoraActual, calculateEaseOut, calculateIndex } from "@/utils";
+import { sectorsRoulette, colorsSectorRoulette, textRouletteStyle } from '@/config/config-roulette.js'
+
+const CANVAS_TEXT_OFFSET_Y = 30;
 
 export default {
   data: () => {
     return {
-      auxState: "",
       winner: null,
       showAnimation: false,
       screenWidth: window.innerWidth,
@@ -43,27 +36,6 @@ export default {
 
       lineWidth: 0,
 
-      sectors: [
-        { 0: "TUOTE", 1: "PALKINTO" }, // 1 vez x dia
-        "UUDESTAAN", //15-20%
-        { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
-        "LAHJAKORTTI",
-        { 0: "TUOTE", 1: "PALKINTO" }, // based on probability (surpise win) //10 % special prize
-        { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
-        "UUDESTAAN", //15-20%
-        "PÄÄPALKINTO" // 0% dependiendo la hrora
-      ],
-      colors: [
-        "#FFF2F1",
-        "#C9ECFF",
-        "#FF501C",
-        "#2B353A",
-        "#FFF2F1",
-        "#FF501C",
-        "#C9ECFF",
-        "#FFEDA3"
-      ],
-
       heightCircule: 0,
       widthCircule: 0,
       startAngle: 0,
@@ -73,7 +45,6 @@ export default {
       spinTime: 0,
       spinTimeTotal: 0,
       ctx: null,
-      circuleLogoCenter: null,
       canvas: null,
 
       outsideRadius: 0, // radio del circulo, que tan grande sera
@@ -85,7 +56,8 @@ export default {
       globalWidthCircle: 0,
       globalHeightCircle: 0,
 
-      halfPi: 0
+      halfPi: 0,
+
     };
   },
   created() {
@@ -145,7 +117,7 @@ export default {
         this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
         this.textRadius = this.heightCircule * 0.33; // radio del tecto
         this.insideRadius = 1;
-        this.letterSize = 1;
+        this.letterSize = 4;
         this.restOutsideRadius = 10;
 
         this.sizePhone = 220;
@@ -168,7 +140,7 @@ export default {
         this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
         this.textRadius = this.heightCircule * 0.33; // radio del los textos
         this.insideRadius = 1;
-        this.letterSize = 1;
+        this.letterSize = 1.4;
         this.restOutsideRadius = 10;
 
         this.sizePhone = 220;
@@ -319,10 +291,10 @@ export default {
     drawEachSector(ctx, widthCircle, heightCircule) {
       const halfArc = this.arc / 2;
 
-      for (let i = 0; i < this.sectors.length; i++) {
-        const text = this.sectors[i][0];
-        const textPart2 = this.sectors[i][1];
-        const halfMeasureTextWidth = -ctx.measureText(text).width / 2;
+      for (let i = 0; i < sectorsRoulette.length; i++) {
+        const mainText = sectorsRoulette[i][0];
+        const secundaryText = sectorsRoulette[i][1];
+        const halfMeasureTextWidth = -ctx.measureText(mainText).width / 2;
 
         let angle = this.startAngle + i * this.arc;
         if (i === 0) {
@@ -330,7 +302,7 @@ export default {
         }
 
         ctx.strokeStyle = "transparent";
-        ctx.fillStyle = this.colors[i];
+        ctx.fillStyle = colorsSectorRoulette[i];
         ctx.beginPath();
         ctx.arc(
           widthCircle,
@@ -353,7 +325,6 @@ export default {
           true
         );
 
-        ctx.stroke();
         ctx.fill();
         ctx.save();
 
@@ -392,35 +363,35 @@ export default {
         if (i === 2 || i == 5) {
           ctx.translate(
             this.globalWidthCircle +
-              Math.cos(angle + halfArc) * this.textRadius,
+            Math.cos(angle + halfArc) * this.textRadius,
             this.globalHeightCircle +
-              Math.sin(angle + halfArc) * this.textRadius
+            Math.sin(angle + halfArc) * this.textRadius
           );
           ctx.rotate(angle + halfArc + this.halfPi);
 
-          ctx.fillText(text, halfMeasureTextWidth, 0);
-          ctx.fillText(textPart2, halfMeasureTextWidth, 40);
+          ctx.fillText(mainText, halfMeasureTextWidth, 0);
+          ctx.fillText(secundaryText, halfMeasureTextWidth, CANVAS_TEXT_OFFSET_Y);
         } else if (i === 0 || i === 4) {
           ctx.translate(
             this.globalWidthCircle +
-              Math.cos(angle + halfArc) * this.textRadius,
+            Math.cos(angle + halfArc) * this.textRadius,
             this.globalHeightCircle +
-              Math.sin(angle + halfArc) * this.textRadius
+            Math.sin(angle + halfArc) * this.textRadius
           );
           ctx.rotate(angle + halfArc + this.halfPi);
 
-          ctx.fillText(text, -this.ctx.measureText(text).width / 4, 0);
-          ctx.fillText(textPart2, halfMeasureTextWidth, 40);
+          ctx.fillText(mainText, -this.ctx.measureText(mainText).width / 4, 0);
+          ctx.fillText(secundaryText, halfMeasureTextWidth, CANVAS_TEXT_OFFSET_Y);
         } else {
           ctx.translate(
             this.globalWidthCircle +
-              Math.cos(angle + halfArc) * this.textRadius,
+            Math.cos(angle + halfArc) * this.textRadius,
             this.globalHeightCircle +
-              Math.sin(angle + halfArc) * this.textRadius
+            Math.sin(angle + halfArc) * this.textRadius
           );
           ctx.rotate(angle + halfArc + this.halfPi);
 
-          const textAux = this.sectors[i];
+          const textAux = sectorsRoulette[i];
           ctx.fillText(textAux, -ctx.measureText(textAux).width / 2, 0);
         }
         ctx.restore();
@@ -439,11 +410,10 @@ export default {
         this.globalHeightCircle
       ); // Borra todo el contenido del canvas
 
-      // determina el color de la line externa
-      this.ctx.clearRect(0, 0, this.globalWidthCircle, this.globalHeightCircle); // elimina una porcion enviando psicion y tamaño del rectangulo
+      this.ctx.clearRect(0, 0, this.globalWidthCircle, this.globalHeightCircle); // elimina una porcion enviando posicion y tamaño del rectangulo
       this.ctx.beginPath();
 
-      this.ctx.font = `700 ${this.letterSize}rem Helvetica, Arial`;
+      this.ctx.font = `${textRouletteStyle.fontWeight} ${this.letterSize}${textRouletteStyle.fontSizeUnit} ${textRouletteStyle.fontFamily}`;
 
       this.drawEachSector(
         this.ctx,
@@ -787,7 +757,7 @@ export default {
     },
 
     arc() {
-      return Math.PI / (this.sectors.length / 2); // valor de cada arco
+      return Math.PI / (sectorsRoulette.length / 2); // valor de cada arco
     },
     actualPosition() {
       var degrees = (this.startAngle * 180) / Math.PI + 90;
@@ -817,15 +787,19 @@ export default {
   0% {
     transform: translateX(0);
   }
+
   25% {
     transform: translateX(-5px) rotate(-1deg);
   }
+
   50% {
     transform: translateX(0) rotate(1deg);
   }
+
   75% {
     transform: translateX(5px) rotate(-1deg);
   }
+
   100% {
     transform: translateX(0);
   }
