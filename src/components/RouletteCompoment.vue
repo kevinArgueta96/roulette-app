@@ -89,18 +89,8 @@ export default {
 
   methods: {
     ...mapActions([
-      "setTotalReplay",
-      "setTotalSpecialPrice",
-      "setTotalSpecialSurprise",
-      "setTotalTopPrice",
-      "setTotalGiftCard",
-      "setTotalSpin",
+      "updateState",
 
-      "setGiftCards",
-      "setTopPrices",
-
-      "setInitialAngle",
-      "setSpinRoullete"
     ]),
 
     spinRoulleteByEnter(event) {
@@ -424,7 +414,10 @@ export default {
 
     spin() {
       if (this.spinRoullete) {
-        this.setSpinRoullete(false);
+        this.updateState({
+            mutationType: "setSpinRoullete",
+            payload: (false)
+          });
         this.speedRoulette = false;
         this.showAnimation = true;
         const numberWinner = this.generateNumberToShow();
@@ -474,7 +467,10 @@ export default {
     },
 
     stopRotateWheel() {
-      this.setInitialAngle(this.startAngle);
+      this.updateState({
+        mutationType: "setInitialAngle",
+        payload: (this.startAngle)
+      });
       cancelAnimationFrame(this.drawRouletteTime);
       cancelAnimationFrame(this.spinTimeout);
       this.drawRouletteTime = null;
@@ -507,26 +503,44 @@ export default {
     },
 
     nameToUpdate(update) {
-      this.setTotalSpin(this.totalSpin + 1);
+      this.updateState({
+        mutationType: "setTotalSpin",
+        payload: (this.totalSpin + 1)
+      });
       switch (update) {
         case 3:
-          this.setTotalGiftCard(this.totalGiftCard + 1);
+          this.updateState({
+            mutationType: "setTotalGiftCard",
+            payload: (this.totalGiftCard + 1)
+          });
           break;
         case 1:
         case 6:
-          this.setTotalReplay(this.totalReplay + 1);
+          this.updateState({
+            mutationType: "setTotalReplay",
+            payload: (this.totalReplay + 1)
+          });
           break;
         case 2:
         case 5:
-          this.setTotalSpecialSurprise(this.totalSpecialSurprise + 1);
+          this.updateState({
+            mutationType: "setTotalSpecialSurprise",
+            payload: (this.totalSpecialSurprise + 1)
+          });
           break;
         case 0:
         case 4:
-          this.setTotalSpecialPrice(this.totalSpecialPrice + 1);
+          this.updateState({
+            mutationType: "setTotalSpecialPrice",
+            payload: (this.totalSpecialPrice + 1)
+          });
 
           break;
         case 7:
-          this.setTotalTopPrice(this.totalTopPrice + 1);
+          this.updateState({
+            mutationType: "setTotalTopPrice",
+            payload: (this.totalTopPrice + 1)
+          });
           break;
       }
     },
@@ -707,7 +721,10 @@ export default {
       },
       set(value) {
         const val = parseInt(value);
-        this.setTotalReplay(val);
+        this.updateState({
+          mutationType: "setTotalReplay",
+          payload: (val)
+        });
       }
     },
 
@@ -717,7 +734,10 @@ export default {
       },
       set(value) {
         const val = parseInt(value);
-        this.setTotalSpecialPrice(val);
+        this.updateState({
+          mutationType: "setTotalSpecialPrice",
+          payload: (val)
+        });
       }
     },
     selectedTotalSpecialSuprise: {
@@ -726,7 +746,10 @@ export default {
       },
       set(value) {
         const val = parseInt(value);
-        this.setTotalSpecialSurprise(val);
+        this.updateState({
+          mutationType: "setTotalSpecialSurprise",
+          payload: (val)
+        });
       }
     },
 
@@ -736,7 +759,10 @@ export default {
       },
       set(value) {
         const val = parseInt(value);
-        this.setTotalTopPrice(val);
+        this.updateState({
+          mutationType: "setTotalTopPrice",
+          payload: (val)
+        });
       }
     },
 
@@ -752,7 +778,10 @@ export default {
       },
       set(value) {
         const val = parseInt(value);
-        this.setTotalGiftCard(val);
+        this.updateState({
+          mutationType: "setTotalGiftCard",
+          payload: (val)
+        });
       }
     },
 

@@ -25,3 +25,14 @@ export const textRouletteStyle = {
     fontSizeUnit: 'rem',
     fontFamily: 'Helvetica, Arial'
 };
+
+export const initialOptionsConfigRoullete = [
+    { "option": "LAHJAKORTT", "probability": 0.425 },
+    { "option": "UUDESTAAN", "probability": 0.025 },
+    { "option": "YLLÄTYSPALKINTO", "probability": 0.05 },
+    { "option": "LAHJAKORTTI", "probability": 0 },
+    { "option": "TUOTEPALKINTO", "probability": 0.425 },
+    { "option": "YLLÄTYSPALKINTO", "probability": 0.05 },
+    { "option": "UUDESTAAN", "probability": 0.025 },
+    { "option": "PÄÄPALKINTO", "probability": 0 }
+]

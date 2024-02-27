@@ -8,20 +8,22 @@
         </div>-->
       </div>
       <div class="row" style="height: 100%;">
-        <div class="col-sm-1 win-colmun" :style="{right:leftImg + 'px'}">
+        <div class="col-sm-1 win-colmun" :style="{ right: leftImg + 'px' }">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette" :sizeGift="sizeGift"/>
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette"
+              :sizeGift="sizeGift" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
         <div class="col-sm-10 win-central" style="overflow: visible;" v-if="showRoulette">
           <RouletteCompoment @showImg="showImg" />
         </div>
-        <div class="col-sm-1 win-colmun" :style="{right:rightImg + 'px'}">
+        <div class="col-sm-1 win-colmun" :style="{ right: rightImg + 'px' }">
           <div class="row" id="null-column-top"></div>
           <div class="row" id="null-column-right">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette" :sizeGift="sizeGift"/>
+            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette"
+              :sizeGift="sizeGift" />
           </div>
           <div class="row" id="null-column"></div>
         </div>
@@ -88,24 +90,13 @@ export default {
 
   methods: {
     ...mapActions([
-      "setOptions",
-      "setTotalReplay",
-      "setTotalSpecialPrice",
-      "setTotalSpecialSurprise",
-      "setTotalTopPrice",
-      "setTotalGiftCard",
-      "setTotalSpin",
-
-      "setGiftCardScheduleRangeH",
-
-      "setGiftCards",
-      "setTopPrices",
-
       "setSpinRoullete",
 
       "setTimeToShowOptions",
 
-      "initializeRandomAngle"
+      "initializeRandomAngle",
+
+      "updateState"
     ]),
     spinRoulleteByEnter(event) {
       if (event.keyCode === 13 || event.keyCode === 32) {
@@ -140,7 +131,10 @@ export default {
           this.isVisbleWinImg = false;
           this.isVisbleLooseImg = true;
           this.winType = "replay";
-          this.setTimeToShowOptions(2500);
+          this.updateState({
+            mutationType: 'setTimeToShowOptions',
+            payload: 2500
+          });
           this.sizeGift = 30;
           break;
         case "individualBox":
@@ -148,7 +142,10 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000);
+          this.updateState({
+            mutationType: 'setTimeToShowOptions',
+            payload: 7000
+          });
           this.winType = "individualBox";
           this.sizeGift = 30;
           break;
@@ -157,7 +154,10 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000);
+          this.updateState({
+            mutationType: 'setTimeToShowOptions',
+            payload: 7000
+          });
           this.winType = "giftCard";
           this.sizeGift = 30;
           break;
@@ -166,7 +166,10 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000);
+          this.updateState({
+            mutationType: 'setTimeToShowOptions',
+            payload: 7000
+          });
           this.winType = "differentBoxes";
           this.sizeGift = 30;
           break;
@@ -175,7 +178,10 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = true;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setTimeToShowOptions(7000);
+          this.updateState({
+            mutationType: 'setTimeToShowOptions',
+            payload: 7000
+          });
           this.winType = "topPrice";
           this.sizeGift = 25;
           break;
@@ -186,34 +192,65 @@ export default {
     async getOptions() {
       const options = await service.getOptions();
       if (options !== "error") {
-        this.setOptions(options.sectors);
+        this.updateState({
+          mutationType: 'setOptions',
+          payload: options.sectors
+        });
       }
     },
     async getGiftCards() {
       const response = await service.getGiftCards();
       if (response !== "error") {
-        this.setGiftCards(Object.values(response));
+        this.updateState({
+          mutationType: 'setGiftCards',
+          payload: Object.values(response)
+        });
       }
     },
 
     async getTopPrices() {
       const response = await service.getTopPrices();
       if (response !== "error") {
-        this.setTopPrices(Object.values(response));
+        this.updateState({
+          mutationType: 'setTopPrices',
+          payload: Object.values(response)
+        });
       }
     },
 
     async getTotals() {
       const totals = await service.getTotals();
       if (totals !== "error") {
-        this.setTotalReplay(totals.totalReplay);
-        this.setTotalSpecialPrice(totals.totalSpecialPrice);
-        this.setTotalSpecialSurprise(totals.totalSpecialSurprice);
-        this.setTotalTopPrice(totals.totalTopPrice);
-        this.setTotalGiftCard(totals.totalGitfCard);
-        this.setTotalSpin(totals.totalSpin);
+        Object.keys(totals).forEach(key => {
+          let mutationType = '';
+          switch (key) {
+            case 'totalReplay':
+              mutationType = 'setTotalReplay';
+              break;
+            case 'totalSpecialPrice':
+              mutationType = 'setTotalSpecialPrice';
+              break;
+            case 'totalSpecialSurprise':
+              mutationType = 'setTotalSpecialSurprise';
+              break;
+            case 'totalTopPrice':
+              mutationType = 'setTotalTopPrice';
+              break;
+            case 'totalGiftCard':
+              mutationType = 'setTotalGiftCard';
+              break;
+            case 'totalSpin':
+              mutationType = 'setTotalSpin';
+              break;
+          }
+          if (mutationType) {
+            this.updateState({
+              mutationType,
+              payload: totals[key]
+            });
+          }
+        });
       }
-      //this.setTotalTopPrice(setTotalTopPrice)
     },
 
   },
@@ -222,7 +259,10 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
-          this.setSpinRoullete(true);
+          this.updateState({
+            mutationType: 'setSpinRoullete',
+            payload: true
+          });
           this.srcImg = "";
           this.winType = "";
         }, this.timeToShowOptions);
@@ -232,7 +272,10 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
-          this.setSpinRoullete(true);
+          this.updateState({
+            mutationType: 'setSpinRoullete',
+            payload: true
+          });
           this.srcImg = "";
         }, this.timeToShowOptions);
       }
@@ -241,7 +284,10 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.setSpinRoullete(true);
+          this.updateState({
+            mutationType: 'setSpinRoullete',
+            payload: true
+          });
         }, this.timeToShowOptions);
       }
     },

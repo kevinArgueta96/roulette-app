@@ -1,13 +1,12 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import { initialOptionsConfigRoullete } from '@/config/config-roulette.js'
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
-    options: [
-      { "option": "LAHJAKORTT", "probability": 0.425 }, { "option": "UUDESTAAN", "probability": 0.025 }, { "option": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "option": "LAHJAKORTTI", "probability": 0 }, { "option": "TUOTEPALKINTO", "probability": 0.425 }, { "option": "YLLÄTYSPALKINTO", "probability": 0.05 }, { "option": "UUDESTAAN", "probability": 0.025 }, { "option": "PÄÄPALKINTO", "probability": 0 }
-    ],
+    options: initialOptionsConfigRoullete,
     timeToShowOptions: 7000,
     totalReplay: 0,
     totalSpecialPrice: 0,
@@ -87,54 +86,14 @@ export default new Vuex.Store({
   },
   actions: {
     initializeRandomAngle({commit}) {
-      const positions = [5.1,1.16,4.3,3.5,5.9,0.35,2.75]
-      const randomNumber = Math.floor(Math.random() * ((positions.length) - 1)) +1;
-      commit('setInitialAngle', positions[randomNumber])
-    },
-    setOptions(context, payload) {
-      context.commit('setOptions', payload)
-    },
-    setTotalReplay(context, payload) {
-      context.commit('setTotalReplay', payload)
-    },
-    setTotalSpecialPrice(context, payload) {
-      context.commit('setTotalSpecialPrice', payload)
-    },
-    setTotalSpecialSurprise(context, payload) {
-      context.commit('setTotalSpecialSurprise', payload)
-    },
-    setTotalTopPrice(context, payload) {
-      context.commit('setTotalTopPrice', payload)
-    },
-    setTotalGiftCard(context, payload) {
-      context.commit('setTotalGiftCard', payload)
-    },
-    setTotalSpin(context, payload) {
-      context.commit('setTotalSpin', payload)
+      const positions = [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
+      const randomNumber = Math.floor(Math.random() * positions.length);
+      commit('setInitialAngle', positions[randomNumber]);
     },
 
-    
-
-    setGiftCards(context, payload) {
-      context.commit('setGiftCards', payload)
-    },
-    setTopPrices(context, payload) {
-      context.commit('setTopPrices', payload)
+    updateState({commit}, {mutationType, payload}) {
+      commit(mutationType, payload);
     },
 
-
-    setInitialAngle(context, payload) {
-      context.commit('setInitialAngle', payload)
-    },
-
-    setSpinRoullete(context, payload) {
-      context.commit('setSpinRoullete', payload)
-    },
-
-    setTimeToShowOptions(context, payload) {
-      context.commit('setTimeToShowOptions', payload)
-    },
   },
-  modules: {
-  }
 })
