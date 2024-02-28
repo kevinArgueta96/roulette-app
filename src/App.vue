@@ -78,6 +78,7 @@ export default {
     this.getTotals();
     this.getGiftCards();
     this.getTopPrices();
+    this.getTeslaData();
   },
   created() {
     this.initializeRandomAngle();
@@ -131,10 +132,7 @@ export default {
           this.isVisbleWinImg = false;
           this.isVisbleLooseImg = true;
           this.winType = "replay";
-          this.updateState({
-            mutationType: 'setTimeToShowOptions',
-            payload: 2500
-          });
+          this.defineState('setTimeToShowOptions', 2500)
           this.sizeGift = 30;
           break;
         case "individualBox":
@@ -142,10 +140,7 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.updateState({
-            mutationType: 'setTimeToShowOptions',
-            payload: 7000
-          });
+          this.defineState('setTimeToShowOptions', 7000)
           this.winType = "individualBox";
           this.sizeGift = 30;
           break;
@@ -154,10 +149,7 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.updateState({
-            mutationType: 'setTimeToShowOptions',
-            payload: 7000
-          });
+          this.defineState('setTimeToShowOptions', 7000)
           this.winType = "giftCard";
           this.sizeGift = 30;
           break;
@@ -166,10 +158,7 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = false;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.updateState({
-            mutationType: 'setTimeToShowOptions',
-            payload: 7000
-          });
+          this.defineState('setTimeToShowOptions', 7000)
           this.winType = "differentBoxes";
           this.sizeGift = 30;
           break;
@@ -178,10 +167,16 @@ export default {
           this.isVisbleWinImg = true;
           this.isVisbleLooseImg = true;
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.updateState({
-            mutationType: 'setTimeToShowOptions',
-            payload: 7000
-          });
+          this.defineState('setTimeToShowOptions', 7000)
+          this.winType = "topPrice";
+          this.sizeGift = 25;
+          break;
+        case "tesla":
+          this.srcImg = "gift/tesla_win.gif";
+          this.isVisbleWinImg = true;
+          this.isVisbleLooseImg = true;
+          this.isVisibleConfetti = !this.isVisibleConfetti;
+          this.defineState('setTimeToShowOptions', 7000)
           this.winType = "topPrice";
           this.sizeGift = 25;
           break;
@@ -192,29 +187,27 @@ export default {
     async getOptions() {
       const options = await service.getOptions();
       if (options !== "error") {
-        this.updateState({
-          mutationType: 'setOptions',
-          payload: options.sectors
-        });
+        this.defineState('setOptions', options.sectors)
       }
     },
     async getGiftCards() {
       const response = await service.getGiftCards();
       if (response !== "error") {
-        this.updateState({
-          mutationType: 'setGiftCards',
-          payload: Object.values(response)
-        });
+        this.defineState('setGiftCards', Object.values(response))
       }
     },
 
     async getTopPrices() {
       const response = await service.getTopPrices();
       if (response !== "error") {
-        this.updateState({
-          mutationType: 'setTopPrices',
-          payload: Object.values(response)
-        });
+        this.defineState('setTopPrices', Object.values(response))
+      }
+    },
+
+    async getTeslaData() {
+      const response = await service.getTeslaWin();
+      if (response !== "error") {
+        this.defineState('setTeslaPrices', Object.values(response))
       }
     },
 
@@ -244,25 +237,26 @@ export default {
               break;
           }
           if (mutationType) {
-            this.updateState({
-              mutationType,
-              payload: totals[key]
-            });
+            this.defineState(mutationType, totals[key])
           }
         });
       }
     },
+    
 
+    defineState(mutationType, payload) {
+      this.updateState({
+        mutationType: mutationType,
+        payload: payload
+      });
+    }
   },
   watch: {
     isVisbleWinImg(value) {
       if (value) {
         setTimeout(() => {
           this.isVisbleWinImg = !this.isVisbleWinImg;
-          this.updateState({
-            mutationType: 'setSpinRoullete',
-            payload: true
-          });
+          this.defineState('setSpinRoullete', true)
           this.srcImg = "";
           this.winType = "";
         }, this.timeToShowOptions);
@@ -272,10 +266,7 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisbleLooseImg = !this.isVisbleLooseImg;
-          this.updateState({
-            mutationType: 'setSpinRoullete',
-            payload: true
-          });
+          this.defineState('setSpinRoullete', true)
           this.srcImg = "";
         }, this.timeToShowOptions);
       }
@@ -284,10 +275,7 @@ export default {
       if (value) {
         setTimeout(() => {
           this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.updateState({
-            mutationType: 'setSpinRoullete',
-            payload: true
-          });
+          this.defineState('setSpinRoullete', true)
         }, this.timeToShowOptions);
       }
     },

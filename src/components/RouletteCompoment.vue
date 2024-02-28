@@ -12,7 +12,7 @@
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import { obtenerHoraActual, calculateEaseOut, calculateIndex } from "@/utils";
-import { sectorsRoulette, colorsSectorRoulette, textRouletteStyle } from '@/config/config-roulette.js'
+import { sectorsRoulette, colorsSectorRoulette, textDefaultRouletteStyle, textTeslaRouletteStyle } from '@/config/config-roulette.js'
 
 const CANVAS_TEXT_OFFSET_Y = 30;
 
@@ -51,6 +51,7 @@ export default {
       textRadius: 0, // radio del tecto
       insideRadius: 0,
       letterSize: 0,
+      letterNewFontSize: 0,
       speedRoulette: 10,
 
       globalWidthCircle: 0,
@@ -108,6 +109,7 @@ export default {
         this.textRadius = this.heightCircule * 0.33; // radio del tecto
         this.insideRadius = 1;
         this.letterSize = 4;
+        this.letterNewFontSize = 4
         this.restOutsideRadius = 10;
 
         this.sizePhone = 220;
@@ -131,6 +133,7 @@ export default {
         this.textRadius = this.heightCircule * 0.33; // radio del los textos
         this.insideRadius = 1;
         this.letterSize = 1.4;
+        this.letterNewFontSize = 2.1
         this.restOutsideRadius = 10;
 
         this.sizePhone = 220;
@@ -155,6 +158,7 @@ export default {
         this.textRadius = this.heightCircule * 0.35; // radio del tecto
         this.insideRadius = 1;
         this.letterSize = 1;
+        this.letterNewFontSize = 2
         this.restOutsideRadius = 10;
 
         this.sizePhone = 300;
@@ -178,6 +182,7 @@ export default {
         this.textRadius = this.heightCircule * 0.35; // radio del tecto
         this.insideRadius = 1;
         this.letterSize = 1;
+        this.letterNewFontSize = 2
         this.restOutsideRadius = 10;
 
         this.sizePhone = 350;
@@ -282,13 +287,21 @@ export default {
       const halfArc = this.arc / 2;
 
       for (let i = 0; i < sectorsRoulette.length; i++) {
+
+        if (i === 1) {
+          this.ctx.font = `${textTeslaRouletteStyle.fontWeight} ${this.letterNewFontSize}${textTeslaRouletteStyle.fontSizeUnit} ${textTeslaRouletteStyle.fontFamily}`;
+        } else {
+          this.ctx.font = `${textDefaultRouletteStyle.fontWeight} ${this.letterSize}${textDefaultRouletteStyle.fontSizeUnit} ${textDefaultRouletteStyle.fontFamily}`;
+        }
+
+
         const mainText = sectorsRoulette[i][0];
         const secundaryText = sectorsRoulette[i][1];
         const halfMeasureTextWidth = -ctx.measureText(mainText).width / 2;
 
         let angle = this.startAngle + i * this.arc;
         if (i === 0) {
-          this.drawCircule(angle - 5.1);
+          this.drawCircule(angle + 2.8);
         }
 
         ctx.strokeStyle = "transparent";
@@ -337,19 +350,25 @@ export default {
         ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 0;
 
+        if (i === 1) {
+          ctx.shadowColor = "#C9CBCC";
+          ctx.fillStyle = "#C9CBCC";
+        }
+
         if (i === 7) {
           this.drawPhone(angle, this.arc);
         }
 
-        if (i === 2 || i === 3 || i === 5) {
+        if (i === 2 || i === 5 || i === 6) {
           ctx.shadowColor = "white";
           ctx.fillStyle = "white";
         }
 
-        if (i === 0 || i === 1 || i === 4 || i === 6 || i === 7) {
+        if (i === 0 || i === 3 || i === 4 || i === 7) {
           ctx.shadowColor = "black";
           ctx.fillStyle = "black";
         }
+
         if (i === 2 || i == 5) {
           ctx.translate(
             this.globalWidthCircle +
@@ -361,7 +380,7 @@ export default {
 
           ctx.fillText(mainText, halfMeasureTextWidth, 0);
           ctx.fillText(secundaryText, halfMeasureTextWidth, CANVAS_TEXT_OFFSET_Y);
-        } else if (i === 0 || i === 4) {
+        } else if (i === 4) {
           ctx.translate(
             this.globalWidthCircle +
             Math.cos(angle + halfArc) * this.textRadius,
@@ -403,8 +422,6 @@ export default {
       this.ctx.clearRect(0, 0, this.globalWidthCircle, this.globalHeightCircle); // elimina una porcion enviando posicion y tamaño del rectangulo
       this.ctx.beginPath();
 
-      this.ctx.font = `${textRouletteStyle.fontWeight} ${this.letterSize}${textRouletteStyle.fontSizeUnit} ${textRouletteStyle.fontFamily}`;
-
       this.drawEachSector(
         this.ctx,
         this.globalWidthCircle,
@@ -415,9 +432,9 @@ export default {
     spin() {
       if (this.spinRoullete) {
         this.updateState({
-            mutationType: "setSpinRoullete",
-            payload: (false)
-          });
+          mutationType: "setSpinRoullete",
+          payload: (false)
+        });
         this.speedRoulette = false;
         this.showAnimation = true;
         const numberWinner = this.generateNumberToShow();
@@ -487,7 +504,7 @@ export default {
       this.ctx.save();
       this.ctx.font = "bold 30px Helvetica, Arial";
 
-      if (index === 1 || index === 6) {
+      if (index === 6) {
         this.$emit("showImg", { type: "replay" });
       } else if (index === 2 || index === 5) {
         this.$emit("showImg", { type: "differentBoxes" });
@@ -497,6 +514,8 @@ export default {
         this.$emit("showImg", { type: "individualBox" });
       } else if (index === 7) {
         this.$emit("showImg", { type: "topPrice" });
+      } else if (index === 1) {
+        this.$emit("showImg", { type: "tesla" });
       }
 
       this.ctx.restore();
@@ -627,18 +646,28 @@ export default {
       }
     },
     async updateWinnerChoice(winner) {
-      const { typeWinner, position, giftCardsLength } = winner;
-
+      const { typeWinner, positionWinner } = winner;
       switch (typeWinner) {
         case "card":
-          this.giftCards[position].given = true;
+          this.giftCards[positionWinner].given = true;
           await service.setGiftCards(this.giftCards);
           return;
-
         case "topPrice":
-          this.topPrices[position - (giftCardsLength + 1)].given = true;
+          this.topPrices[positionWinner].given = true;
           await service.setTopPrices(this.topPrices);
           return;
+
+        case "teslaWin": {
+          const dataCopy = JSON.parse(JSON.stringify(this.teslaWinnerData));
+          dataCopy[positionWinner].given = true
+          this.updateState({
+            mutationType: "setTeslaPrices",
+            payload: (dataCopy)
+          });
+          await service.setTeslaWinService(this.teslaPrices)
+          return;
+        }
+
 
         default:
           return;
@@ -646,12 +675,14 @@ export default {
     },
 
     generateProbabilityPriceByScheduler() {
-      const totalData = this.giftCards.concat(this.topPrices);
+      const totalData = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
 
       const time = obtenerHoraActual();
       const down = totalData.map(obj => obj.rangeDown);
       const top = totalData.map(obj => obj.rangeTop);
       const givenS = totalData.map(obj => obj.given);
+      const typeWin = totalData.map(obj => obj.type);
+      const positionWinnerArray = totalData.map(obj => obj.position)
 
       for (let position = 0; position < totalData.length; position++) {
         if (
@@ -659,43 +690,58 @@ export default {
           time <= top[position] &&
           givenS[position] === false
         ) {
-          const typeWinner =
-            position > this.giftCards.length - 1 ? "topPrice" : "card";
+          const typeWinner = typeWin[position]
+          const positionWinner = positionWinnerArray[position]
           const winner = {
             typeWinner,
-            position,
-            giftCardsLength: this.giftCards.length - 1
+            positionWinner
           };
           this.updateWinnerChoice(winner);
-          if (position >= 0 && position <= 7) {
-            const options = [
-              { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-              { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-              { option: "LAHJAKORTTI", probability: 1 }, // based on probability (surpise win)
-              { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-              { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
-            ];
-            return options;
-          } else if (position > 7 && position <= 9) {
-            const options = [
-              { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-              { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-              { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-              { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-              { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-              { option: "UUDESTAAN", probability: 0 }, //15-20%
-              { option: "PÄÄPALKINTO", probability: 1 } // 0% dependiendo la hrora
-            ];
-            return options;
-          }
+
+          const options = this.obtainConfigurationSectorWin(typeWinner);
+          return options;
         }
       }
 
       return null;
+    },
+
+    obtainConfigurationSectorWin(typeWinner) {
+      switch (typeWinner) {
+        case "card":
+          return [
+            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+            { option: "TESLA", probability: 0 }, //15-20%
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "LAHJAKORTTI", probability: 1 }, // based on probability (surpise win)
+            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "UUDESTAAN", probability: 0 }, //15-20%
+            { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
+          ];
+        case "topPrice":
+          return [
+            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+            { option: "TESLA", probability: 0 }, //15-20%
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "UUDESTAAN", probability: 0 }, //15-20%
+            { option: "PÄÄPALKINTO", probability: 1 } // 0% dependiendo la hrora
+          ];
+        case "teslaWin":
+          return [
+            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+            { option: "TESLA", probability: 1 }, //15-20%
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
+            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
+            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
+            { option: "UUDESTAAN", probability: 0 }, //15-20%
+            { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
+          ];
+      }
     }
   },
   computed: {
@@ -711,6 +757,7 @@ export default {
 
       "giftCards",
       "topPrices",
+      "teslaPrices",
 
       "initialAngle",
       "spinRoullete"
@@ -785,6 +832,12 @@ export default {
       }
     },
 
+    teslaWinnerData: {
+      get() {
+        return this.teslaPrices;
+      }
+    },
+
     arc() {
       return Math.PI / (sectorsRoulette.length / 2); // valor de cada arco
     },
@@ -832,5 +885,13 @@ export default {
   100% {
     transform: translateX(0);
   }
+}
+
+@font-face {
+  font-family: 'TeslaRegular';
+  src: url('../../src/assets/fonts/tesla-webfont.woff') format('woff2'),
+    url('../../src/assets/fonts/tesla-webfont.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
 }
 </style>

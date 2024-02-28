@@ -20,6 +20,36 @@ async function getTotals() {
   }
 }
 
+async function getGiftCards() {
+  try { 
+    const url =  CONFIG.apiUrlQA+"gift-cards.json";
+    const response = await fetch(url);
+    return response.json();
+  } catch (error) {
+    return 'error';
+  }
+}
+
+async function getTopPrices() {
+  try { 
+    const url =  CONFIG.apiUrlQA+"top-prices.json";
+    const response = await fetch(url);
+    return response.json();
+  } catch (error) {
+    return 'error';
+  }
+}
+
+async function getTeslaWin() {
+  try { 
+    const url =  CONFIG.apiUrlQA+"tesla-win.json";
+    const response = await fetch(url);
+    return response.json();
+  } catch (error) {
+    return 'error';
+  }
+}
+
 async function setNewTotal(data) {
   try {
     const url = CONFIG.apiUrlQA+"total-prices.json";
@@ -31,16 +61,6 @@ async function setNewTotal(data) {
       body: JSON.stringify(data),
     };
     const response = await fetch(url, options);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
-}
-
-async function getGiftCards() {
-  try { 
-    const url =  CONFIG.apiUrlQA+"gift-cards.json";
-    const response = await fetch(url);
     return response.json();
   } catch (error) {
     return 'error';
@@ -81,10 +101,17 @@ async function setTopPrices(data) {
   }
 }
 
-async function getTopPrices() {
-  try { 
-    const url =  CONFIG.apiUrlQA+"top-prices.json";
-    const response = await fetch(url);
+async function setTeslaWinService(data) {
+  try {
+    const url = CONFIG.apiUrlQA+"tesla-win.json";
+    const options = {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    };
+    const response = await fetch(url, options);
     return response.json();
   } catch (error) {
     return 'error';
@@ -94,11 +121,11 @@ async function getTopPrices() {
 export default {
   getOptions,
   getTotals,
-  setNewTotal,
-  
   getGiftCards,
   getTopPrices,
-
   setGiftCards,
-  setTopPrices
+  getTeslaWin,
+  setNewTotal,
+  setTopPrices,
+  setTeslaWinService
 };

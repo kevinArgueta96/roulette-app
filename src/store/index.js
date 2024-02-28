@@ -14,13 +14,11 @@ export default new Vuex.Store({
     totalTopPrice: 0,
     totalGiftCard: 0,
     totalSpin: 0,
-
     giftCards: [],
     topPrices: [],
-
+    teslaPrices: [],
     initialAngle: 0,
     spinRoullete: true,
-
   },
   getters: {
     options: (state) => state.options,
@@ -31,10 +29,9 @@ export default new Vuex.Store({
     totalTopPrice: (state) => state.totalTopPrice,
     totalGiftCard: (state) => state.totalGiftCard,
     totalSpin: (state) => state.totalSpin,
-
     giftCards: (state) => state.giftCards,
     topPrices: (state) => state.topPrices,
-  
+    teslaPrices: (state) => state.teslaPrices,
     initialAngle: (state) => state.initialAngle,
     spinRoullete: (state) => state.spinRoullete,
 
@@ -61,25 +58,21 @@ export default new Vuex.Store({
     setTotalSpin(state, payload) {
       state.totalSpin = payload;
     },
-
-    
-
     setGiftCards(state, payload) {
       state.giftCards = payload;
     },
     setTopPrices(state, payload) {
       state.topPrices = payload;
     },
-
-
+    setTeslaPrices(state, payload) {
+      state.teslaPrices = payload;
+    },
     setInitialAngle(state, payload) {
       state.initialAngle = payload;
     },
-
     setSpinRoullete(state, payload) {
       state.spinRoullete = payload;
     },
-
     setTimeToShowOptions(state, payload){
       state.timeToShowOptions = payload;
     }
