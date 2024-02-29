@@ -508,9 +508,9 @@ export default {
         this.$emit("showImg", { type: "replay" });
       } else if (index === 2 || index === 5) {
         this.$emit("showImg", { type: "differentBoxes" });
-      } else if (index === 3) {
+      } else if (index === 0 || index === 3) {
         this.$emit("showImg", { type: "giftCard" });
-      } else if (index === 0 || index === 4) {
+      } else if (index === 4) {
         this.$emit("showImg", { type: "individualBox" });
       } else if (index === 7) {
         this.$emit("showImg", { type: "topPrice" });
@@ -528,12 +528,12 @@ export default {
       });
       switch (update) {
         case 3:
+        case 0:
           this.updateState({
             mutationType: "setTotalGiftCard",
             payload: (this.totalGiftCard + 1)
           });
           break;
-        case 1:
         case 6:
           this.updateState({
             mutationType: "setTotalReplay",
@@ -547,7 +547,6 @@ export default {
             payload: (this.totalSpecialSurprise + 1)
           });
           break;
-        case 0:
         case 4:
           this.updateState({
             mutationType: "setTotalSpecialPrice",
@@ -556,6 +555,7 @@ export default {
 
           break;
         case 7:
+        case 1:
           this.updateState({
             mutationType: "setTotalTopPrice",
             payload: (this.totalTopPrice + 1)
@@ -632,8 +632,7 @@ export default {
     generateNumberToShow() {
       const newProbabilitie = this.generateProbabilityPriceByScheduler();
       const probabilities =
-        newProbabilitie === null ? this.options : newProbabilitie;
-
+        newProbabilitie === null || typeof newProbabilitie === 'undefined' ? this.options : newProbabilitie;
       const numeroAleatorio = Math.random();
       let sumaProbabilidades = 0;
       for (let i = 0; i < probabilities.length; i++) {
@@ -708,17 +707,20 @@ export default {
 
     obtainConfigurationSectorWin(typeWinner) {
       switch (typeWinner) {
-        case "card":
+        case "card": {
+          const { firstOption, secondOption } = this.generateRandomNumbers();
+
           return [
-            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
+            { option: "LAHJAKORTTI", probability: firstOption }, // 1 vez x dia
             { option: "TESLA", probability: 0 }, //15-20%
             { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "LAHJAKORTTI", probability: 1 }, // based on probability (surpise win)
+            { option: "LAHJAKORTTI", probability: secondOption }, // based on probability (surpise win)
             { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
             { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
             { option: "UUDESTAAN", probability: 0 }, //15-20%
             { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
           ];
+        }
         case "topPrice":
           return [
             { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
@@ -742,7 +744,22 @@ export default {
             { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
           ];
       }
-    }
+    },
+
+    generateRandomNumbers() {
+      const randomNum = Math.round(Math.random());
+
+      let firstOption, secondOption;
+      if (randomNum === 0) {
+        firstOption = 0;
+        secondOption = 1;
+      } else {
+        firstOption = 1;
+        secondOption = 0;
+      }
+
+      return { firstOption, secondOption };
+    },
   },
   computed: {
     ...mapGetters([

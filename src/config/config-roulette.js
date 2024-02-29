@@ -33,12 +33,12 @@ export const textTeslaRouletteStyle = {
 };
 
 export const initialOptionsConfigRoullete = [
-    { "option": "LAHJAKORTT", "probability": 0.425 },
+    { "option": "LAHJAKORTT", "probability": 0 },
     { "option": "TESLA", "probability": 0 },
-    { "option": "YLLÄTYSPALKINTO", "probability": 0.05 },
+    { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
     { "option": "LAHJAKORTTI", "probability": 0 },
-    { "option": "TUOTEPALKINTO", "probability": 0.425 },
-    { "option": "YLLÄTYSPALKINTO", "probability": 0.05 },
-    { "option": "UUDESTAAN", "probability": 0.025 },
+    { "option": "TUOTEPALKINTO", "probability": 0.60 },
+    { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
+    { "option": "UUDESTAAN", "probability": 0.1 },
     { "option": "PÄÄPALKINTO", "probability": 0 }
 ]
