@@ -565,49 +565,58 @@ export default {
     },
 
     generateAnglesToWin(positionIndex) {
+      const FIRS_POSITION_ROULLETE = 0;
+      const SECOND_POSTIION_ROULLETE = 1;
+      const THIRD_POSITION_ROULLETE = 2;
+      const FOURTH_POSITION_ROULLETE = 3;
+      const FIFTH_POSITION_ROULLETE = 4;
+      const SIXTH_POSITION_ROULLETE = 5;
+      const SEVENTH_POSITION_ROULLETE = 6;
+      const EIGHTH_POSITION_ROULLETE = 7;
+      
       switch (positionIndex) {
-        case 0:
+        case FIRS_POSITION_ROULLETE:
           return {
             topAngle: 45,
             downAngle: 0
           };
-        case 1:
+        case SECOND_POSTIION_ROULLETE:
           return {
             topAngle: 90,
             downAngle: 46
           };
 
-        case 2:
+        case THIRD_POSITION_ROULLETE:
           return {
             topAngle: 135,
             downAngle: 91
           };
 
-        case 3:
+        case FOURTH_POSITION_ROULLETE:
           return {
             topAngle: 180,
             downAngle: 136
           };
 
-        case 4:
+        case FIFTH_POSITION_ROULLETE:
           return {
             topAngle: 225,
             downAngle: 181
           };
 
-        case 5:
+        case SIXTH_POSITION_ROULLETE:
           return {
             topAngle: 270,
             downAngle: 226
           };
 
-        case 6:
+        case SEVENTH_POSITION_ROULLETE:
           return {
             topAngle: 315,
             downAngle: 271
           };
 
-        case 7:
+        case EIGHTH_POSITION_ROULLETE:
           return {
             topAngle: 360,
             downAngle: 316
