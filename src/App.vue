@@ -1,39 +1,44 @@
 <template>
-  <div id="app">
+  <div id="app" class="app-shell">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
-    <div class="container text-center" id="container-objects">
-      <div class="col-sm-12">
-        <!-- <div class="row" id="null-column">
-          <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" />
-        </div>-->
-      </div>
-      <div class="row" style="height: 100%;">
-        <div class="col-sm-1 win-colmun" :style="{ right: leftImg + 'px' }">
-          <div class="row" id="null-column-top"></div>
-          <div class="row" id="null-column">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleWinImg" :winType="winType" v-if="showRoulette"
-              :sizeGift="sizeGift" />
+
+    <main class="app-layout">
+      <aside class="result-panel" :class="{ 'result-panel--visible': hasResult }">
+        <WinRowComponent
+          :srcImg="srcImg"
+          :visible="hasResult"
+          :winType="winType"
+          :sizeGift="sizeGift"
+        />
+      </aside>
+
+      <section class="roulette-panel">
+        <div class="roulette-card">
+          <div class="roulette-copy">
+            <p class="roulette-copy__eyebrow">Roulette App</p>
+            <h1>Ruleta de premios</h1>
+            <p>
+              Gira con el boton o usando <code>Enter</code> y <code>Espacio</code>.
+            </p>
           </div>
-          <div class="row" id="null-column"></div>
-        </div>
-        <div class="col-sm-10 win-central" style="overflow: visible;" v-if="showRoulette">
+
           <RouletteCompoment @showImg="showImg" />
         </div>
-        <div class="col-sm-1 win-colmun" :style="{ right: rightImg + 'px' }">
-          <div class="row" id="null-column-top"></div>
-          <div class="row" id="null-column-right">
-            <WinRowComponent :srcImg="srcImg" :visible="isVisbleLooseImg" :winType="winType" v-if="showRoulette"
-              :sizeGift="sizeGift" />
-          </div>
-          <div class="row" id="null-column"></div>
-        </div>
-      </div>
-    </div>
-    <div class="footer">
-      <div class="col-auto text-center p-5 footer-img">
-        <img src="/img/logo-img.png" class="img-fluid" alt="Responsive image" />
-      </div>
-    </div>
+      </section>
+
+      <aside class="result-panel result-panel--secondary" :class="{ 'result-panel--visible': hasResult }">
+        <WinRowComponent
+          :srcImg="srcImg"
+          :visible="hasResult"
+          :winType="winType"
+          :sizeGift="sizeGift"
+        />
+      </aside>
+    </main>
+
+    <footer class="app-footer">
+      <img src="/img/logo-img.png" class="app-footer__logo" alt="Storytel" />
+    </footer>
   </div>
 </template>
 
@@ -44,6 +49,45 @@ import ConfettiComponent from "./components/ConfettiComponent.vue";
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 
+const RESULT_CONFIG = {
+  replay: {
+    srcImg: "gift/replay.gif",
+    duration: 2500,
+    sizeGift: 18,
+    confetti: false
+  },
+  individualBox: {
+    srcImg: "gift/gifts_storytel_individual.gif",
+    duration: 7000,
+    sizeGift: 18,
+    confetti: true
+  },
+  giftCard: {
+    srcImg: "gift/gift_card.gif",
+    duration: 7000,
+    sizeGift: 18,
+    confetti: true
+  },
+  differentBoxes: {
+    srcImg: "gift/gifts_storytel_boxes.gif",
+    duration: 7000,
+    sizeGift: 18,
+    confetti: true
+  },
+  topPrice: {
+    srcImg: "gift/gifts_storytel_boxes.gif",
+    duration: 7000,
+    sizeGift: 16,
+    confetti: true
+  },
+  tesla: {
+    srcImg: "gift/tesla_win.gif",
+    duration: 7000,
+    sizeGift: 16,
+    confetti: true
+  }
+};
+
 export default {
   name: "App",
   components: {
@@ -51,248 +95,242 @@ export default {
     WinRowComponent,
     ConfettiComponent
   },
-  data: () => {
+  data() {
     return {
-      isVisbleWinImg: false,
-      isVisbleLooseImg: false,
-      isVisibleConfetti: false,
-      screenWidth: 0,
-      screenHeight: 0,
       srcImg: "",
       winType: "",
-
-      showRoulette: true,
-
-      rightImg: 0,
-      leftImg: 0,
-
-      sizeGift: 0
+      sizeGift: 0,
+      isVisibleConfetti: false,
+      resultTimer: null
     };
   },
   computed: {
-    ...mapGetters(["timeToShowOptions"])
+    ...mapGetters(["timeToShowOptions"]),
+    hasResult() {
+      return Boolean(this.srcImg);
+    }
   },
   mounted() {
-    this.controlGift();
-    this.getOptions();
-    this.getTotals();
-    this.getGiftCards();
-    this.getTopPrices();
-    this.getTeslaData();
+    this.loadInitialData();
   },
-  created() {
-    this.initializeRandomAngle();
-    window.addEventListener("resize", this.handleResize);
+  beforeDestroy() {
+    this.clearTimers();
   },
-
-  destroyed() {
-    window.removeEventListener("resize", this.handleResize);
-  },
-
   methods: {
-    ...mapActions([
-      "setSpinRoullete",
+    ...mapActions(["initializeRandomAngle", "updateState"]),
+    async loadInitialData() {
+      this.initializeRandomAngle();
 
-      "setTimeToShowOptions",
+      const [options, totals, giftCards, topPrices, teslaPrices] = await Promise.all([
+        service.getOptions(),
+        service.getTotals(),
+        service.getGiftCards(),
+        service.getTopPrices(),
+        service.getTeslaWin()
+      ]);
 
-      "initializeRandomAngle",
-
-      "updateState"
-    ]),
-    spinRoulleteByEnter(event) {
-      if (event.keyCode === 13 || event.keyCode === 32) {
-        this.spin();
-      }
-    },
-    controlGift() {
-      if (window.innerWidth <= 1366) {
-        this.rightImg = 100;
-        this.leftImg = 100;
-      } else if (window.innerWidth <= 1444) {
-        this.rightImg = 100;
-        this.leftImg = 50;
-      } else if (window.innerWidth <= 1980) {
-        this.rightImg = 50;
-        this.leftImg = 100;
-      } else {
-        this.rightImg = 10;
-        this.leftImg = 100;
-      }
-    },
-    handleResize() {
-      this.controlGift();
-      this.screenWidth = window.innerWidth;
-      this.screenHeight = window.innerHeight;
-    },
-    showImg(value) {
-      const { type } = value;
-      switch (type) {
-        case "replay":
-          this.srcImg = "gift/replay.gif";
-          this.isVisbleWinImg = false;
-          this.isVisbleLooseImg = true;
-          this.winType = "replay";
-          this.defineState('setTimeToShowOptions', 2500)
-          this.sizeGift = 30;
-          break;
-        case "individualBox":
-          this.srcImg = "gift/gifts_storytel_individual.gif";
-          this.isVisbleWinImg = true;
-          this.isVisbleLooseImg = false;
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setTimeToShowOptions', 7000)
-          this.winType = "individualBox";
-          this.sizeGift = 30;
-          break;
-        case "giftCard":
-          this.srcImg = "gift/gift_card.gif";
-          this.isVisbleWinImg = true;
-          this.isVisbleLooseImg = false;
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setTimeToShowOptions', 7000)
-          this.winType = "giftCard";
-          this.sizeGift = 30;
-          break;
-        case "differentBoxes":
-          this.srcImg = "gift/gifts_storytel_boxes.gif";
-          this.isVisbleWinImg = true;
-          this.isVisbleLooseImg = false;
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setTimeToShowOptions', 7000)
-          this.winType = "differentBoxes";
-          this.sizeGift = 30;
-          break;
-        case "topPrice":
-          this.srcImg = "gift/gifts_storytel_boxes.gif";
-          this.isVisbleWinImg = true;
-          this.isVisbleLooseImg = true;
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setTimeToShowOptions', 7000)
-          this.winType = "topPrice";
-          this.sizeGift = 25;
-          break;
-        case "tesla":
-          this.srcImg = "gift/tesla_win.gif";
-          this.isVisbleWinImg = true;
-          this.isVisbleLooseImg = true;
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setTimeToShowOptions', 7000)
-          this.winType = "topPrice";
-          this.sizeGift = 25;
-          break;
+      if (options && options !== "error") {
+        this.defineState("setOptions", options.sectors || options);
       }
 
-      this.showRoulette = false;
-    },
-    async getOptions() {
-      const options = await service.getOptions();
-      if (options !== "error") {
-        this.defineState('setOptions', options.sectors)
-      }
-    },
-    async getGiftCards() {
-      const response = await service.getGiftCards();
-      if (response !== "error") {
-        this.defineState('setGiftCards', Object.values(response))
-      }
-    },
+      if (totals && totals !== "error") {
+        const mutationMap = {
+          totalReplay: "setTotalReplay",
+          totalSpecialPrice: "setTotalSpecialPrice",
+          totalSpecialSurprise: "setTotalSpecialSurprise",
+          totalTopPrice: "setTotalTopPrice",
+          totalGiftCard: "setTotalGiftCard",
+          totalSpin: "setTotalSpin"
+        };
 
-    async getTopPrices() {
-      const response = await service.getTopPrices();
-      if (response !== "error") {
-        this.defineState('setTopPrices', Object.values(response))
-      }
-    },
-
-    async getTeslaData() {
-      const response = await service.getTeslaWin();
-      if (response !== "error") {
-        this.defineState('setTeslaPrices', Object.values(response))
-      }
-    },
-
-    async getTotals() {
-      const totals = await service.getTotals();
-      if (totals !== "error") {
-        Object.keys(totals).forEach(key => {
-          let mutationType = '';
-          switch (key) {
-            case 'totalReplay':
-              mutationType = 'setTotalReplay';
-              break;
-            case 'totalSpecialPrice':
-              mutationType = 'setTotalSpecialPrice';
-              break;
-            case 'totalSpecialSurprise':
-              mutationType = 'setTotalSpecialSurprise';
-              break;
-            case 'totalTopPrice':
-              mutationType = 'setTotalTopPrice';
-              break;
-            case 'totalGiftCard':
-              mutationType = 'setTotalGiftCard';
-              break;
-            case 'totalSpin':
-              mutationType = 'setTotalSpin';
-              break;
-          }
-          if (mutationType) {
-            this.defineState(mutationType, totals[key])
+        Object.keys(mutationMap).forEach((key) => {
+          if (typeof totals[key] !== "undefined") {
+            this.defineState(mutationMap[key], totals[key]);
           }
         });
       }
-    },
-    
 
+      if (giftCards && giftCards !== "error") {
+        this.defineState("setGiftCards", Object.values(giftCards));
+      }
+
+      if (topPrices && topPrices !== "error") {
+        this.defineState("setTopPrices", Object.values(topPrices));
+      }
+
+      if (teslaPrices && teslaPrices !== "error") {
+        this.defineState("setTeslaPrices", Object.values(teslaPrices));
+      }
+    },
+    showImg({ type }) {
+      const result = RESULT_CONFIG[type];
+
+      if (!result) {
+        this.defineState("setSpinRoullete", true);
+        return;
+      }
+
+      this.clearTimers();
+      this.srcImg = result.srcImg;
+      this.winType = type;
+      this.sizeGift = result.sizeGift;
+      this.isVisibleConfetti = result.confetti;
+      this.defineState("setTimeToShowOptions", result.duration);
+
+      this.resultTimer = window.setTimeout(() => {
+        this.resetResultState();
+      }, result.duration);
+    },
+    resetResultState() {
+      this.clearTimers();
+      this.srcImg = "";
+      this.winType = "";
+      this.sizeGift = 0;
+      this.isVisibleConfetti = false;
+      this.defineState("setSpinRoullete", true);
+    },
+    clearTimers() {
+      if (this.resultTimer) {
+        window.clearTimeout(this.resultTimer);
+        this.resultTimer = null;
+      }
+    },
     defineState(mutationType, payload) {
       this.updateState({
-        mutationType: mutationType,
-        payload: payload
+        mutationType,
+        payload
       });
-    }
-  },
-  watch: {
-    isVisbleWinImg(value) {
-      if (value) {
-        setTimeout(() => {
-          this.isVisbleWinImg = !this.isVisbleWinImg;
-          this.defineState('setSpinRoullete', true)
-          this.srcImg = "";
-          this.winType = "";
-        }, this.timeToShowOptions);
-      }
-    },
-    isVisbleLooseImg(value) {
-      if (value) {
-        setTimeout(() => {
-          this.isVisbleLooseImg = !this.isVisbleLooseImg;
-          this.defineState('setSpinRoullete', true)
-          this.srcImg = "";
-        }, this.timeToShowOptions);
-      }
-    },
-    isVisibleConfetti(value) {
-      if (value) {
-        setTimeout(() => {
-          this.isVisibleConfetti = !this.isVisibleConfetti;
-          this.defineState('setSpinRoullete', true)
-        }, this.timeToShowOptions);
-      }
-    },
-    showRoulette(value) {
-      if (!value) {
-        setTimeout(() => {
-          this.showRoulette = true;
-        }, 10);
-      }
     }
   }
 };
 </script>
 
-<style>
-#app {
-  height: 85%;
-  margin-top: 20px;
+<style scoped>
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.app-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(320px, 1.8fr) minmax(180px, 0.9fr);
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: stretch;
+}
+
+.roulette-panel,
+.result-panel {
+  min-height: 0;
+}
+
+.roulette-card,
+.result-panel {
+  border: 1px solid rgba(43, 53, 58, 0.12);
+  background: rgba(255, 250, 248, 0.88);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 28px 70px rgba(43, 53, 58, 0.1);
+  border-radius: 28px;
+}
+
+.roulette-card {
+  height: 100%;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.roulette-copy {
+  text-align: center;
+}
+
+.roulette-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #2b353a;
+}
+
+.roulette-copy p {
+  margin: 0.65rem 0 0;
+  color: rgba(43, 53, 58, 0.72);
+  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+}
+
+.roulette-copy code {
+  font-family: inherit;
+  font-weight: 700;
+  color: #2b353a;
+}
+
+.roulette-copy__eyebrow {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.74rem;
+  color: #ff501c;
+  font-weight: 700;
+}
+
+.result-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  min-height: 220px;
+  opacity: 0.45;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.result-panel--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-footer {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0.5rem;
+}
+
+.app-footer__logo {
+  width: min(240px, 42vw);
+  max-width: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 1100px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .result-panel--secondary {
+    display: none;
+  }
+
+  .result-panel {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 0.85rem;
+  }
+
+  .roulette-card,
+  .result-panel {
+    border-radius: 22px;
+  }
+
+  .result-panel {
+    min-height: 150px;
+  }
 }
 </style>

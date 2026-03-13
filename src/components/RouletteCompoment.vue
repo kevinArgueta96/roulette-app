@@ -1,923 +1,675 @@
 <template>
-  <div class="container text-center padre" ref="containerCircule" style="width: 100%;">
-    <div style="position: relative;">
-      <canvas id="canvas" ref="myCanvas" style :width="widthCircule" :height="heightCircule"></canvas>
-      <img src="/img/storytel-flecha.png" style="position: absolute; "
-        :style="{ top: topArrowLogo + '%', right: rightArrowLogo + 'px', width: widthArrowLogo + '%' }"
-        class="central-img" :class="{ vibratingImage: showAnimation }" alt="Responsive image" />
+  <div class="roulette-shell">
+    <div ref="containerCircule" class="wheel-stage">
+      <canvas ref="myCanvas" class="wheel-canvas"></canvas>
+
+      <img
+        src="/img/storytel-flecha.png"
+        class="wheel-pointer"
+        :class="{ vibratingImage: showAnimation }"
+        alt=""
+      />
+
+      <div class="wheel-center">
+        <img src="/img/logo.png" class="wheel-logo" alt="Logo" />
+      </div>
     </div>
+
+    <button class="spin-button" type="button" :disabled="!canSpin" @click="spin">
+      {{ isSpinning ? "Girando..." : "Girar ruleta" }}
+    </button>
   </div>
 </template>
+
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
-import { obtenerHoraActual, calculateEaseOut, calculateIndex } from "@/utils";
-import { sectorsRoulette, colorsSectorRoulette, textDefaultRouletteStyle, textTeslaRouletteStyle } from '@/config/config-roulette.js'
+import { obtenerHoraActual, calculateIndex } from "@/utils";
+import {
+  sectorsRoulette,
+  colorsSectorRoulette,
+  textDefaultRouletteStyle,
+  textTeslaRouletteStyle
+} from "@/config/config-roulette.js";
 
-const CANVAS_TEXT_OFFSET_Y = 30;
+const FULL_SPINS = 6;
+const SPIN_DURATION = 4600;
+const FALLBACK_INDEX = 6;
+const RESULT_BY_INDEX = {
+  0: "giftCard",
+  1: "tesla",
+  2: "differentBoxes",
+  3: "giftCard",
+  4: "individualBox",
+  5: "differentBoxes",
+  6: "replay",
+  7: "topPrice"
+};
 
 export default {
-  data: () => {
+  name: "RouletteCompoment",
+  data() {
     return {
-      winner: null,
-      showAnimation: false,
-      screenWidth: window.innerWidth,
-      screenHeight: window.innerHeight,
-
-      // position roulette
-      topArrowLogo: 0,
-      rightArrowLogo: 0,
-      widthArrowLogo: 0,
-      restOutsideRadius: 0,
-      sizePhone: 0,
-      positionPhone: [],
-      sizeMiddleCircle: 0,
-      positionMiddleCircle: [],
-
-      lineWidth: 0,
-
-      heightCircule: 0,
-      widthCircule: 0,
       startAngle: 0,
-      spinTimeout: null,
-      drawRouletteTime: null,
-      spinArcStart: 15, // para decir cuanto girara el arco
-      spinTime: 0,
-      spinTimeTotal: 0,
-      ctx: null,
+      canvasSize: 320,
       canvas: null,
-
-      outsideRadius: 0, // radio del circulo, que tan grande sera
-      textRadius: 0, // radio del tecto
-      insideRadius: 0,
-      letterSize: 0,
-      letterNewFontSize: 0,
-      speedRoulette: 10,
-
-      globalWidthCircle: 0,
-      globalHeightCircle: 0,
-
-      halfPi: 0,
-
+      ctx: null,
+      resizeObserver: null,
+      resizeRaf: null,
+      animationFrame: null,
+      showAnimation: false,
+      isSpinning: false
     };
-  },
-  created() {
-    window.addEventListener("resize", this.handleResize);
-  },
-
-  destroyed() {
-    window.removeEventListener("resize", this.handleResize);
-  },
-
-  mounted() {
-    this.globalWidthCircle = this.$refs.containerCircule.offsetWidth / 2;
-    this.globalHeightCircle = this.$refs.containerCircule.offsetHeight / 2;
-    this.halfPi = Math.PI / 2;
-
-    this.startAngle = this.initialStartAngle;
-    setTimeout(() => {
-      document.addEventListener("keyup", this.spinRoulleteByEnter);
-    }, 1000);
-    this.widthCircule = this.$refs.containerCircule.offsetWidth;
-    this.heightCircule = this.$refs.containerCircule.offsetHeight;
-    this.validateSizeOfImg();
-    requestAnimationFrame(this.drawRouletteWheel);
-  },
-
-  beforeDestroy() {
-    document.removeEventListener("keyup", this.spinRoulleteByEnter);
-  },
-
-  methods: {
-    ...mapActions([
-      "updateState",
-
-    ]),
-
-    spinRoulleteByEnter(event) {
-      if (event.keyCode === 13 || event.keyCode === 32) {
-        this.spin();
-      }
-    },
-    validateSizeOfImg() {
-      if (this.screenWidth <= 1366) {
-        this.topArrowLogo = 4;
-        this.rightArrowLogo = 46;
-        this.widthArrowLogo = 6.6;
-
-        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
-        this.textRadius = this.heightCircule * 0.33; // radio del tecto
-        this.insideRadius = 1;
-        this.letterSize = 4;
-        this.letterNewFontSize = 4
-        this.restOutsideRadius = 10;
-
-        this.sizePhone = 220;
-        const widthPhone = 4;
-        const heightPhone = 35;
-        this.positionPhone["x"] = widthPhone;
-        this.positionPhone["y"] = heightPhone;
-
-        this.sizeMiddleCircle = 150;
-        const widthCircule = 7;
-        const heightCircule = 6;
-        this.positionMiddleCircle["x"] = widthCircule;
-        this.positionMiddleCircle["y"] = heightCircule;
-        this.lineWidth = 15;
-      } else if (this.screenWidth <= 1444) {
-        this.topArrowLogo = -2;
-        this.rightArrowLogo = 30;
-        this.widthArrowLogo = 7.5;
-
-        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
-        this.textRadius = this.heightCircule * 0.33; // radio del los textos
-        this.insideRadius = 1;
-        this.letterSize = 1.4;
-        this.letterNewFontSize = 2.1
-        this.restOutsideRadius = 10;
-
-        this.sizePhone = 220;
-        const widthPhone = 4;
-        const heightPhone = 35;
-        this.positionPhone["x"] = widthPhone;
-        this.positionPhone["y"] = heightPhone;
-
-        this.sizeMiddleCircle = 150;
-        const widthCircule = 7;
-        const heightCircule = 6;
-        this.positionMiddleCircle["x"] = widthCircule;
-        this.positionMiddleCircle["y"] = heightCircule;
-
-        this.lineWidth = 21;
-      } else if (this.screenWidth <= 1980) {
-        this.topArrowLogo = 2;
-        this.rightArrowLogo = 30;
-        this.widthArrowLogo = 8;
-
-        this.outsideRadius = this.heightCircule * 0.46; // radio del circulo, que tan grande sera
-        this.textRadius = this.heightCircule * 0.35; // radio del tecto
-        this.insideRadius = 1;
-        this.letterSize = 1;
-        this.letterNewFontSize = 2
-        this.restOutsideRadius = 10;
-
-        this.sizePhone = 300;
-        const xPhone = 2.9;
-        const yPhone = 35;
-        this.positionPhone["x"] = xPhone;
-        this.positionPhone["y"] = yPhone;
-
-        this.sizeMiddleCircle = 200;
-        const xCircule = 5.5;
-        const yCircule = 5;
-        this.positionMiddleCircle["x"] = xCircule;
-        this.positionMiddleCircle["y"] = yCircule;
-        this.lineWidth = 20;
-      } else {
-        this.topArrowLogo = 1;
-        this.rightArrowLogo = 30;
-        this.widthArrowLogo = 8;
-
-        this.outsideRadius = this.heightCircule * 0.43; // radio del circulo, que tan grande sera
-        this.textRadius = this.heightCircule * 0.35; // radio del tecto
-        this.insideRadius = 1;
-        this.letterSize = 1;
-        this.letterNewFontSize = 2
-        this.restOutsideRadius = 10;
-
-        this.sizePhone = 350;
-        const xPhone = 2.5;
-        const yPhone = 100;
-        this.positionPhone["x"] = xPhone;
-        this.positionPhone["y"] = yPhone;
-
-        this.sizeMiddleCircle = 220;
-        const xCircule = 5;
-        const yCircule = 5;
-        this.positionMiddleCircle["x"] = xCircule;
-        this.positionMiddleCircle["y"] = yCircule;
-        this.lineWidth = 20;
-      }
-    },
-
-    handleResize() {
-      (this.canvas = null),
-        (this.ctx = null),
-        (this.screenWidth = window.innerWidth);
-      this.screenHeight = window.innerHeight;
-      this.widthCircule = this.$refs.containerCircule.offsetWidth;
-      this.heightCircule = this.$refs.containerCircule.offsetHeight;
-
-      this.globalWidthCircle = this.$refs.containerCircule.offsetWidth / 2;
-      this.globalHeightCircle = this.$refs.containerCircule.offsetHeight / 2;
-    },
-
-    drawCircule(angle) {
-      const img = new Image();
-      img.src = "/img/logo.png";
-      const buffer = this.$refs.myCanvas;
-      const bufferCtx = buffer.getContext("2d");
-
-      img.onload = () => {
-        requestAnimationFrame(draw);
-      };
-
-      const draw = () => {
-        bufferCtx.clearRect(
-          -img.width,
-          -img.height,
-          this.sizeMiddleCircle,
-          this.sizeMiddleCircle
-        );
-        bufferCtx.save();
-        bufferCtx.translate(this.globalWidthCircle, this.globalHeightCircle);
-        bufferCtx.rotate(angle);
-        bufferCtx.drawImage(
-          img,
-          -img.width / this.positionMiddleCircle.x,
-          -img.height / this.positionMiddleCircle.y,
-          this.sizeMiddleCircle,
-          this.sizeMiddleCircle
-        );
-        bufferCtx.restore();
-
-        bufferCtx.drawImage(buffer, 0, 0);
-
-        bufferCtx.restore();
-      };
-    },
-
-    drawPhone(angle, arc) {
-      const img = new Image();
-      img.src = "/img/winner.png";
-      const buffer = this.$refs.myCanvas;
-      const bufferCtx = buffer.getContext("2d");
-      const halfArc = arc / 2;
-
-      img.onload = () => {
-        requestAnimationFrame(draw);
-      };
-
-      const draw = () => {
-        bufferCtx.clearRect(
-          -img.width,
-          -img.height,
-          this.sizePhone,
-          this.sizePhone
-        );
-        bufferCtx.save();
-        bufferCtx.translate(
-          this.globalWidthCircle + Math.cos(angle + halfArc) * this.textRadius,
-          this.globalHeightCircle + Math.sin(angle + halfArc) * this.textRadius
-        );
-        bufferCtx.rotate(angle + halfArc + this.halfPi);
-        bufferCtx.drawImage(
-          img,
-          -img.width / this.positionPhone.x,
-          -img.height / this.positionPhone.y,
-          this.sizePhone,
-          this.sizePhone
-        );
-
-        bufferCtx.restore();
-      };
-    },
-
-    drawEachSector(ctx, widthCircle, heightCircule) {
-      const halfArc = this.arc / 2;
-
-      for (let i = 0; i < sectorsRoulette.length; i++) {
-
-        if (i === 1) {
-          this.ctx.font = `${textTeslaRouletteStyle.fontWeight} ${this.letterNewFontSize}${textTeslaRouletteStyle.fontSizeUnit} ${textTeslaRouletteStyle.fontFamily}`;
-        } else {
-          this.ctx.font = `${textDefaultRouletteStyle.fontWeight} ${this.letterSize}${textDefaultRouletteStyle.fontSizeUnit} ${textDefaultRouletteStyle.fontFamily}`;
-        }
-
-
-        const mainText = sectorsRoulette[i][0];
-        const secundaryText = sectorsRoulette[i][1];
-        const halfMeasureTextWidth = -ctx.measureText(mainText).width / 2;
-
-        let angle = this.startAngle + i * this.arc;
-        if (i === 0) {
-          this.drawCircule(angle + 2.8);
-        }
-
-        ctx.strokeStyle = "transparent";
-        ctx.fillStyle = colorsSectorRoulette[i];
-        ctx.beginPath();
-        ctx.arc(
-          widthCircle,
-          heightCircule,
-          this.outsideRadius - this.restOutsideRadius,
-          angle,
-          angle + this.arc,
-          false
-        );
-
-        ctx.fill();
-        ctx.save();
-
-        ctx.arc(
-          widthCircle,
-          heightCircule,
-          this.insideRadius,
-          angle + this.arc,
-          angle,
-          true
-        );
-
-        ctx.fill();
-        ctx.save();
-
-        ctx.beginPath();
-
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = this.lineWidth;
-        ctx.arc(
-          widthCircle,
-          heightCircule,
-          this.outsideRadius + 20,
-          angle,
-          angle + this.arc,
-          false
-        );
-
-        ctx.stroke();
-
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.shadowBlur = 0;
-
-        if (i === 1) {
-          ctx.shadowColor = "#C9CBCC";
-          ctx.fillStyle = "#C9CBCC";
-        }
-
-        if (i === 7) {
-          this.drawPhone(angle, this.arc);
-        }
-
-        if (i === 2 || i === 5 || i === 6) {
-          ctx.shadowColor = "white";
-          ctx.fillStyle = "white";
-        }
-
-        if (i === 0 || i === 3 || i === 4 || i === 7) {
-          ctx.shadowColor = "black";
-          ctx.fillStyle = "black";
-        }
-
-        if (i === 2 || i == 5) {
-          ctx.translate(
-            this.globalWidthCircle +
-            Math.cos(angle + halfArc) * this.textRadius,
-            this.globalHeightCircle +
-            Math.sin(angle + halfArc) * this.textRadius
-          );
-          ctx.rotate(angle + halfArc + this.halfPi);
-
-          ctx.fillText(mainText, halfMeasureTextWidth, 0);
-          ctx.fillText(secundaryText, halfMeasureTextWidth, CANVAS_TEXT_OFFSET_Y);
-        } else if (i === 4) {
-          ctx.translate(
-            this.globalWidthCircle +
-            Math.cos(angle + halfArc) * this.textRadius,
-            this.globalHeightCircle +
-            Math.sin(angle + halfArc) * this.textRadius
-          );
-          ctx.rotate(angle + halfArc + this.halfPi);
-
-          ctx.fillText(mainText, -this.ctx.measureText(mainText).width / 4, 0);
-          ctx.fillText(secundaryText, halfMeasureTextWidth, CANVAS_TEXT_OFFSET_Y);
-        } else {
-          ctx.translate(
-            this.globalWidthCircle +
-            Math.cos(angle + halfArc) * this.textRadius,
-            this.globalHeightCircle +
-            Math.sin(angle + halfArc) * this.textRadius
-          );
-          ctx.rotate(angle + halfArc + this.halfPi);
-
-          const textAux = sectorsRoulette[i];
-          ctx.fillText(textAux, -ctx.measureText(textAux).width / 2, 0);
-        }
-        ctx.restore();
-        ctx.save();
-      }
-    },
-
-    drawRouletteWheel() {
-      this.canvas = this.$refs.myCanvas;
-      this.ctx = this.canvas.getContext("2d");
-
-      this.ctx.clearRect(
-        this.widthCircule,
-        this.globalWidthCircle,
-        this.heightCircule,
-        this.globalHeightCircle
-      ); // Borra todo el contenido del canvas
-
-      this.ctx.clearRect(0, 0, this.globalWidthCircle, this.globalHeightCircle); // elimina una porcion enviando posicion y tamaño del rectangulo
-      this.ctx.beginPath();
-
-      this.drawEachSector(
-        this.ctx,
-        this.globalWidthCircle,
-        this.globalHeightCircle
-      );
-    },
-
-    spin() {
-      if (this.spinRoullete) {
-        this.updateState({
-          mutationType: "setSpinRoullete",
-          payload: (false)
-        });
-        this.speedRoulette = false;
-        this.showAnimation = true;
-        const numberWinner = this.generateNumberToShow();
-        this.winner = this.generateAnglesToWin(numberWinner);
-        this.updateOptionRoulette(numberWinner);
-        this.spinTimeTotal = 100;
-
-        this.spinTime = 0;
-        this.spinTimeout = 0;
-
-        this.rotateWheel();
-      }
-    },
-
-    rotateWheel() {
-      const winner = this.winner;
-      if (this.startAngle >= 6.28) {
-        this.startAngle = 0;
-      }
-
-      if (
-        this.actualPosition <= winner.topAngle &&
-        this.actualPosition >= winner.downAngle
-      ) {
-        this.spinTime += 3;
-        if (this.spinTime >= this.spinTimeTotal) {
-          this.stopRotateWheel();
-          return;
-        }
-      }
-      this.obtainSpinAngle();
-      this.spinTimeout = requestAnimationFrame(this.rotateWheel);
-      this.drawRouletteTime = requestAnimationFrame(this.drawRouletteWheel);
-    },
-
-    obtainSpinAngle() {
-      const dataRoulette = {
-        spinTime: this.spinTime,
-        b: 0,
-        spinArcStart: this.spinArcStart,
-        spinTimeTotal: this.spinTimeTotal
-      };
-
-      const spinAngle = this.spinArcStart - calculateEaseOut(dataRoulette);
-
-      this.startAngle += (spinAngle * 2 * Math.PI) / 180;
-    },
-
-    stopRotateWheel() {
-      this.updateState({
-        mutationType: "setInitialAngle",
-        payload: (this.startAngle)
-      });
-      cancelAnimationFrame(this.drawRouletteTime);
-      cancelAnimationFrame(this.spinTimeout);
-      this.drawRouletteTime = null;
-      this.drawRouletteTime = null;
-      this.showAnimation = false;
-
-      const dataRoulette = {
-        startAngle: this.startAngle,
-        arc: this.arc
-      };
-
-      const index = calculateIndex(dataRoulette);
-
-      this.ctx.save();
-      this.ctx.font = "bold 30px Helvetica, Arial";
-
-      if (index === 6) {
-        this.$emit("showImg", { type: "replay" });
-      } else if (index === 2 || index === 5) {
-        this.$emit("showImg", { type: "differentBoxes" });
-      } else if (index === 0 || index === 3) {
-        this.$emit("showImg", { type: "giftCard" });
-      } else if (index === 4) {
-        this.$emit("showImg", { type: "individualBox" });
-      } else if (index === 7) {
-        this.$emit("showImg", { type: "topPrice" });
-      } else if (index === 1) {
-        this.$emit("showImg", { type: "tesla" });
-      }
-
-      this.ctx.restore();
-    },
-
-    nameToUpdate(update) {
-      this.updateState({
-        mutationType: "setTotalSpin",
-        payload: (this.totalSpin + 1)
-      });
-      switch (update) {
-        case 3:
-        case 0:
-          this.updateState({
-            mutationType: "setTotalGiftCard",
-            payload: (this.totalGiftCard + 1)
-          });
-          break;
-        case 6:
-          this.updateState({
-            mutationType: "setTotalReplay",
-            payload: (this.totalReplay + 1)
-          });
-          break;
-        case 2:
-        case 5:
-          this.updateState({
-            mutationType: "setTotalSpecialSurprise",
-            payload: (this.totalSpecialSurprise + 1)
-          });
-          break;
-        case 4:
-          this.updateState({
-            mutationType: "setTotalSpecialPrice",
-            payload: (this.totalSpecialPrice + 1)
-          });
-
-          break;
-        case 7:
-        case 1:
-          this.updateState({
-            mutationType: "setTotalTopPrice",
-            payload: (this.totalTopPrice + 1)
-          });
-          break;
-      }
-    },
-
-    generateAnglesToWin(positionIndex) {
-      const FIRS_POSITION_ROULLETE = 0;
-      const SECOND_POSTIION_ROULLETE = 1;
-      const THIRD_POSITION_ROULLETE = 2;
-      const FOURTH_POSITION_ROULLETE = 3;
-      const FIFTH_POSITION_ROULLETE = 4;
-      const SIXTH_POSITION_ROULLETE = 5;
-      const SEVENTH_POSITION_ROULLETE = 6;
-      const EIGHTH_POSITION_ROULLETE = 7;
-      
-      switch (positionIndex) {
-        case FIRS_POSITION_ROULLETE:
-          return {
-            topAngle: 45,
-            downAngle: 0
-          };
-        case SECOND_POSTIION_ROULLETE:
-          return {
-            topAngle: 90,
-            downAngle: 46
-          };
-
-        case THIRD_POSITION_ROULLETE:
-          return {
-            topAngle: 135,
-            downAngle: 91
-          };
-
-        case FOURTH_POSITION_ROULLETE:
-          return {
-            topAngle: 180,
-            downAngle: 136
-          };
-
-        case FIFTH_POSITION_ROULLETE:
-          return {
-            topAngle: 225,
-            downAngle: 181
-          };
-
-        case SIXTH_POSITION_ROULLETE:
-          return {
-            topAngle: 270,
-            downAngle: 226
-          };
-
-        case SEVENTH_POSITION_ROULLETE:
-          return {
-            topAngle: 315,
-            downAngle: 271
-          };
-
-        case EIGHTH_POSITION_ROULLETE:
-          return {
-            topAngle: 360,
-            downAngle: 316
-          };
-      }
-      return positionIndex;
-    },
-
-    async updateOptionRoulette(index) {
-      this.nameToUpdate(index);
-
-      const data = {
-        totalReplay: this.selectedTotalReplay,
-        totalSpecialSurprice: this.selectedTotalSpecialSuprise,
-        totalSpecialPrice: this.selectedTotalSpecialPrice,
-        totalTopPrice: this.selectedTotalTopPrice,
-        totalGitfCard: this.selectedTotalGiftCard,
-        totalSpin: this.totalSpin
-      };
-      await service.setNewTotal(data);
-    },
-    generateNumberToShow() {
-      const newProbabilitie = this.generateProbabilityPriceByScheduler();
-      const probabilities =
-        newProbabilitie === null || typeof newProbabilitie === 'undefined' ? this.options : newProbabilitie;
-      const numeroAleatorio = Math.random();
-      let sumaProbabilidades = 0;
-      for (let i = 0; i < probabilities.length; i++) {
-        const sector = probabilities[i];
-        sumaProbabilidades += sector.probability;
-
-        if (sumaProbabilidades >= numeroAleatorio) {
-          return i;
-        }
-      }
-    },
-    async updateWinnerChoice(winner) {
-      const { typeWinner, positionWinner } = winner;
-      switch (typeWinner) {
-        case "card":
-          this.giftCards[positionWinner].given = true;
-          await service.setGiftCards(this.giftCards);
-          return;
-        case "topPrice":
-          this.topPrices[positionWinner].given = true;
-          await service.setTopPrices(this.topPrices);
-          return;
-
-        case "teslaWin": {
-          const dataCopy = JSON.parse(JSON.stringify(this.teslaWinnerData));
-          dataCopy[positionWinner].given = true
-          this.updateState({
-            mutationType: "setTeslaPrices",
-            payload: (dataCopy)
-          });
-          await service.setTeslaWinService(this.teslaPrices)
-          return;
-        }
-
-
-        default:
-          return;
-      }
-    },
-
-    generateProbabilityPriceByScheduler() {
-      const totalData = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
-
-      const time = obtenerHoraActual();
-      const down = totalData.map(obj => obj.rangeDown);
-      const top = totalData.map(obj => obj.rangeTop);
-      const givenS = totalData.map(obj => obj.given);
-      const typeWin = totalData.map(obj => obj.type);
-      const positionWinnerArray = totalData.map(obj => obj.position)
-
-      for (let position = 0; position < totalData.length; position++) {
-        if (
-          time >= down[position] &&
-          time <= top[position] &&
-          givenS[position] === false
-        ) {
-          const typeWinner = typeWin[position]
-          const positionWinner = positionWinnerArray[position]
-          const winner = {
-            typeWinner,
-            positionWinner
-          };
-          this.updateWinnerChoice(winner);
-
-          const options = this.obtainConfigurationSectorWin(typeWinner);
-          return options;
-        }
-      }
-
-      return null;
-    },
-
-    obtainConfigurationSectorWin(typeWinner) {
-      switch (typeWinner) {
-        case "card": {
-          const { firstOption, secondOption } = this.generateRandomNumbers();
-
-          return [
-            { option: "LAHJAKORTTI", probability: firstOption }, // 1 vez x dia
-            { option: "TESLA", probability: 0 }, //15-20%
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "LAHJAKORTTI", probability: secondOption }, // based on probability (surpise win)
-            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "UUDESTAAN", probability: 0 }, //15-20%
-            { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
-          ];
-        }
-        case "topPrice":
-          return [
-            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-            { option: "TESLA", probability: 0 }, //15-20%
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "UUDESTAAN", probability: 0 }, //15-20%
-            { option: "PÄÄPALKINTO", probability: 1 } // 0% dependiendo la hrora
-          ];
-        case "teslaWin":
-          return [
-            { option: "LAHJAKORTTI", probability: 0 }, // 1 vez x dia
-            { option: "TESLA", probability: 1 }, //15-20%
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "LAHJAKORTTI", probability: 0 }, // based on probability (surpise win)
-            { option: "TUOTEPALKINTO", probability: 0 }, //10 % special prize
-            { option: "YLLÄTYSPALKINTO", probability: 0 }, // based on probability (surpise win)
-            { option: "UUDESTAAN", probability: 0 }, //15-20%
-            { option: "PÄÄPALKINTO", probability: 0 } // 0% dependiendo la hrora
-          ];
-      }
-    },
-
-    generateRandomNumbers() {
-      const randomNum = Math.round(Math.random());
-
-      let firstOption, secondOption;
-      if (randomNum === 0) {
-        firstOption = 0;
-        secondOption = 1;
-      } else {
-        firstOption = 1;
-        secondOption = 0;
-      }
-
-      return { firstOption, secondOption };
-    },
   },
   computed: {
     ...mapGetters([
-      "timeToShowOptions",
       "options",
+      "giftCards",
+      "topPrices",
+      "teslaPrices",
       "totalReplay",
       "totalSpecialPrice",
       "totalSpecialSurprise",
       "totalTopPrice",
       "totalGiftCard",
       "totalSpin",
-
-      "giftCards",
-      "topPrices",
-      "teslaPrices",
-
       "initialAngle",
       "spinRoullete"
     ]),
-    selectedTotalReplay: {
-      get() {
-        return this.totalReplay;
-      },
-      set(value) {
-        const val = parseInt(value);
-        this.updateState({
-          mutationType: "setTotalReplay",
-          payload: (val)
-        });
-      }
-    },
-
-    selectedTotalSpecialPrice: {
-      get() {
-        return this.totalSpecialPrice;
-      },
-      set(value) {
-        const val = parseInt(value);
-        this.updateState({
-          mutationType: "setTotalSpecialPrice",
-          payload: (val)
-        });
-      }
-    },
-    selectedTotalSpecialSuprise: {
-      get() {
-        return this.totalSpecialSurprise;
-      },
-      set(value) {
-        const val = parseInt(value);
-        this.updateState({
-          mutationType: "setTotalSpecialSurprise",
-          payload: (val)
-        });
-      }
-    },
-
-    selectedTotalTopPrice: {
-      get() {
-        return this.totalTopPrice;
-      },
-      set(value) {
-        const val = parseInt(value);
-        this.updateState({
-          mutationType: "setTotalTopPrice",
-          payload: (val)
-        });
-      }
-    },
-
-    initialStartAngle: {
-      get() {
-        return this.initialAngle;
-      }
-    },
-
-    selectedTotalGiftCard: {
-      get() {
-        return this.totalGiftCard;
-      },
-      set(value) {
-        const val = parseInt(value);
-        this.updateState({
-          mutationType: "setTotalGiftCard",
-          payload: (val)
-        });
-      }
-    },
-
-    teslaWinnerData: {
-      get() {
-        return this.teslaPrices;
-      }
-    },
-
     arc() {
-      return Math.PI / (sectorsRoulette.length / 2); // valor de cada arco
+      return (Math.PI * 2) / sectorsRoulette.length;
     },
-    actualPosition() {
-      var degrees = (this.startAngle * 180) / Math.PI + 90;
-      return Math.floor(360 - (degrees % 360));
+    center() {
+      return this.canvasSize / 2;
+    },
+    outerRadius() {
+      return this.canvasSize * 0.47;
+    },
+    innerRadius() {
+      return this.canvasSize * 0.11;
+    },
+    textRadius() {
+      return this.canvasSize * 0.33;
+    },
+    borderWidth() {
+      return Math.max(6, this.canvasSize * 0.018);
+    },
+    defaultFontSize() {
+      return Math.max(14, this.canvasSize * 0.038);
+    },
+    teslaFontSize() {
+      return Math.max(16, this.canvasSize * 0.044);
+    },
+    canSpin() {
+      return this.spinRoullete && !this.isSpinning;
     }
   },
-  watch: {
-    widthCircule() {
-      this.validateSizeOfImg();
-      requestAnimationFrame(this.drawRouletteWheel);
+  mounted() {
+    this.startAngle = this.normalizeRadians(this.initialAngle || 0);
+    this.initializeCanvas();
+    this.observeResize();
+    document.addEventListener("keyup", this.spinRoulleteByEnter);
+  },
+  beforeDestroy() {
+    document.removeEventListener("keyup", this.spinRoulleteByEnter);
+    window.removeEventListener("resize", this.handleResize);
+    this.stopAnimation();
+
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+
+    if (this.resizeRaf) {
+      window.cancelAnimationFrame(this.resizeRaf);
+      this.resizeRaf = null;
+    }
+  },
+  methods: {
+    ...mapActions(["updateState"]),
+    initializeCanvas() {
+      this.canvas = this.$refs.myCanvas;
+      this.ctx = this.canvas.getContext("2d");
+      this.updateCanvasSize();
     },
-    heightCircule() {
-      this.validateSizeOfImg();
-      requestAnimationFrame(this.drawRouletteWheel);
+    observeResize() {
+      if (!window.ResizeObserver) {
+        window.addEventListener("resize", this.handleResize);
+        return;
+      }
+
+      this.resizeObserver = new window.ResizeObserver(() => {
+        this.handleResize();
+      });
+
+      this.resizeObserver.observe(this.$refs.containerCircule);
+    },
+    handleResize() {
+      if (this.resizeRaf) {
+        window.cancelAnimationFrame(this.resizeRaf);
+      }
+
+      this.resizeRaf = window.requestAnimationFrame(() => {
+        this.updateCanvasSize();
+      });
+    },
+    updateCanvasSize() {
+      if (!this.canvas || !this.ctx) {
+        return;
+      }
+
+      const container = this.$refs.containerCircule;
+
+      if (!container) {
+        return;
+      }
+
+      const bounds = container.getBoundingClientRect();
+      const nextSize = Math.max(260, Math.floor(Math.min(bounds.width, window.innerHeight * 0.68)));
+      const devicePixelRatio = window.devicePixelRatio || 1;
+
+      this.canvasSize = nextSize;
+      this.canvas.width = nextSize * devicePixelRatio;
+      this.canvas.height = nextSize * devicePixelRatio;
+      this.canvas.style.width = `${nextSize}px`;
+      this.canvas.style.height = `${nextSize}px`;
+      this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+      this.drawRouletteWheel();
+    },
+    spinRoulleteByEnter(event) {
+      const isSpace = event.key === " " || event.code === "Space";
+
+      if (event.key !== "Enter" && !isSpace) {
+        return;
+      }
+
+      event.preventDefault();
+      this.spin();
+    },
+    drawRouletteWheel() {
+      if (!this.ctx) {
+        return;
+      }
+
+      this.ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
+
+      sectorsRoulette.forEach((sector, index) => {
+        const angle = this.startAngle + index * this.arc;
+        const halfArc = angle + this.arc / 2;
+        const lines = this.getSectorLines(sector);
+        const isTesla = index === 1;
+        const fontSize = isTesla ? this.teslaFontSize : this.defaultFontSize;
+        const lineHeight = fontSize * 1.1;
+        const textOffset = ((lines.length - 1) * lineHeight) / 2;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.center, this.center);
+        this.ctx.arc(this.center, this.center, this.outerRadius, angle, angle + this.arc, false);
+        this.ctx.arc(this.center, this.center, this.innerRadius, angle + this.arc, angle, true);
+        this.ctx.closePath();
+        this.ctx.fillStyle = colorsSectorRoulette[index];
+        this.ctx.fill();
+        this.ctx.lineWidth = this.borderWidth;
+        this.ctx.strokeStyle = "#fdf1f0";
+        this.ctx.stroke();
+
+        this.ctx.save();
+        this.ctx.translate(
+          this.center + Math.cos(halfArc) * this.textRadius,
+          this.center + Math.sin(halfArc) * this.textRadius
+        );
+        this.ctx.rotate(halfArc + Math.PI / 2);
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillStyle = this.getTextColor(index);
+        this.ctx.font = `${isTesla ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${isTesla ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily}`;
+
+        lines.forEach((line, lineIndex) => {
+          this.ctx.fillText(line, 0, lineIndex * lineHeight - textOffset);
+        });
+
+        this.ctx.restore();
+      });
+
+      this.ctx.beginPath();
+      this.ctx.fillStyle = "rgba(255, 250, 248, 0.92)";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 1.4, 0, Math.PI * 2);
+      this.ctx.fill();
+    },
+    getSectorLines(sector) {
+      return typeof sector === "string" ? [sector] : Object.values(sector);
+    },
+    getTextColor(index) {
+      if (index === 1) {
+        return "#C9CBCC";
+      }
+
+      if (index === 2 || index === 5 || index === 6) {
+        return "#FFFFFF";
+      }
+
+      return "#111111";
+    },
+    spin() {
+      if (!this.canSpin) {
+        return;
+      }
+
+      const winnerIndex = this.generateNumberToShow();
+
+      if (typeof winnerIndex !== "number") {
+        this.updateState({ mutationType: "setSpinRoullete", payload: true });
+        return;
+      }
+
+      const currentAngle = this.normalizeRadians(this.startAngle);
+      const targetAngle = this.calculateTargetAngle(winnerIndex, currentAngle);
+      const startTime = performance.now();
+
+      this.isSpinning = true;
+      this.showAnimation = true;
+      this.updateState({ mutationType: "setSpinRoullete", payload: false });
+
+      const animate = (timestamp) => {
+        const progress = Math.min((timestamp - startTime) / SPIN_DURATION, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        this.startAngle = currentAngle + (targetAngle - currentAngle) * eased;
+        this.drawRouletteWheel();
+
+        if (progress < 1) {
+          this.animationFrame = window.requestAnimationFrame(animate);
+          return;
+        }
+
+        this.finishSpin(winnerIndex);
+      };
+
+      this.animationFrame = window.requestAnimationFrame(animate);
+    },
+    finishSpin(winnerIndex) {
+      this.stopAnimation();
+
+      this.startAngle = this.normalizeRadians(this.startAngle);
+      this.drawRouletteWheel();
+      this.updateState({ mutationType: "setInitialAngle", payload: this.startAngle });
+
+      this.persistSpinResult(winnerIndex).catch(() => null);
+      this.$emit("showImg", { type: RESULT_BY_INDEX[winnerIndex] || RESULT_BY_INDEX[FALLBACK_INDEX] });
+    },
+    stopAnimation() {
+      if (this.animationFrame) {
+        window.cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
+
+      this.showAnimation = false;
+      this.isSpinning = false;
+    },
+    calculateTargetAngle(winnerIndex, currentAngle) {
+      const currentDegrees = this.toDegrees(this.normalizeRadians(currentAngle));
+      const targetDegrees = this.getTargetDegreesForIndex(winnerIndex);
+      const delta = this.normalizeDegrees(targetDegrees - currentDegrees) + FULL_SPINS * 360;
+
+      return currentAngle + this.toRadians(delta);
+    },
+    getTargetDegreesForIndex(winnerIndex) {
+      const matches = [];
+
+      for (let degree = 0; degree < 360; degree += 0.5) {
+        const index = calculateIndex({
+          startAngle: this.toRadians(degree),
+          arc: this.arc
+        });
+
+        if (index === winnerIndex) {
+          matches.push(degree);
+        }
+      }
+
+      if (!matches.length) {
+        return 0;
+      }
+
+      return matches[Math.floor(matches.length / 2)];
+    },
+    generateNumberToShow() {
+      const forcedConfiguration = this.generateProbabilityPriceByScheduler();
+      const probabilities = Array.isArray(forcedConfiguration) ? forcedConfiguration : this.options;
+
+      return this.getWeightedWinner(probabilities);
+    },
+    getWeightedWinner(probabilities) {
+      if (!Array.isArray(probabilities) || !probabilities.length) {
+        return FALLBACK_INDEX;
+      }
+
+      const weights = probabilities.map((item) => Math.max(0, Number(item.probability) || 0));
+      const totalWeight = weights.reduce((accumulator, value) => accumulator + value, 0);
+
+      if (totalWeight <= 0) {
+        return FALLBACK_INDEX;
+      }
+
+      const threshold = Math.random() * totalWeight;
+      let cumulative = 0;
+
+      for (let index = 0; index < weights.length; index += 1) {
+        cumulative += weights[index];
+
+        if (threshold <= cumulative) {
+          return index;
+        }
+      }
+
+      return weights.length - 1;
+    },
+    async updateWinnerChoice({ typeWinner, positionWinner }) {
+      switch (typeWinner) {
+        case "card": {
+          const nextGiftCards = this.giftCards.map((item) => (
+            item.position === positionWinner ? { ...item, given: true } : item
+          ));
+          this.updateState({ mutationType: "setGiftCards", payload: nextGiftCards });
+          await service.setGiftCards(nextGiftCards);
+          return;
+        }
+
+        case "topPrice": {
+          const nextTopPrices = this.topPrices.map((item) => (
+            item.position === positionWinner ? { ...item, given: true } : item
+          ));
+          this.updateState({ mutationType: "setTopPrices", payload: nextTopPrices });
+          await service.setTopPrices(nextTopPrices);
+          return;
+        }
+
+        case "teslaWin": {
+          const nextTeslaPrices = this.teslaPrices.map((item) => (
+            item.position === positionWinner ? { ...item, given: true } : item
+          ));
+          this.updateState({ mutationType: "setTeslaPrices", payload: nextTeslaPrices });
+          await service.setTeslaWinService(nextTeslaPrices);
+          return;
+        }
+
+        default:
+          return;
+      }
+    },
+    generateProbabilityPriceByScheduler() {
+      const scheduledPrizes = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
+      const currentTime = obtenerHoraActual();
+
+      const scheduledWinner = scheduledPrizes.find((item) => (
+        item &&
+        currentTime >= item.rangeDown &&
+        currentTime <= item.rangeTop &&
+        item.given === false
+      ));
+
+      if (!scheduledWinner) {
+        return null;
+      }
+
+      this.updateWinnerChoice({
+        typeWinner: scheduledWinner.type,
+        positionWinner: scheduledWinner.position
+      }).catch(() => null);
+
+      return this.obtainConfigurationSectorWin(scheduledWinner.type);
+    },
+    obtainConfigurationSectorWin(typeWinner) {
+      switch (typeWinner) {
+        case "card": {
+          const { firstOption, secondOption } = this.generateRandomNumbers();
+
+          return [
+            { option: "LAHJAKORTTI", probability: firstOption },
+            { option: "TESLA", probability: 0 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "LAHJAKORTTI", probability: secondOption },
+            { option: "TUOTEPALKINTO", probability: 0 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "UUDESTAAN", probability: 0 },
+            { option: "PÄÄPALKINTO", probability: 0 }
+          ];
+        }
+
+        case "topPrice":
+          return [
+            { option: "LAHJAKORTTI", probability: 0 },
+            { option: "TESLA", probability: 0 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "LAHJAKORTTI", probability: 0 },
+            { option: "TUOTEPALKINTO", probability: 0 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "UUDESTAAN", probability: 0 },
+            { option: "PÄÄPALKINTO", probability: 1 }
+          ];
+
+        case "teslaWin":
+          return [
+            { option: "LAHJAKORTTI", probability: 0 },
+            { option: "TESLA", probability: 1 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "LAHJAKORTTI", probability: 0 },
+            { option: "TUOTEPALKINTO", probability: 0 },
+            { option: "YLLÄTYSPALKINTO", probability: 0 },
+            { option: "UUDESTAAN", probability: 0 },
+            { option: "PÄÄPALKINTO", probability: 0 }
+          ];
+
+        default:
+          return null;
+      }
+    },
+    generateRandomNumbers() {
+      return Math.round(Math.random()) === 0
+        ? { firstOption: 0, secondOption: 1 }
+        : { firstOption: 1, secondOption: 0 };
+    },
+    async persistSpinResult(winnerIndex) {
+      const totals = this.buildNextTotals(winnerIndex);
+      const mutationMap = {
+        totalReplay: "setTotalReplay",
+        totalSpecialPrice: "setTotalSpecialPrice",
+        totalSpecialSurprise: "setTotalSpecialSurprise",
+        totalTopPrice: "setTotalTopPrice",
+        totalGiftCard: "setTotalGiftCard",
+        totalSpin: "setTotalSpin"
+      };
+
+      Object.keys(mutationMap).forEach((key) => {
+        this.updateState({ mutationType: mutationMap[key], payload: totals[key] });
+      });
+
+      await service.setNewTotal({
+        ...totals,
+        totalSpecialSurprice: totals.totalSpecialSurprise,
+        totalGitfCard: totals.totalGiftCard
+      });
+    },
+    buildNextTotals(winnerIndex) {
+      const totals = {
+        totalReplay: this.totalReplay,
+        totalSpecialPrice: this.totalSpecialPrice,
+        totalSpecialSurprise: this.totalSpecialSurprise,
+        totalTopPrice: this.totalTopPrice,
+        totalGiftCard: this.totalGiftCard,
+        totalSpin: this.totalSpin + 1
+      };
+
+      switch (winnerIndex) {
+        case 0:
+        case 3:
+          totals.totalGiftCard += 1;
+          break;
+
+        case 2:
+        case 5:
+          totals.totalSpecialSurprise += 1;
+          break;
+
+        case 4:
+          totals.totalSpecialPrice += 1;
+          break;
+
+        case 6:
+          totals.totalReplay += 1;
+          break;
+
+        case 1:
+        case 7:
+          totals.totalTopPrice += 1;
+          break;
+
+        default:
+          break;
+      }
+
+      return totals;
+    },
+    normalizeRadians(angle) {
+      const fullTurn = Math.PI * 2;
+      const normalized = angle % fullTurn;
+
+      return normalized < 0 ? normalized + fullTurn : normalized;
+    },
+    normalizeDegrees(angle) {
+      const normalized = angle % 360;
+      return normalized < 0 ? normalized + 360 : normalized;
+    },
+    toDegrees(angle) {
+      return (angle * 180) / Math.PI;
+    },
+    toRadians(angle) {
+      return (angle * Math.PI) / 180;
     }
   }
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+.roulette-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wheel-stage {
+  position: relative;
+  width: min(100%, 720px);
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wheel-canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  filter: drop-shadow(0 25px 45px rgba(43, 53, 58, 0.14));
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  width: clamp(34px, 6vw, 56px);
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.wheel-center {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: clamp(92px, 16vw, 150px);
+  height: clamp(92px, 16vw, 150px);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(255, 250, 248, 0.95);
+  box-shadow: 0 16px 30px rgba(43, 53, 58, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.wheel-logo {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+}
+
+.spin-button {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff501c 0%, #ff824f 100%);
+  color: #fff;
+  padding: 0.95rem 1.8rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 16px 32px rgba(255, 80, 28, 0.24);
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.spin-button:hover:enabled {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 38px rgba(255, 80, 28, 0.3);
+}
+
+.spin-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .vibratingImage {
-  animation: shake 0.5s linear infinite;
+  animation: shake 0.48s linear infinite;
 }
 
 @keyframes shake {
   0% {
-    transform: translateX(0);
+    transform: translateX(-50%);
   }
 
   25% {
-    transform: translateX(-5px) rotate(-1deg);
+    transform: translateX(calc(-50% - 4px)) rotate(-3deg);
   }
 
   50% {
-    transform: translateX(0) rotate(1deg);
+    transform: translateX(-50%) rotate(2deg);
   }
 
   75% {
-    transform: translateX(5px) rotate(-1deg);
+    transform: translateX(calc(-50% + 4px)) rotate(-3deg);
   }
 
   100% {
-    transform: translateX(0);
+    transform: translateX(-50%);
   }
 }
 
 @font-face {
-  font-family: 'TeslaRegular';
-  src: url('../../src/assets/fonts/tesla-webfont.woff') format('woff2'),
-    url('../../src/assets/fonts/tesla-webfont.woff') format('woff');
+  font-family: "TeslaRegular";
+  src: url("../assets/fonts/tesla-webfont.woff2") format("woff2"),
+    url("../assets/fonts/tesla-webfont.woff") format("woff");
   font-weight: normal;
   font-style: normal;
+}
+
+@media (max-width: 640px) {
+  .wheel-stage {
+    width: 100%;
+  }
+
+  .spin-button {
+    width: 100%;
+  }
 }
 </style>

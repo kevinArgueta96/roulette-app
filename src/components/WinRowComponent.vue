@@ -1,25 +1,24 @@
 <template>
-  <div class="container">
-    <div
-      class="container"
-      :class="{ fadeInImage: visible, notShowImg: !visible } "
-      :style="{width:sizeGift+'rem'}"
-    >
-      <img :src="srcImg" class="img-fluid win-text" alt="Responsive image" ref="gifImg" />
-    </div>
+  <div class="result-shell" :class="{ 'result-shell--visible': visible }">
+    <img
+      v-if="srcImg"
+      :src="srcImg"
+      class="result-image"
+      :alt="imageAlt"
+      :style="{ '--gift-size': `${sizeGift || 16}rem` }"
+    />
+    <p v-else class="result-placeholder">Esperando resultado</p>
   </div>
 </template>
 
 <script>
 export default {
   name: "WinColumn",
-  data: () => {
-    return {
-      screenWidth: 0,
-    };
-  },
   props: {
-    srcImg: String,
+    srcImg: {
+      type: String,
+      default: ""
+    },
     visible: {
       type: Boolean,
       default: false
@@ -33,79 +32,52 @@ export default {
       default: 0
     }
   },
-  mounted() {
-  },
-  created() {
-    window.addEventListener("resize", this.handleResize);
-  },
-
-  destroyed() {
-    window.removeEventListener("resize", this.handleResize);
-  },
-  methods: {
-    handleResize() {
-      this.screenWidth = window.innerWidth;
+  computed: {
+    imageAlt() {
+      return this.winType ? `Premio ${this.winType}` : "Premio";
     }
   }
 };
 </script>
 
 <style scoped>
-.notShowImg {
-  opacity: 1;
-  transition: opacity 5s ease-in-out;
-  display: none;
+.result-shell {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 240ms ease, transform 240ms ease;
 }
-.fadeInImage {
-  animation: fadeIn 3s;
-  -webkit-animation: fadeIn 3s;
-  -moz-animation: fadeIn 3s;
-  -o-animation: fadeIn 3s;
-  -ms-animation: fadeIn 3s;
+
+.result-shell--visible {
+  opacity: 1;
+}
+
+.result-image {
+  width: min(100%, var(--gift-size));
+  max-height: min(40vh, 22rem);
+  object-fit: contain;
+  animation: fadeIn 320ms ease;
+}
+
+.result-placeholder {
+  margin: 0;
+  color: rgba(43, 53, 58, 0.45);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
 }
 
 @keyframes fadeIn {
-  0% {
+  from {
     opacity: 0;
+    transform: scale(0.98);
   }
-  100% {
-    opacity: 1;
-  }
-}
 
-@-moz-keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
+  to {
     opacity: 1;
-  }
-}
-
-@-webkit-keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@-o-keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@-ms-keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
+    transform: scale(1);
   }
 }
 </style>

@@ -1,121 +1,63 @@
-import { CONFIG } from '../../env.config'
+import { CONFIG } from "../../env.config";
 
-async function getOptions() {
+async function requestJson(path, options) {
   try {
-    const url = CONFIG.apiUrlQA+"roulette.json";
-    const response = await fetch(url);
-    return response.json();
+    const response = await fetch(`${CONFIG.apiUrlQA}${path}`, options);
+
+    if (!response.ok) {
+      return "error";
+    }
+
+    return await response.json();
   } catch (error) {
-    return 'error';
+    return "error";
   }
 }
 
-async function getTotals() {
-  try {
-    const url = CONFIG.apiUrlQA+"total-prices.json";
-    const response = await fetch(url);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function putJson(path, data) {
+  return requestJson(path, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  });
 }
 
-async function getGiftCards() {
-  try { 
-    const url =  CONFIG.apiUrlQA+"gift-cards.json";
-    const response = await fetch(url);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function getOptions() {
+  return requestJson("roulette.json");
 }
 
-async function getTopPrices() {
-  try { 
-    const url =  CONFIG.apiUrlQA+"top-prices.json";
-    const response = await fetch(url);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function getTotals() {
+  return requestJson("total-prices.json");
 }
 
-async function getTeslaWin() {
-  try { 
-    const url =  CONFIG.apiUrlQA+"tesla-win.json";
-    const response = await fetch(url);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function getGiftCards() {
+  return requestJson("gift-cards.json");
 }
 
-async function setNewTotal(data) {
-  try {
-    const url = CONFIG.apiUrlQA+"total-prices.json";
-    const options = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    };
-    const response = await fetch(url, options);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function getTopPrices() {
+  return requestJson("top-prices.json");
 }
 
-async function setGiftCards(data) {
-  try {
-    const url = CONFIG.apiUrlQA+"gift-cards.json";
-    const options = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    };
-    const response = await fetch(url, options);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function getTeslaWin() {
+  return requestJson("tesla-win.json");
 }
 
-async function setTopPrices(data) {
-  try {
-    const url = CONFIG.apiUrlQA+"top-prices.json";
-    const options = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    };
-    const response = await fetch(url, options);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function setNewTotal(data) {
+  return putJson("total-prices.json", data);
 }
 
-async function setTeslaWinService(data) {
-  try {
-    const url = CONFIG.apiUrlQA+"tesla-win.json";
-    const options = {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    };
-    const response = await fetch(url, options);
-    return response.json();
-  } catch (error) {
-    return 'error';
-  }
+function setGiftCards(data) {
+  return putJson("gift-cards.json", data);
+}
+
+function setTopPrices(data) {
+  return putJson("top-prices.json", data);
+}
+
+function setTeslaWinService(data) {
+  return putJson("tesla-win.json", data);
 }
 
 export default {
@@ -123,9 +65,9 @@ export default {
   getTotals,
   getGiftCards,
   getTopPrices,
-  setGiftCards,
   getTeslaWin,
   setNewTotal,
+  setGiftCards,
   setTopPrices,
   setTeslaWinService
 };
