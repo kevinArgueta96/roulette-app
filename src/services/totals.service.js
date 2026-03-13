@@ -1,16 +1,39 @@
 import { CONFIG } from "../../env.config";
+import {
+  normalizeOptions,
+  normalizePrizeCollection,
+  normalizeTotals
+} from "@/utils";
 
-async function requestJson(path, options) {
+const REQUEST_TIMEOUT_MS = 8000;
+
+async function requestJson(path, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
-    const response = await fetch(`${CONFIG.apiUrlQA}${path}`, options);
+    const response = await fetch(`${CONFIG.apiUrlQA}${path}`, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.headers || {})
+      },
+      signal: controller.signal
+    });
 
     if (!response.ok) {
-      return "error";
+      return null;
+    }
+
+    if (response.status === 204) {
+      return {};
     }
 
     return await response.json();
   } catch (error) {
-    return "error";
+    return null;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
@@ -24,49 +47,96 @@ function putJson(path, data) {
   });
 }
 
-function getOptions() {
-  return requestJson("roulette.json");
+async function getOptions() {
+  const response = await requestJson("roulette.json");
+  return response === null ? null : normalizeOptions(response);
 }
 
-function getTotals() {
-  return requestJson("total-prices.json");
+async function getTotals() {
+  const response = await requestJson("total-prices.json");
+  return response === null ? null : normalizeTotals(response);
 }
 
-function getGiftCards() {
-  return requestJson("gift-cards.json");
+async function getGiftCards() {
+  const response = await requestJson("gift-cards.json");
+  return response === null ? null : normalizePrizeCollection(response);
 }
 
-function getTopPrices() {
-  return requestJson("top-prices.json");
+async function getTopPrices() {
+  const response = await requestJson("top-prices.json");
+  return response === null ? null : normalizePrizeCollection(response);
 }
 
-function getTeslaWin() {
-  return requestJson("tesla-win.json");
+async function getTeslaWin() {
+  const response = await requestJson("tesla-win.json");
+  return response === null ? null : normalizePrizeCollection(response);
 }
 
-function setNewTotal(data) {
-  return putJson("total-prices.json", data);
+async function getBootstrapData() {
+  const [options, totals, giftCards, topPrices, teslaPrices] = await Promise.all([
+    getOptions(),
+    getTotals(),
+    getGiftCards(),
+    getTopPrices(),
+    getTeslaWin()
+  ]);
+
+  const errors = [];
+
+  if (options === null) {
+    errors.push("options");
+  }
+
+  if (totals === null) {
+    errors.push("totals");
+  }
+
+  if (giftCards === null) {
+    errors.push("giftCards");
+  }
+
+  if (topPrices === null) {
+    errors.push("topPrices");
+  }
+
+  if (teslaPrices === null) {
+    errors.push("teslaPrices");
+  }
+
+  return {
+    options: options || [],
+    totals: totals || null,
+    giftCards: giftCards || [],
+    topPrices: topPrices || [],
+    teslaPrices: teslaPrices || [],
+    errors
+  };
 }
 
-function setGiftCards(data) {
-  return putJson("gift-cards.json", data);
+async function saveTotals(data) {
+  return Boolean(await putJson("total-prices.json", data));
 }
 
-function setTopPrices(data) {
-  return putJson("top-prices.json", data);
+async function setGiftCards(data) {
+  return Boolean(await putJson("gift-cards.json", data));
 }
 
-function setTeslaWinService(data) {
-  return putJson("tesla-win.json", data);
+async function setTopPrices(data) {
+  return Boolean(await putJson("top-prices.json", data));
+}
+
+async function setTeslaWinService(data) {
+  return Boolean(await putJson("tesla-win.json", data));
 }
 
 export default {
+  getBootstrapData,
   getOptions,
   getTotals,
   getGiftCards,
   getTopPrices,
   getTeslaWin,
-  setNewTotal,
+  saveTotals,
   setGiftCards,
   setTopPrices,
   setTeslaWinService

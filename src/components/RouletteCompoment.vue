@@ -24,7 +24,16 @@
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
-import { obtenerHoraActual, calculateIndex } from "@/utils";
+import {
+  formatTime24h,
+  isTimeWithinRange,
+  pickWeightedIndex,
+  RESULT_BY_INDEX,
+  FALLBACK_INDEX,
+  buildForcedOptions,
+  buildNextTotals,
+  getTargetDegreesForIndex
+} from "@/utils";
 import {
   sectorsRoulette,
   colorsSectorRoulette,
@@ -35,17 +44,6 @@ import {
 const FULL_SPINS = 6;
 const SPIN_DURATION = 4600;
 const STRESS_TEST_DURATION = 650;
-const FALLBACK_INDEX = 6;
-const RESULT_BY_INDEX = {
-  0: "giftCard",
-  1: "tesla",
-  2: "differentBoxes",
-  3: "giftCard",
-  4: "individualBox",
-  5: "differentBoxes",
-  6: "replay",
-  7: "topPrice"
-};
 
 export default {
   name: "RouletteCompoment",
@@ -110,6 +108,16 @@ export default {
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
+    },
+    currentTotals() {
+      return {
+        totalReplay: this.totalReplay,
+        totalSpecialPrice: this.totalSpecialPrice,
+        totalSpecialSurprise: this.totalSpecialSurprise,
+        totalTopPrice: this.totalTopPrice,
+        totalGiftCard: this.totalGiftCard,
+        totalSpin: this.totalSpin
+      };
     }
   },
   mounted() {
@@ -437,61 +445,16 @@ export default {
     },
     calculateTargetAngle(winnerIndex, currentAngle) {
       const currentDegrees = this.toDegrees(this.normalizeRadians(currentAngle));
-      const targetDegrees = this.getTargetDegreesForIndex(winnerIndex);
+      const targetDegrees = getTargetDegreesForIndex(winnerIndex, this.arc);
       const delta = this.normalizeDegrees(targetDegrees - currentDegrees) + FULL_SPINS * 360;
 
       return currentAngle + this.toRadians(delta);
-    },
-    getTargetDegreesForIndex(winnerIndex) {
-      const matches = [];
-
-      for (let degree = 0; degree < 360; degree += 0.5) {
-        const index = calculateIndex({
-          startAngle: this.toRadians(degree),
-          arc: this.arc
-        });
-
-        if (index === winnerIndex) {
-          matches.push(degree);
-        }
-      }
-
-      if (!matches.length) {
-        return 0;
-      }
-
-      return matches[Math.floor(matches.length / 2)];
     },
     generateNumberToShow() {
       const forcedConfiguration = this.generateProbabilityPriceByScheduler();
       const probabilities = Array.isArray(forcedConfiguration) ? forcedConfiguration : this.options;
 
-      return this.getWeightedWinner(probabilities);
-    },
-    getWeightedWinner(probabilities) {
-      if (!Array.isArray(probabilities) || !probabilities.length) {
-        return FALLBACK_INDEX;
-      }
-
-      const weights = probabilities.map((item) => Math.max(0, Number(item.probability) || 0));
-      const totalWeight = weights.reduce((accumulator, value) => accumulator + value, 0);
-
-      if (totalWeight <= 0) {
-        return FALLBACK_INDEX;
-      }
-
-      const threshold = Math.random() * totalWeight;
-      let cumulative = 0;
-
-      for (let index = 0; index < weights.length; index += 1) {
-        cumulative += weights[index];
-
-        if (threshold <= cumulative) {
-          return index;
-        }
-      }
-
-      return weights.length - 1;
+      return pickWeightedIndex(probabilities, FALLBACK_INDEX);
     },
     async updateWinnerChoice({ typeWinner, positionWinner }) {
       switch (typeWinner) {
@@ -528,13 +491,12 @@ export default {
     },
     generateProbabilityPriceByScheduler() {
       const scheduledPrizes = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
-      const currentTime = obtenerHoraActual();
+      const currentTime = formatTime24h();
 
       const scheduledWinner = scheduledPrizes.find((item) => (
         item &&
-        currentTime >= item.rangeDown &&
-        currentTime <= item.rangeTop &&
-        item.given === false
+        item.given === false &&
+        isTimeWithinRange(currentTime, item.rangeDown, item.rangeTop)
       ));
 
       if (!scheduledWinner) {
@@ -546,60 +508,10 @@ export default {
         positionWinner: scheduledWinner.position
       }).catch(() => null);
 
-      return this.obtainConfigurationSectorWin(scheduledWinner.type);
-    },
-    obtainConfigurationSectorWin(typeWinner) {
-      switch (typeWinner) {
-        case "card": {
-          const { firstOption, secondOption } = this.generateRandomNumbers();
-
-          return [
-            { option: "LAHJAKORTTI", probability: firstOption },
-            { option: "TESLA", probability: 0 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "LAHJAKORTTI", probability: secondOption },
-            { option: "TUOTEPALKINTO", probability: 0 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "UUDESTAAN", probability: 0 },
-            { option: "PÄÄPALKINTO", probability: 0 }
-          ];
-        }
-
-        case "topPrice":
-          return [
-            { option: "LAHJAKORTTI", probability: 0 },
-            { option: "TESLA", probability: 0 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "LAHJAKORTTI", probability: 0 },
-            { option: "TUOTEPALKINTO", probability: 0 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "UUDESTAAN", probability: 0 },
-            { option: "PÄÄPALKINTO", probability: 1 }
-          ];
-
-        case "teslaWin":
-          return [
-            { option: "LAHJAKORTTI", probability: 0 },
-            { option: "TESLA", probability: 1 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "LAHJAKORTTI", probability: 0 },
-            { option: "TUOTEPALKINTO", probability: 0 },
-            { option: "YLLÄTYSPALKINTO", probability: 0 },
-            { option: "UUDESTAAN", probability: 0 },
-            { option: "PÄÄPALKINTO", probability: 0 }
-          ];
-
-        default:
-          return null;
-      }
-    },
-    generateRandomNumbers() {
-      return Math.round(Math.random()) === 0
-        ? { firstOption: 0, secondOption: 1 }
-        : { firstOption: 1, secondOption: 0 };
+      return buildForcedOptions(scheduledWinner.type);
     },
     async persistSpinResult(winnerIndex) {
-      const totals = this.buildNextTotals(winnerIndex);
+      const totals = buildNextTotals(this.currentTotals, winnerIndex);
       const mutationMap = {
         totalReplay: "setTotalReplay",
         totalSpecialPrice: "setTotalSpecialPrice",
@@ -613,51 +525,11 @@ export default {
         this.updateState({ mutationType: mutationMap[key], payload: totals[key] });
       });
 
-      await service.setNewTotal({
+      await service.saveTotals({
         ...totals,
         totalSpecialSurprice: totals.totalSpecialSurprise,
         totalGitfCard: totals.totalGiftCard
       });
-    },
-    buildNextTotals(winnerIndex) {
-      const totals = {
-        totalReplay: this.totalReplay,
-        totalSpecialPrice: this.totalSpecialPrice,
-        totalSpecialSurprise: this.totalSpecialSurprise,
-        totalTopPrice: this.totalTopPrice,
-        totalGiftCard: this.totalGiftCard,
-        totalSpin: this.totalSpin + 1
-      };
-
-      switch (winnerIndex) {
-        case 0:
-        case 3:
-          totals.totalGiftCard += 1;
-          break;
-
-        case 2:
-        case 5:
-          totals.totalSpecialSurprise += 1;
-          break;
-
-        case 4:
-          totals.totalSpecialPrice += 1;
-          break;
-
-        case 6:
-          totals.totalReplay += 1;
-          break;
-
-        case 1:
-        case 7:
-          totals.totalTopPrice += 1;
-          break;
-
-        default:
-          break;
-      }
-
-      return totals;
     },
     normalizeRadians(angle) {
       const fullTurn = Math.PI * 2;

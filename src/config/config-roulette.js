@@ -1,44 +1,44 @@
 export const sectorsRoulette = [
-    "LAHJAKORTTI",
-    "TESLA", //15-20%
-    { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
-    "LAHJAKORTTI",
-    { 0: "TUOTE", 1: "PALKINTO" }, // based on probability (surpise win) //10 % special prize
-    { 0: "YLLÄTYS", 1: "PALKINTO" }, // based on probability (surpise win)
-    "UUDESTAAN", //15-20%
-    "PÄÄPALKINTO" // 0% dependiendo la hrora
-]
+  "LAHJAKORTTI",
+  "TESLA",
+  { 0: "YLLÄTYS", 1: "PALKINTO" },
+  "LAHJAKORTTI",
+  { 0: "TUOTE", 1: "PALKINTO" },
+  { 0: "YLLÄTYS", 1: "PALKINTO" },
+  "UUDESTAAN",
+  "PÄÄPALKINTO"
+];
 
 export const colorsSectorRoulette = [
-    "#FFF2F1", //Blanco
-    "#000000", // NEGRO
-    "#FF501C", // anaranjado
-    "#FFF2F1", //bLANCO
-    "#C9ECFF", //CELESTE
-    "#FF501C",// anaranjado
-    "#2B353A", // celeste
-    "#FFEDA3" // amarillo 
-]
+  "#FFF2F1",
+  "#000000",
+  "#FF501C",
+  "#FFF2F1",
+  "#C9ECFF",
+  "#FF501C",
+  "#2B353A",
+  "#FFEDA3"
+];
 
 export const textDefaultRouletteStyle = {
-    fontWeight: '700',
-    fontSizeUnit: 'rem',
-    fontFamily: 'Helvetica, Arial',
+  fontWeight: "700",
+  fontFamily: "Helvetica, Arial"
 };
 
 export const textTeslaRouletteStyle = {
-    fontWeight: '100',
-    fontSizeUnit: 'rem',
-    fontFamily: 'TeslaRegular',
+  fontWeight: "100",
+  fontFamily: "TeslaRegular"
 };
 
-export const initialOptionsConfigRoullete = [
-    { "option": "LAHJAKORTT", "probability": 0 },
-    { "option": "TESLA", "probability": 0 },
-    { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
-    { "option": "LAHJAKORTTI", "probability": 0 },
-    { "option": "TUOTEPALKINTO", "probability": 0.60 },
-    { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
-    { "option": "UUDESTAAN", "probability": 0.1 },
-    { "option": "PÄÄPALKINTO", "probability": 0 }
-]
+export const initialOptionsConfigRoulette = [
+  { option: "LAHJAKORTTI", probability: 0 },
+  { option: "TESLA", probability: 0 },
+  { option: "YLLÄTYSPALKINTO", probability: 0.15 },
+  { option: "LAHJAKORTTI", probability: 0 },
+  { option: "TUOTEPALKINTO", probability: 0.6 },
+  { option: "YLLÄTYSPALKINTO", probability: 0.15 },
+  { option: "UUDESTAAN", probability: 0.1 },
+  { option: "PÄÄPALKINTO", probability: 0 }
+];
+
+export const initialOptionsConfigRoullete = initialOptionsConfigRoulette;

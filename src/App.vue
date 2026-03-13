@@ -22,7 +22,18 @@
             </p>
           </div>
 
-          <RouletteCompoment @showImg="showImg" />
+          <p v-if="loadWarning" class="status-banner">
+            {{ loadWarning }}
+          </p>
+
+          <div v-if="isLoading" class="status-card">
+            <span class="status-spinner"></span>
+            <p>Cargando configuracion de premios...</p>
+          </div>
+
+          <div v-else class="roulette-content">
+            <RouletteCompoment @showImg="showImg" />
+          </div>
         </div>
       </section>
 
@@ -46,7 +57,7 @@
 import RouletteCompoment from "./components/RouletteCompoment.vue";
 import WinRowComponent from "./components/WinRowComponent.vue";
 import ConfettiComponent from "./components/ConfettiComponent.vue";
-import { mapGetters, mapActions } from "vuex";
+import { mapActions } from "vuex";
 import service from "@/services/totals.service";
 
 const RESULT_CONFIG = {
@@ -101,11 +112,12 @@ export default {
       winType: "",
       sizeGift: 0,
       isVisibleConfetti: false,
-      resultTimer: null
+      resultTimer: null,
+      isLoading: true,
+      loadWarning: ""
     };
   },
   computed: {
-    ...mapGetters(["timeToShowOptions"]),
     hasResult() {
       return Boolean(this.srcImg);
     }
@@ -117,56 +129,26 @@ export default {
     this.clearTimers();
   },
   methods: {
-    ...mapActions(["initializeRandomAngle", "updateState"]),
+    ...mapActions(["initializeRandomAngle", "hydrateBootstrapData", "updateState"]),
     async loadInitialData() {
+      this.isLoading = true;
+      this.loadWarning = "";
       this.initializeRandomAngle();
 
-      const [options, totals, giftCards, topPrices, teslaPrices] = await Promise.all([
-        service.getOptions(),
-        service.getTotals(),
-        service.getGiftCards(),
-        service.getTopPrices(),
-        service.getTeslaWin()
-      ]);
+      const bootstrapData = await service.getBootstrapData();
+      this.hydrateBootstrapData(bootstrapData);
 
-      if (options && options !== "error") {
-        this.defineState("setOptions", options.sectors || options);
+      if (bootstrapData.errors.length) {
+        this.loadWarning = "Algunos datos remotos no respondieron. Se usaran valores disponibles y la app seguira operativa.";
       }
 
-      if (totals && totals !== "error") {
-        const mutationMap = {
-          totalReplay: "setTotalReplay",
-          totalSpecialPrice: "setTotalSpecialPrice",
-          totalSpecialSurprise: "setTotalSpecialSurprise",
-          totalTopPrice: "setTotalTopPrice",
-          totalGiftCard: "setTotalGiftCard",
-          totalSpin: "setTotalSpin"
-        };
-
-        Object.keys(mutationMap).forEach((key) => {
-          if (typeof totals[key] !== "undefined") {
-            this.defineState(mutationMap[key], totals[key]);
-          }
-        });
-      }
-
-      if (giftCards && giftCards !== "error") {
-        this.defineState("setGiftCards", Object.values(giftCards));
-      }
-
-      if (topPrices && topPrices !== "error") {
-        this.defineState("setTopPrices", Object.values(topPrices));
-      }
-
-      if (teslaPrices && teslaPrices !== "error") {
-        this.defineState("setTeslaPrices", Object.values(teslaPrices));
-      }
+      this.isLoading = false;
     },
     showImg({ type }) {
       const result = RESULT_CONFIG[type];
 
       if (!result) {
-        this.defineState("setSpinRoullete", true);
+        this.updateState({ mutationType: "setSpinRoullete", payload: true });
         return;
       }
 
@@ -175,7 +157,7 @@ export default {
       this.winType = type;
       this.sizeGift = result.sizeGift;
       this.isVisibleConfetti = result.confetti;
-      this.defineState("setTimeToShowOptions", result.duration);
+      this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
 
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
@@ -187,19 +169,13 @@ export default {
       this.winType = "";
       this.sizeGift = 0;
       this.isVisibleConfetti = false;
-      this.defineState("setSpinRoullete", true);
+      this.updateState({ mutationType: "setSpinRoullete", payload: true });
     },
     clearTimers() {
       if (this.resultTimer) {
         window.clearTimeout(this.resultTimer);
         this.resultTimer = null;
       }
-    },
-    defineState(mutationType, payload) {
-      this.updateState({
-        mutationType,
-        payload
-      });
     }
   }
 };
@@ -278,6 +254,50 @@ export default {
   font-weight: 700;
 }
 
+.roulette-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.status-banner,
+.status-card {
+  border-radius: 18px;
+  background: rgba(255, 80, 28, 0.08);
+  border: 1px solid rgba(255, 80, 28, 0.15);
+  color: #8d3a1a;
+}
+
+.status-banner {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+}
+
+.status-card {
+  flex: 1;
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  gap: 0.8rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.status-card p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.status-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 4px solid rgba(255, 80, 28, 0.18);
+  border-top-color: #ff501c;
+  animation: spin 0.8s linear infinite;
+}
+
 .result-panel {
   display: flex;
   align-items: center;
@@ -303,6 +323,12 @@ export default {
   width: min(240px, 42vw);
   max-width: 100%;
   object-fit: contain;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 1100px) {

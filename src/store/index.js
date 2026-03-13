@@ -1,92 +1,117 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-import { initialOptionsConfigRoullete } from '@/config/config-roulette.js'
+import Vue from "vue";
+import Vuex from "vuex";
+import { initialOptionsConfigRoulette } from "@/config/config-roulette.js";
+import { RANDOM_START_ANGLES } from "@/utils";
 
-Vue.use(Vuex)
+Vue.use(Vuex);
+
+const createState = () => ({
+  options: [...initialOptionsConfigRoulette],
+  timeToShowOptions: 7000,
+  totalReplay: 0,
+  totalSpecialPrice: 0,
+  totalSpecialSurprise: 0,
+  totalTopPrice: 0,
+  totalGiftCard: 0,
+  totalSpin: 0,
+  giftCards: [],
+  topPrices: [],
+  teslaPrices: [],
+  initialAngle: RANDOM_START_ANGLES[0],
+  spinRoullete: true
+});
+
+const totalKeys = [
+  "totalReplay",
+  "totalSpecialPrice",
+  "totalSpecialSurprise",
+  "totalTopPrice",
+  "totalGiftCard",
+  "totalSpin"
+];
 
 export default new Vuex.Store({
-  state: {
-    options: initialOptionsConfigRoullete,
-    timeToShowOptions: 7000,
-    totalReplay: 0,
-    totalSpecialPrice: 0,
-    totalSpecialSurprise: 0,
-    totalTopPrice: 0,
-    totalGiftCard: 0,
-    totalSpin: 0,
-    giftCards: [],
-    topPrices: [],
-    teslaPrices: [],
-    initialAngle: 0,
-    spinRoullete: true,
-  },
-  getters: {
-    options: (state) => state.options,
-    timeToShowOptions: (state) => state.timeToShowOptions,
-    totalReplay: (state) => state.totalReplay,
-    totalSpecialPrice: (state) => state.totalSpecialPrice,
-    totalSpecialSurprise: (state) => state.totalSpecialSurprise,
-    totalTopPrice: (state) => state.totalTopPrice,
-    totalGiftCard: (state) => state.totalGiftCard,
-    totalSpin: (state) => state.totalSpin,
-    giftCards: (state) => state.giftCards,
-    topPrices: (state) => state.topPrices,
-    teslaPrices: (state) => state.teslaPrices,
-    initialAngle: (state) => state.initialAngle,
-    spinRoullete: (state) => state.spinRoullete,
-
-  },
+  state: createState(),
+  getters: Object.keys(createState()).reduce((accumulator, key) => ({
+    ...accumulator,
+    [key]: (state) => state[key]
+  }), {}),
   mutations: {
     setOptions(state, payload) {
-      state.options = payload;
+      state.options = Array.isArray(payload) && payload.length
+        ? payload
+        : [...initialOptionsConfigRoulette];
+    },
+    setTotals(state, payload) {
+      totalKeys.forEach((key) => {
+        state[key] = Number(payload?.[key]) || 0;
+      });
     },
     setTotalReplay(state, payload) {
-      state.totalReplay = payload;
+      state.totalReplay = Number(payload) || 0;
     },
     setTotalSpecialPrice(state, payload) {
-      state.totalSpecialPrice = payload;
+      state.totalSpecialPrice = Number(payload) || 0;
     },
     setTotalSpecialSurprise(state, payload) {
-      state.totalSpecialSurprise = payload;
+      state.totalSpecialSurprise = Number(payload) || 0;
     },
     setTotalTopPrice(state, payload) {
-      state.totalTopPrice = payload;
+      state.totalTopPrice = Number(payload) || 0;
     },
     setTotalGiftCard(state, payload) {
-      state.totalGiftCard = payload;
+      state.totalGiftCard = Number(payload) || 0;
     },
     setTotalSpin(state, payload) {
-      state.totalSpin = payload;
+      state.totalSpin = Number(payload) || 0;
     },
     setGiftCards(state, payload) {
-      state.giftCards = payload;
+      state.giftCards = Array.isArray(payload) ? payload : [];
     },
     setTopPrices(state, payload) {
-      state.topPrices = payload;
+      state.topPrices = Array.isArray(payload) ? payload : [];
     },
     setTeslaPrices(state, payload) {
-      state.teslaPrices = payload;
+      state.teslaPrices = Array.isArray(payload) ? payload : [];
     },
     setInitialAngle(state, payload) {
-      state.initialAngle = payload;
+      state.initialAngle = Number(payload) || 0;
     },
     setSpinRoullete(state, payload) {
-      state.spinRoullete = payload;
+      state.spinRoullete = Boolean(payload);
     },
-    setTimeToShowOptions(state, payload){
-      state.timeToShowOptions = payload;
+    setTimeToShowOptions(state, payload) {
+      state.timeToShowOptions = Number(payload) || 7000;
     }
   },
   actions: {
-    initializeRandomAngle({commit}) {
-      const positions = [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
-      const randomNumber = Math.floor(Math.random() * positions.length);
-      commit('setInitialAngle', positions[randomNumber]);
+    initializeRandomAngle({ commit }) {
+      const randomIndex = Math.floor(Math.random() * RANDOM_START_ANGLES.length);
+      commit("setInitialAngle", RANDOM_START_ANGLES[randomIndex]);
     },
+    hydrateBootstrapData({ commit }, payload) {
+      if (payload?.options) {
+        commit("setOptions", payload.options);
+      }
 
-    updateState({commit}, {mutationType, payload}) {
+      if (payload?.totals) {
+        commit("setTotals", payload.totals);
+      }
+
+      if (payload?.giftCards) {
+        commit("setGiftCards", payload.giftCards);
+      }
+
+      if (payload?.topPrices) {
+        commit("setTopPrices", payload.topPrices);
+      }
+
+      if (payload?.teslaPrices) {
+        commit("setTeslaPrices", payload.teslaPrices);
+      }
+    },
+    updateState({ commit }, { mutationType, payload }) {
       commit(mutationType, payload);
-    },
-
-  },
-})
+    }
+  }
+});
