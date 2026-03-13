@@ -34,6 +34,7 @@ import {
 
 const FULL_SPINS = 6;
 const SPIN_DURATION = 4600;
+const STRESS_TEST_DURATION = 650;
 const FALLBACK_INDEX = 6;
 const RESULT_BY_INDEX = {
   0: "giftCard",
@@ -58,7 +59,14 @@ export default {
       resizeRaf: null,
       animationFrame: null,
       showAnimation: false,
-      isSpinning: false
+      isSpinning: false,
+      pendingResize: false,
+      stressTest: {
+        active: false,
+        total: 0,
+        completed: 0,
+        duration: STRESS_TEST_DURATION
+      }
     };
   },
   computed: {
@@ -108,11 +116,13 @@ export default {
     this.startAngle = this.normalizeRadians(this.initialAngle || 0);
     this.initializeCanvas();
     this.observeResize();
+    this.registerDebugApi();
     document.addEventListener("keyup", this.spinRoulleteByEnter);
   },
   beforeDestroy() {
     document.removeEventListener("keyup", this.spinRoulleteByEnter);
     window.removeEventListener("resize", this.handleResize);
+    this.unregisterDebugApi();
     this.stopAnimation();
 
     if (this.resizeObserver) {
@@ -145,6 +155,11 @@ export default {
       this.resizeObserver.observe(this.$refs.containerCircule);
     },
     handleResize() {
+      if (this.isSpinning) {
+        this.pendingResize = true;
+        return;
+      }
+
       if (this.resizeRaf) {
         window.cancelAnimationFrame(this.resizeRaf);
       }
@@ -173,9 +188,18 @@ export default {
       this.canvas.height = nextSize * devicePixelRatio;
       this.canvas.style.width = `${nextSize}px`;
       this.canvas.style.height = `${nextSize}px`;
-      this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      this.resetCanvasState(devicePixelRatio);
 
       this.drawRouletteWheel();
+    },
+    resetCanvasState(devicePixelRatio = window.devicePixelRatio || 1) {
+      if (!this.canvas || !this.ctx) {
+        return;
+      }
+
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     },
     spinRoulleteByEnter(event) {
       const isSpace = event.key === " " || event.code === "Space";
@@ -251,28 +275,34 @@ export default {
 
       return "#111111";
     },
-    spin() {
+    spin(spinConfig = {}) {
       if (!this.canSpin) {
         return;
       }
 
-      const winnerIndex = this.generateNumberToShow();
+      const winnerIndex = typeof spinConfig.winnerIndex === "number"
+        ? spinConfig.winnerIndex
+        : this.generateNumberToShow();
 
       if (typeof winnerIndex !== "number") {
         this.updateState({ mutationType: "setSpinRoullete", payload: true });
+        if (typeof spinConfig.onComplete === "function") {
+          spinConfig.onComplete(false);
+        }
         return;
       }
 
       const currentAngle = this.normalizeRadians(this.startAngle);
       const targetAngle = this.calculateTargetAngle(winnerIndex, currentAngle);
       const startTime = performance.now();
+      const duration = Math.max(200, Number(spinConfig.duration) || SPIN_DURATION);
 
       this.isSpinning = true;
       this.showAnimation = true;
       this.updateState({ mutationType: "setSpinRoullete", payload: false });
 
       const animate = (timestamp) => {
-        const progress = Math.min((timestamp - startTime) / SPIN_DURATION, 1);
+        const progress = Math.min((timestamp - startTime) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
 
         this.startAngle = currentAngle + (targetAngle - currentAngle) * eased;
@@ -283,20 +313,36 @@ export default {
           return;
         }
 
-        this.finishSpin(winnerIndex);
+        this.finishSpin(winnerIndex, spinConfig);
       };
 
       this.animationFrame = window.requestAnimationFrame(animate);
     },
-    finishSpin(winnerIndex) {
+    finishSpin(winnerIndex, spinConfig = {}) {
       this.stopAnimation();
 
       this.startAngle = this.normalizeRadians(this.startAngle);
       this.drawRouletteWheel();
       this.updateState({ mutationType: "setInitialAngle", payload: this.startAngle });
 
-      this.persistSpinResult(winnerIndex).catch(() => null);
-      this.$emit("showImg", { type: RESULT_BY_INDEX[winnerIndex] || RESULT_BY_INDEX[FALLBACK_INDEX] });
+      if (this.pendingResize) {
+        this.pendingResize = false;
+        this.updateCanvasSize();
+      }
+
+      if (!spinConfig.skipPersist) {
+        this.persistSpinResult(winnerIndex).catch(() => null);
+      }
+
+      if (spinConfig.skipResult) {
+        this.updateState({ mutationType: "setSpinRoullete", payload: true });
+      } else {
+        this.$emit("showImg", { type: RESULT_BY_INDEX[winnerIndex] || RESULT_BY_INDEX[FALLBACK_INDEX] });
+      }
+
+      if (typeof spinConfig.onComplete === "function") {
+        spinConfig.onComplete(true);
+      }
     },
     stopAnimation() {
       if (this.animationFrame) {
@@ -306,6 +352,88 @@ export default {
 
       this.showAnimation = false;
       this.isSpinning = false;
+    },
+    async runCanvasStressTest(iterations = 300, duration = STRESS_TEST_DURATION) {
+      if (this.stressTest.active || this.isSpinning) {
+        return false;
+      }
+
+      const totalIterations = Math.max(1, Number(iterations) || 300);
+      const spinDuration = Math.max(200, Number(duration) || STRESS_TEST_DURATION);
+
+      this.stressTest = {
+        active: true,
+        total: totalIterations,
+        completed: 0,
+        duration: spinDuration
+      };
+
+      for (let step = 0; step < totalIterations; step += 1) {
+        if (!this.stressTest.active) {
+          break;
+        }
+
+        const randomIndex = Math.floor(Math.random() * sectorsRoulette.length);
+
+        await new Promise((resolve) => {
+          this.spin({
+            winnerIndex: randomIndex,
+            duration: spinDuration,
+            skipPersist: true,
+            skipResult: true,
+            onComplete: resolve
+          });
+        });
+
+        this.stressTest.completed = step + 1;
+      }
+
+      const wasCompleted = this.stressTest.completed === this.stressTest.total;
+
+      this.stressTest = {
+        active: false,
+        total: 0,
+        completed: 0,
+        duration: spinDuration
+      };
+
+      return wasCompleted;
+    },
+    stopCanvasStressTest() {
+      this.stressTest = {
+        active: false,
+        total: 0,
+        completed: 0,
+        duration: STRESS_TEST_DURATION
+      };
+    },
+    registerDebugApi() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      window.__rouletteDebug = {
+        spinTo: (index) => this.spin({ winnerIndex: Number(index) }),
+        runCanvasStressTest: (iterations = 300, duration = STRESS_TEST_DURATION) => (
+          this.runCanvasStressTest(iterations, duration)
+        ),
+        stopCanvasStressTest: () => this.stopCanvasStressTest(),
+        getState: () => ({
+          isSpinning: this.isSpinning,
+          canvasSize: this.canvasSize,
+          pendingResize: this.pendingResize,
+          stressTest: { ...this.stressTest }
+        })
+      };
+    },
+    unregisterDebugApi() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (window.__rouletteDebug) {
+        delete window.__rouletteDebug;
+      }
     },
     calculateTargetAngle(winnerIndex, currentAngle) {
       const currentDegrees = this.toDegrees(this.normalizeRadians(currentAngle));
