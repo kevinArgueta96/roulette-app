@@ -22,6 +22,26 @@
       </ul>
 
       <div class="db-sidebar__footer">
+        <!-- Mode toggle -->
+        <div class="db-mode-section">
+          <span class="db-mode-section__label">Fuente de datos</span>
+          <button class="db-mode-btn" @click="toggleMode">
+            <span class="db-mode-track" :class="{ 'db-mode-track--on': isLocalMode }">
+              <span class="db-mode-thumb"></span>
+            </span>
+            <span class="db-mode-text">{{ isLocalMode ? 'Local' : 'Remoto' }}</span>
+          </button>
+        </div>
+
+        <!-- Export / Import (solo en modo local) -->
+        <div v-if="isLocalMode" class="db-local-actions">
+          <button class="db-local-btn" @click="exportLocalData">↓ Exportar JSON</button>
+          <label class="db-local-btn">
+            ↑ Importar JSON
+            <input type="file" accept=".json" style="display:none" @change="importLocalData" />
+          </label>
+        </div>
+
         <button class="db-back-btn" @click="$router.push('/')">
           <span>←</span> Ruleta
         </button>
@@ -35,7 +55,7 @@
       <header class="db-topbar">
         <div class="db-topbar__left">
           <h1 class="db-topbar__title">{{ currentSection.label }}</h1>
-          <span class="db-topbar__sub">Evento en curso</span>
+          <span class="db-topbar__sub">{{ isLocalMode ? '● Modo local' : '○ Modo remoto' }}</span>
         </div>
         <div class="db-topbar__right">
           <button class="db-btn db-btn--ghost" :disabled="isRefreshing" @click="refresh">
@@ -198,6 +218,7 @@ export default {
   data() {
     return {
       activeSection: "overview",
+      isLocalMode: service.getMode() === "local",
       isSaving: false,
       isRefreshing: false,
       statusMsg: "",
@@ -252,14 +273,52 @@ export default {
       "setTotalTopPrice", "setTotalGiftCard", "setTotalSpin",
       "setGiftCards", "setTopPrices", "setTotals"
     ]),
+    toggleMode() {
+      const next = this.isLocalMode ? "remote" : "local";
+      service.setMode(next);
+      this.isLocalMode = next === "local";
+      this.refresh();
+      this.showStatus(next === "local" ? "Modo local activado" : "Modo remoto activado", "success");
+    },
+    exportLocalData() {
+      const db = service.getLocalDb();
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "roulette-local-db.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    importLocalData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const db = JSON.parse(e.target.result);
+          service.setLocalDb(db);
+          this.refresh();
+          this.showStatus("Datos importados correctamente", "success");
+        } catch {
+          this.showStatus("Archivo JSON inválido", "error");
+        }
+      };
+      reader.readAsText(file);
+    },
     async refresh() {
       this.isRefreshing = true;
       try {
         const data = await service.getBootstrapData();
+        // Sync local mode flag (puede haber cambiado por auto-fallback)
+        this.isLocalMode = service.getMode() === "local";
+        if (data.autoFallback) {
+          this.showStatus("Sin conexión — modo local activado automáticamente", "error");
+        }
         if (data.totals)    this.setTotals(data.totals);
         if (data.giftCards) this.setGiftCards(data.giftCards);
         if (data.topPrices) this.setTopPrices(data.topPrices);
-        this.showStatus("Datos actualizados", "success");
+        if (!data.autoFallback) this.showStatus("Datos actualizados", "success");
       } catch {
         this.showStatus("Error al refrescar", "error");
       } finally {
@@ -747,4 +806,89 @@ export default {
   opacity: 0;
   transform: translateY(10px);
 }
+
+/* ── Mode toggle ── */
+.db-mode-section {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 0.75rem;
+}
+
+.db-mode-section__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 0.5rem;
+}
+
+.db-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.db-mode-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+  transition: background 200ms;
+  flex-shrink: 0;
+}
+
+.db-mode-track--on { background: #ff501c; }
+
+.db-mode-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 200ms;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.db-mode-track--on .db-mode-thumb { transform: translateX(16px); }
+
+.db-mode-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── Local actions ── */
+.db-local-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.db-local-btn {
+  display: block;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  background: rgba(255,80,28,0.12);
+  border: 1px solid rgba(255,80,28,0.25);
+  border-radius: 8px;
+  color: #ff6b3d;
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms;
+}
+
+.db-local-btn:hover { background: rgba(255,80,28,0.2); }
 </style>

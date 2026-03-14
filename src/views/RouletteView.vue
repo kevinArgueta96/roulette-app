@@ -142,7 +142,9 @@ export default {
       const bootstrapData = await service.getBootstrapData();
       this.hydrateBootstrapData(bootstrapData);
 
-      if (bootstrapData.errors.length) {
+      if (bootstrapData.autoFallback) {
+        this.loadWarning = "Sin conexión con Firebase. Operando en modo local automáticamente.";
+      } else if (bootstrapData.errors.length) {
         this.loadWarning = "Algunos datos remotos no respondieron. Se usaran valores disponibles y la app seguira operativa.";
       }
 
