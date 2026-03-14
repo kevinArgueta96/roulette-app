@@ -1,0 +1,33 @@
+{
+    "roulette": {
+      "sectors": [
+        { "option": "LAHJAKORTTI", "probability": 0 },
+        { "option": "TESLA", "probability": 0 },
+        { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
+        { "option": "LAHJAKORTTI", "probability": 0 },
+        { "option": "TUOTEPALKINTO", "probability": 0.6 },
+        { "option": "YLLÄTYSPALKINTO", "probability": 0.15 },
+        { "option": "UUDESTAAN", "probability": 0.1 },
+        { "option": "PÄÄPALKINTO", "probability": 0 }
+      ]
+    },
+    "total-prices": {
+      "totalReplay": 0,
+      "totalSpecialPrice": 0,
+      "totalSpecialSurprise": 0,
+      "totalTopPrice": 0,
+      "totalGiftCard": 0,
+      "totalSpin": 0
+    },
+    "gift-cards": [
+      { "position": 0, "type": "card", "given": false, "rangeDown": "10:00", "rangeTop": "23:00" },
+      { "position": 1, "type": "card", "given": false, "rangeDown": "12:00", "rangeTop": "14:00" },
+      { "position": 2, "type": "card", "given": false, "rangeDown": "14:00", "rangeTop": "16:00" }
+    ],
+    "top-prices": [
+      { "position": 0, "type": "topPrice", "given": false, "rangeDown": "10:00", "rangeTop": "23:59" }
+    ],
+    "tesla-win": [
+      { "position": 0, "type": "teslaWin", "given": false, "rangeDown": "13:00", "rangeTop": "19:00" }
+    ]
+  }

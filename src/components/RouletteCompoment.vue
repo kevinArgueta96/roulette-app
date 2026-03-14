@@ -525,11 +525,7 @@ export default {
         this.updateState({ mutationType: mutationMap[key], payload: totals[key] });
       });
 
-      await service.saveTotals({
-        ...totals,
-        totalSpecialSurprice: totals.totalSpecialSurprise,
-        totalGitfCard: totals.totalGiftCard
-      });
+      await service.saveTotals(totals);
     },
     normalizeRadians(angle) {
       const fullTurn = Math.PI * 2;
