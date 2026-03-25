@@ -311,7 +311,7 @@ export default {
       return Object.values(sector);
     },
     getTextColor(index) {
-      return index === 0 || index === 2 || index === 4 || index === 6 || index === 7
+      return [0, 1, 3, 5, 7, 9, 11].includes(index)
         ? "#f6edd1"
         : "#2d5b38";
     },

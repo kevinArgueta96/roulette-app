@@ -1,16 +1,20 @@
 import { calculateIndex } from "./calculate_roulette";
 
-export const FALLBACK_INDEX = 0;
+export const FALLBACK_INDEX = 1;
 
 export const RESULT_BY_INDEX = {
-  0: "noWin",
-  1: "surpriseWin",
-  2: "noWin",
-  3: "repeat",
-  4: "noWin",
-  5: "surpriseWin",
-  6: "noWin",
-  7: "mainPrize"
+  0: "mainPrize",
+  1: "noWin",
+  2: "surpriseWin",
+  3: "noWin",
+  4: "repeat",
+  5: "noWin",
+  6: "surpriseWin",
+  7: "noWin",
+  8: "repeat",
+  9: "noWin",
+  10: "surpriseWin",
+  11: "noWin"
 };
 
 export const RANDOM_START_ANGLES = [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
@@ -83,6 +87,7 @@ export const buildForcedOptions = (typeWinner) => {
   switch (typeWinner) {
     case "topPrice":
       return [
+        { option: "LAHJAKASSI", probability: 1 },
         { option: "EI VOITTOA", probability: 0 },
         { option: "YLLÄTYSPALKINTO", probability: 0 },
         { option: "EI VOITTOA", probability: 0 },
@@ -90,23 +95,26 @@ export const buildForcedOptions = (typeWinner) => {
         { option: "EI VOITTOA", probability: 0 },
         { option: "YLLÄTYSPALKINTO", probability: 0 },
         { option: "EI VOITTOA", probability: 0 },
-        { option: "LAHJAKASSI", probability: 1 }
+        { option: "KOKEILE UUDESTAAN", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "YLLÄTYSPALKINTO", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 }
       ];
 
     case "card": {
-      const firstWins = Math.round(Math.random());
-      const secondWins = firstWins === 1 ? 0 : 1;
+      const surpriseIndexes = [2, 6, 10];
+      const selectedIndex = surpriseIndexes[Math.floor(Math.random() * surpriseIndexes.length)];
 
-      return [
-        { option: "EI VOITTOA", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: firstWins },
-        { option: "EI VOITTOA", probability: 0 },
-        { option: "KOKEILE UUDESTAAN", probability: 0 },
-        { option: "EI VOITTOA", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: secondWins },
-        { option: "EI VOITTOA", probability: 0 },
-        { option: "LAHJAKASSI", probability: 0 }
-      ];
+      return Array.from({ length: 12 }, (_, index) => ({
+        option: index === 0
+          ? "LAHJAKASSI"
+          : index === 4 || index === 8
+            ? "KOKEILE UUDESTAAN"
+            : index === 2 || index === 6 || index === 10
+              ? "YLLÄTYSPALKINTO"
+              : "EI VOITTOA",
+        probability: index === selectedIndex ? 1 : 0
+      }));
     }
 
     default:
@@ -125,23 +133,27 @@ export const buildNextTotals = (currentTotals, winnerIndex) => {
   };
 
   switch (winnerIndex) {
-    case 1:
-    case 5:
+    case 2:
+    case 6:
+    case 10:
       totals.totalSpecialSurprise += 1;
       break;
 
-    case 3:
+    case 4:
+    case 8:
       totals.totalReplay += 1;
       break;
 
-    case 7:
+    case 0:
       totals.totalTopPrice += 1;
       break;
 
-    case 0:
-    case 2:
-    case 4:
-    case 6:
+    case 1:
+    case 3:
+    case 5:
+    case 7:
+    case 9:
+    case 11:
       totals.totalSpecialPrice += 1;
       break;
 
