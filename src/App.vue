@@ -289,10 +289,10 @@ export default {
 
 .bottom-wave {
   position: absolute;
-  left: -8%;
-  right: -8%;
-  bottom: -24%;
-  height: 44%;
+  left: -12%;
+  right: -12%;
+  bottom: -34%;
+  height: 64%;
   background: #2f6039;
   border-radius: 50% 50% 0 0;
 }
