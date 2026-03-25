@@ -4,7 +4,16 @@
 
     <main class="tablet-stage">
       <section class="tablet-canvas">
-        <RouletteCompoment @showImg="showImg" />
+        <header class="screen-header">
+          <div class="brand">Parrano</div>
+          <button class="menu-button" type="button" aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
+        </header>
+
+        <section class="wheel-region">
+          <RouletteCompoment @showImg="showImg" />
+        </section>
 
         <transition name="fade-up">
           <section v-if="hasResult" class="result-toast" :class="`result-toast--${winType}`">
@@ -148,17 +157,11 @@ export default {
 .app-shell {
   min-height: 100vh;
   background: #f5efdd;
-  display: grid;
-  place-items: center;
-  padding: 1.2rem;
 }
 
 .tablet-stage {
-  width: min(100%, 1100px);
-  aspect-ratio: 4 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100vw;
+  height: 100vh;
 }
 
 .tablet-canvas {
@@ -167,8 +170,45 @@ export default {
   height: 100%;
   overflow: hidden;
   background: #f5efdd;
-  border-radius: 2rem;
-  padding: clamp(1.5rem, 3vw, 2.4rem);
+  padding: 2.1rem 2.2rem 0;
+}
+
+.screen-header {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: #1f5a3f;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-weight: 700;
+  font-style: italic;
+}
+
+.menu-button {
+  background: transparent;
+  border: 0;
+  padding: 0.3rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-button span {
+  width: 18px;
+  height: 2px;
+  background: #1f5a3f;
+  display: block;
+  border-radius: 999px;
+}
+
+.wheel-region {
+  position: relative;
+  z-index: 3;
+  height: calc(100% - 3.2rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,10 +216,10 @@ export default {
 
 .result-toast {
   position: absolute;
-  top: 1.6rem;
-  right: 1.6rem;
+  top: 6.2rem;
+  right: 2rem;
   z-index: 5;
-  width: min(290px, 34%);
+  width: min(280px, 28vw);
   border-radius: 1rem;
   padding: 0.95rem 1rem;
   background: rgba(255, 251, 243, 0.97);
@@ -187,21 +227,10 @@ export default {
   box-shadow: 0 16px 28px rgba(45, 53, 40, 0.1);
 }
 
-.result-toast--mainPrize {
-  background: #fff2bf;
-}
-
-.result-toast--surpriseWin {
-  background: #fff0e4;
-}
-
-.result-toast--repeat {
-  background: #eceae3;
-}
-
-.result-toast--noWin {
-  background: #edf6eb;
-}
+.result-toast--mainPrize { background: #fff2bf; }
+.result-toast--surpriseWin { background: #fff0e4; }
+.result-toast--repeat { background: #eceae3; }
+.result-toast--noWin { background: #edf6eb; }
 
 .result-toast__eyebrow {
   margin: 0 0 0.35rem;
@@ -215,7 +244,7 @@ export default {
 .result-toast h2 {
   margin: 0;
   color: #1d2b22;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   line-height: 1;
 }
 
@@ -226,9 +255,9 @@ export default {
 
 .status-banner {
   position: absolute;
-  left: 1.6rem;
-  right: 1.6rem;
-  bottom: 1.3rem;
+  left: 2rem;
+  right: 2rem;
+  bottom: 1.2rem;
   z-index: 5;
   border-radius: 1rem;
   padding: 0.8rem 1rem;
@@ -260,11 +289,11 @@ export default {
 
 .bottom-wave {
   position: absolute;
-  left: -10%;
-  right: -10%;
-  bottom: -18%;
-  height: 42%;
-  background: #2e5e39;
+  left: -8%;
+  right: -8%;
+  bottom: -24%;
+  height: 44%;
+  background: #2f6039;
   border-radius: 50% 50% 0 0;
 }
 
@@ -280,26 +309,18 @@ export default {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 900px) {
-  .tablet-stage {
-    aspect-ratio: auto;
-    min-height: 100vh;
-  }
-
   .tablet-canvas {
-    min-height: 100vh;
-    border-radius: 0;
+    padding: 1rem 1rem 0;
   }
 
   .result-toast {
-    width: min(280px, calc(100% - 2rem));
     right: 1rem;
-    top: 1rem;
+    top: 4.4rem;
+    width: min(260px, calc(100% - 2rem));
   }
 }
 </style>

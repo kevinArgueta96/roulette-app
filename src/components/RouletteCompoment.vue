@@ -20,7 +20,8 @@
 
       <div class="wheel-center">
         <div class="wheel-center__ring">
-          <div class="wheel-center__core"></div>
+          <div class="wheel-center__logo">Parrano</div>
+          <div class="wheel-center__play"></div>
         </div>
       </div>
     </div>
@@ -104,16 +105,16 @@ export default {
       return this.canvasSize * 0.468;
     },
     innerRadius() {
-      return this.canvasSize * 0.14;
+      return this.canvasSize * 0.145;
     },
     textRadius() {
-      return this.canvasSize * 0.34;
+      return this.canvasSize * 0.35;
     },
     borderWidth() {
       return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      return Math.max(12, this.canvasSize * 0.027);
+      return Math.max(12, this.canvasSize * 0.026);
     },
     teslaFontSize() {
       return Math.max(15, this.canvasSize * 0.034);
@@ -199,7 +200,7 @@ export default {
       }
 
       const bounds = container.getBoundingClientRect();
-      const nextSize = Math.max(320, Math.floor(Math.min(bounds.width, bounds.height, 640)));
+      const nextSize = Math.max(340, Math.floor(Math.min(bounds.width, bounds.height, 560)));
       const devicePixelRatio = window.devicePixelRatio || 1;
 
       this.canvasSize = nextSize;
@@ -248,12 +249,12 @@ export default {
 
       this.ctx.beginPath();
       this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#d0ad62";
+      this.ctx.fillStyle = "#d9bf74";
       this.ctx.fill();
 
       this.ctx.beginPath();
-      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.25, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#b58a3b";
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.3, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#c9a353";
       this.ctx.fill();
 
       sectorsRoulette.forEach((sector, index) => {
@@ -273,7 +274,7 @@ export default {
         this.ctx.fillStyle = colorsSectorRoulette[index];
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = "#d6b46b";
+        this.ctx.strokeStyle = "#d8bb71";
         this.ctx.stroke();
 
         this.ctx.save();
@@ -296,12 +297,12 @@ export default {
 
       this.ctx.beginPath();
       this.ctx.fillStyle = "#4d7347";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 1.34, 0, Math.PI * 2);
+      this.ctx.arc(this.center, this.center, this.innerRadius * 1.28, 0, Math.PI * 2);
       this.ctx.fill();
 
       this.ctx.beginPath();
-      this.ctx.fillStyle = "rgba(21, 34, 21, 0.58)";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 0.56, 0, Math.PI * 2);
+      this.ctx.fillStyle = "rgba(22, 28, 23, 0.38)";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 0.84, 0, Math.PI * 2);
       this.ctx.fill();
     },
     getSectorLines(sector) {
@@ -313,8 +314,8 @@ export default {
     },
     getTextColor(index) {
       return index === 0 || index === 2 || index === 4 || index === 6 || index === 7
-        ? "#f7efd6"
-        : "#234431";
+        ? "#f6edd1"
+        : "#2d5b38";
     },
     spin(spinConfig = {}) {
       if (!this.canSpin) return;
@@ -505,14 +506,14 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.3rem;
+  gap: 1.4rem;
 }
 
 .pointer-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: -1.2rem;
+  margin-bottom: -1.45rem;
   position: relative;
   z-index: 4;
 }
@@ -520,15 +521,15 @@ export default {
 .wheel-pointer {
   width: 0;
   height: 0;
-  border-left: 16px solid transparent;
-  border-right: 16px solid transparent;
-  border-top: 44px solid #cb3027;
+  border-left: 17px solid transparent;
+  border-right: 17px solid transparent;
+  border-top: 48px solid #cb3027;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
 }
 
 .wheel-stage {
   position: relative;
-  width: min(100%, 640px);
+  width: min(100%, 560px);
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -557,33 +558,45 @@ export default {
 }
 
 .wheel-center__ring {
-  width: clamp(76px, 10vw, 104px);
-  height: clamp(76px, 10vw, 104px);
+  width: clamp(78px, 9vw, 98px);
+  height: clamp(78px, 9vw, 98px);
   border-radius: 999px;
-  background: rgba(56, 88, 52, 0.92);
-  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.08);
-  display: grid;
-  place-items: center;
+  background: linear-gradient(180deg, #375d3b 0%, #223a24 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.08);
 }
 
-.wheel-center__core {
-  width: clamp(28px, 3.8vw, 40px);
-  height: clamp(28px, 3.8vw, 40px);
-  border-radius: 999px;
-  background: rgba(21, 34, 21, 0.55);
+.wheel-center__logo {
+  color: #f7f0dd;
+  font-style: italic;
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  line-height: 1;
+}
+
+.wheel-center__play {
+  width: 0;
+  height: 0;
+  border-top: 9px solid transparent;
+  border-bottom: 9px solid transparent;
+  border-left: 14px solid rgba(255, 255, 255, 0.95);
+  margin-left: 0.18rem;
 }
 
 .spin-button {
   border: 0;
-  border-radius: 0.45rem;
+  border-radius: 0.35rem;
   background: linear-gradient(180deg, #da3b2f 0%, #c92b22 100%);
   color: #fff6e7;
-  padding: 0.9rem 2rem;
-  min-width: 170px;
-  font-size: 1rem;
+  padding: 0.72rem 2rem;
+  min-width: 154px;
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  box-shadow: 0 10px 18px rgba(201, 43, 34, 0.2);
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 16px rgba(201, 43, 34, 0.16);
 }
 
 .spin-button:disabled {
@@ -593,13 +606,7 @@ export default {
 
 @media (max-width: 900px) {
   .wheel-stage {
-    width: min(100%, 520px);
-  }
-
-  .wheel-pointer {
-    border-left-width: 13px;
-    border-right-width: 13px;
-    border-top-width: 36px;
+    width: min(100%, 500px);
   }
 }
 </style>
