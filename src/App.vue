@@ -2,93 +2,80 @@
   <div id="app" class="app-shell">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
-    <main class="app-layout">
-      <aside class="result-panel" :class="{ 'result-panel--visible': hasResult }">
-        <WinRowComponent
-          :srcImg="srcImg"
-          :visible="hasResult"
-          :winType="winType"
-          :sizeGift="sizeGift"
-        />
-      </aside>
+    <div class="screen-title">ROULETTE LAHJAKASSI</div>
 
-      <section class="roulette-panel">
-        <div class="roulette-card">
-          <div class="roulette-copy">
-            <p class="roulette-copy__eyebrow">Roulette App</p>
-            <h1>Ruleta de premios</h1>
-            <p>
-              Categorías iniciales: <strong>LAHJAKASSI</strong>, <strong>Yllätyspalkinto</strong>,
-              <strong>Kokeile uudestaan</strong> y <strong>sin premio</strong> en las secciones verdes.
-            </p>
-            <p class="roulette-copy__interaction">
-              Se puede iniciar con botón o tocando la ruleta. Mi preferencia: dejar
-              <strong>botón principal</strong> y además permitir toque/swipe como gesto secundario.
-            </p>
-          </div>
+    <main class="device-shell">
+      <div class="device-frame">
+        <section class="device-screen">
+          <header class="screen-header">
+            <div class="brand">Parrano</div>
+            <button class="menu-button" type="button" aria-label="Menu">
+              <span></span><span></span><span></span>
+            </button>
+          </header>
 
-          <p v-if="loadWarning" class="status-banner">
-            {{ loadWarning }}
-          </p>
-
-          <div v-if="isLoading" class="status-card">
-            <span class="status-spinner"></span>
-            <p>Cargando configuracion de premios...</p>
-          </div>
-
-          <div v-else class="roulette-content">
+          <section class="roulette-stage">
             <RouletteCompoment @showImg="showImg" />
+          </section>
+
+          <transition name="fade-up">
+            <section v-if="hasResult" class="result-toast" :class="`result-toast--${winType}`">
+              <p class="result-toast__eyebrow">{{ resultCopy.kicker }}</p>
+              <h2>{{ resultCopy.title }}</h2>
+              <p>{{ resultCopy.description }}</p>
+            </section>
+          </transition>
+
+          <div v-if="loadWarning" class="status-banner">
+            {{ loadWarning }}
           </div>
-        </div>
-      </section>
 
-      <aside class="result-panel result-panel--secondary" :class="{ 'result-panel--visible': hasResult }">
-        <WinRowComponent
-          :srcImg="srcImg"
-          :visible="hasResult"
-          :winType="winType"
-          :sizeGift="sizeGift"
-        />
-      </aside>
+          <div v-if="isLoading" class="loading-overlay">
+            <span class="status-spinner"></span>
+            <p>Cargando configuracion…</p>
+          </div>
+
+          <div class="bottom-wave"></div>
+        </section>
+      </div>
     </main>
-
-    <footer class="app-footer">
-      <img src="/img/logo-img.png" class="app-footer__logo" alt="Storytel" />
-    </footer>
   </div>
 </template>
 
 <script>
 import RouletteCompoment from "./components/RouletteCompoment.vue";
-import WinRowComponent from "./components/WinRowComponent.vue";
 import ConfettiComponent from "./components/ConfettiComponent.vue";
 import { mapActions } from "vuex";
 import service from "@/services/totals.service";
 
 const RESULT_CONFIG = {
   repeat: {
-    srcImg: "",
     duration: 2500,
-    sizeGift: 18,
-    confetti: false
+    confetti: false,
+    kicker: "Repeat",
+    title: "Kokeile uudestaan",
+    description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    srcImg: "",
     duration: 7000,
-    sizeGift: 18,
-    confetti: true
+    confetti: true,
+    kicker: "Main prize",
+    title: "LAHJAKASSI",
+    description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
-    srcImg: "",
     duration: 6000,
-    sizeGift: 18,
-    confetti: true
+    confetti: true,
+    kicker: "Surprise win",
+    title: "Yllätyspalkinto",
+    description: "Voitit yllätyspalkinnon."
   },
   noWin: {
-    srcImg: "",
     duration: 3200,
-    sizeGift: 18,
-    confetti: false
+    confetti: false,
+    kicker: "No win",
+    title: "Ei voittoa",
+    description: "Tämä sektori ei anna palkintoa."
   }
 };
 
@@ -96,14 +83,11 @@ export default {
   name: "App",
   components: {
     RouletteCompoment,
-    WinRowComponent,
     ConfettiComponent
   },
   data() {
     return {
-      srcImg: "",
       winType: "",
-      sizeGift: 0,
       isVisibleConfetti: false,
       resultTimer: null,
       isLoading: true,
@@ -113,6 +97,9 @@ export default {
   computed: {
     hasResult() {
       return Boolean(this.winType);
+    },
+    resultCopy() {
+      return RESULT_CONFIG[this.winType] || {};
     }
   },
   mounted() {
@@ -132,7 +119,7 @@ export default {
       this.hydrateBootstrapData(bootstrapData);
 
       if (bootstrapData.errors.length) {
-        this.loadWarning = "Algunos datos remotos no respondieron. Se usaran valores disponibles y la app seguira operativa.";
+        this.loadWarning = "Some remote data did not respond. Fallback values are being used.";
       }
 
       this.isLoading = false;
@@ -146,9 +133,7 @@ export default {
       }
 
       this.clearTimers();
-      this.srcImg = result.srcImg;
       this.winType = type;
-      this.sizeGift = result.sizeGift;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
 
@@ -158,9 +143,7 @@ export default {
     },
     resetResultState() {
       this.clearTimers();
-      this.srcImg = "";
       this.winType = "";
-      this.sizeGift = 0;
       this.isVisibleConfetti = false;
       this.updateState({ mutationType: "setSpinRoullete", payload: true });
     },
@@ -176,113 +159,155 @@ export default {
 
 <style scoped>
 .app-shell {
-  position: relative;
   min-height: 100vh;
-  padding: clamp(1rem, 3vw, 2rem);
+  background: #f7f1df;
+  padding: 1rem 1rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
 }
 
-.app-layout {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) minmax(320px, 1.8fr) minmax(180px, 0.9fr);
-  gap: clamp(1rem, 2vw, 1.5rem);
-  align-items: stretch;
-}
-
-.roulette-panel,
-.result-panel {
-  min-height: 0;
-}
-
-.roulette-card,
-.result-panel {
-  border: 1px solid rgba(43, 53, 58, 0.12);
-  background: rgba(255, 250, 248, 0.88);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 28px 70px rgba(43, 53, 58, 0.1);
-  border-radius: 28px;
-}
-
-.roulette-card {
-  height: 100%;
-  padding: clamp(1.25rem, 3vw, 2rem);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.roulette-copy {
+.screen-title {
+  width: 100%;
+  max-width: 520px;
+  color: #1f5a3f;
+  font-size: clamp(2rem, 4.5vw, 3.3rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
   text-align: center;
+  margin-bottom: 0.8rem;
 }
 
-.roulette-copy h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3.2rem);
+.device-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.device-frame {
+  width: min(100%, 430px);
+  background: #0f0f0f;
+  border-radius: 2rem;
+  padding: 0.9rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+}
+
+.device-screen {
+  position: relative;
+  min-height: 760px;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: #f7f1df;
+  padding: 1.5rem 1.4rem 2.2rem;
+}
+
+.screen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  color: #1f5a3f;
+  font-size: 1.9rem;
   font-weight: 700;
-  line-height: 1;
-  color: #2b353a;
+  font-style: italic;
 }
 
-.roulette-copy p {
-  margin: 0.65rem 0 0;
-  color: rgba(43, 53, 58, 0.72);
-  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+.menu-button {
+  background: transparent;
+  border: 0;
+  padding: 0.3rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.roulette-copy strong {
-  color: #2b353a;
+.menu-button span {
+  width: 18px;
+  height: 2px;
+  background: #1f5a3f;
+  display: block;
+  border-radius: 999px;
 }
 
-.roulette-copy__interaction {
-  max-width: 58ch;
-  margin-inline: auto;
+.roulette-stage {
+  position: relative;
+  z-index: 2;
+  margin-top: 1.2rem;
 }
 
-.roulette-copy__eyebrow {
-  margin: 0 0 0.4rem;
+.result-toast {
+  position: relative;
+  z-index: 3;
+  margin: 1rem auto 0;
+  width: min(100%, 280px);
+  border-radius: 1rem;
+  padding: 0.95rem 1rem;
+  text-align: center;
+  background: rgba(255, 251, 243, 0.96);
+  border: 2px solid rgba(205, 174, 104, 0.62);
+  box-shadow: 0 16px 28px rgba(45, 53, 40, 0.1);
+}
+
+.result-toast--mainPrize {
+  background: #fff2bf;
+}
+
+.result-toast--surpriseWin {
+  background: #fff0e4;
+}
+
+.result-toast--repeat {
+  background: #eceae3;
+}
+
+.result-toast--noWin {
+  background: #edf6eb;
+}
+
+.result-toast__eyebrow {
+  margin: 0 0 0.35rem;
   text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-size: 0.74rem;
-  color: #ff501c;
-  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: #1f5a3f;
+  font-weight: 800;
 }
 
-.roulette-content {
-  flex: 1;
-  min-height: 0;
+.result-toast h2 {
+  margin: 0;
+  color: #1d2b22;
+  font-size: 1.6rem;
+  line-height: 1;
 }
 
-.status-banner,
-.status-card {
-  border-radius: 18px;
-  background: rgba(255, 80, 28, 0.08);
-  border: 1px solid rgba(255, 80, 28, 0.15);
-  color: #8d3a1a;
+.result-toast p:last-child {
+  margin: 0.55rem 0 0;
+  color: rgba(29, 43, 34, 0.82);
 }
 
 .status-banner {
-  margin: 0;
-  padding: 0.85rem 1rem;
-  font-size: 0.95rem;
+  position: relative;
+  z-index: 3;
+  margin-top: 0.8rem;
+  border-radius: 1rem;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 80, 28, 0.08);
+  border: 1px solid rgba(255, 80, 28, 0.18);
+  color: #8d3a1a;
+  font-size: 0.92rem;
 }
 
-.status-card {
-  flex: 1;
-  min-height: 320px;
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   display: grid;
   place-items: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
+  background: rgba(247, 241, 223, 0.92);
   text-align: center;
-  padding: 2rem;
-}
-
-.status-card p {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
 }
 
 .status-spinner {
@@ -290,35 +315,29 @@ export default {
   height: 42px;
   border-radius: 999px;
   border: 4px solid rgba(255, 80, 28, 0.18);
-  border-top-color: #ff501c;
+  border-top-color: #d3382d;
   animation: spin 0.8s linear infinite;
 }
 
-.result-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  min-height: 220px;
-  opacity: 0.45;
-  transition: opacity 220ms ease, transform 220ms ease;
+.bottom-wave {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: -120px;
+  height: 250px;
+  background: #2e5e39;
+  border-radius: 50% 50% 0 0;
 }
 
-.result-panel--visible {
-  opacity: 1;
-  transform: translateY(0);
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-.app-footer {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 0.5rem;
-}
-
-.app-footer__logo {
-  width: min(240px, 42vw);
-  max-width: 100%;
-  object-fit: contain;
+.fade-up-enter,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 @keyframes spin {
@@ -327,32 +346,14 @@ export default {
   }
 }
 
-@media (max-width: 1100px) {
-  .app-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 480px) {
+  .device-screen {
+    min-height: 680px;
+    padding-inline: 1rem;
   }
 
-  .result-panel--secondary {
-    display: none;
-  }
-
-  .result-panel {
-    min-height: 180px;
-  }
-}
-
-@media (max-width: 640px) {
-  .app-shell {
-    padding: 0.85rem;
-  }
-
-  .roulette-card,
-  .result-panel {
-    border-radius: 22px;
-  }
-
-  .result-panel {
-    min-height: 150px;
+  .brand {
+    font-size: 1.55rem;
   }
 }
 </style>

@@ -1,11 +1,15 @@
 <template>
   <div class="roulette-shell">
+    <div class="pointer-wrap">
+      <div class="wheel-pointer"></div>
+    </div>
+
     <div
       ref="containerCircule"
       class="wheel-stage"
       role="button"
       tabindex="0"
-      aria-label="Girar ruleta"
+      aria-label="Spin roulette"
       @click="handleWheelInteraction"
       @keyup.enter.prevent="spin"
       @keyup.space.prevent="spin"
@@ -14,25 +18,16 @@
     >
       <canvas ref="myCanvas" class="wheel-canvas"></canvas>
 
-      <img
-        src="/img/storytel-flecha.png"
-        class="wheel-pointer"
-        :class="{ vibratingImage: showAnimation }"
-        alt=""
-      />
-
       <div class="wheel-center">
-        <img src="/img/logo.png" class="wheel-logo" alt="Logo" />
+        <div class="wheel-center__ring">
+          <div class="wheel-center__core"></div>
+        </div>
       </div>
     </div>
 
     <button class="spin-button" type="button" :disabled="!canSpin" @click="spin">
-      {{ isSpinning ? "Girando..." : "Girar ruleta" }}
+      {{ isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
     </button>
-
-    <p class="interaction-hint">
-      Puedes girarla con el botón o tocando / deslizando la ruleta.
-    </p>
   </div>
 </template>
 
@@ -72,7 +67,6 @@ export default {
       resizeObserver: null,
       resizeRaf: null,
       animationFrame: null,
-      showAnimation: false,
       isSpinning: false,
       pendingResize: false,
       touchStartX: 0,
@@ -113,16 +107,16 @@ export default {
       return this.canvasSize * 0.11;
     },
     textRadius() {
-      return this.canvasSize * 0.33;
+      return this.canvasSize * 0.35;
     },
     borderWidth() {
-      return Math.max(6, this.canvasSize * 0.018);
+      return Math.max(6, this.canvasSize * 0.012);
     },
     defaultFontSize() {
-      return Math.max(14, this.canvasSize * 0.038);
+      return Math.max(12, this.canvasSize * 0.03);
     },
     teslaFontSize() {
-      return Math.max(16, this.canvasSize * 0.044);
+      return Math.max(15, this.canvasSize * 0.038);
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
@@ -200,13 +194,12 @@ export default {
       }
 
       const container = this.$refs.containerCircule;
-
       if (!container) {
         return;
       }
 
       const bounds = container.getBoundingClientRect();
-      const nextSize = Math.max(260, Math.floor(Math.min(bounds.width, window.innerHeight * 0.68)));
+      const nextSize = Math.max(260, Math.floor(Math.min(bounds.width, 362)));
       const devicePixelRatio = window.devicePixelRatio || 1;
 
       this.canvasSize = nextSize;
@@ -219,21 +212,15 @@ export default {
       this.drawRouletteWheel();
     },
     resetCanvasState(devicePixelRatio = window.devicePixelRatio || 1) {
-      if (!this.canvas || !this.ctx) {
-        return;
-      }
-
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
     },
     spinRoulleteByEnter(event) {
       const isSpace = event.key === " " || event.code === "Space";
-
       if (event.key !== "Enter" && !isSpace) {
         return;
       }
-
       event.preventDefault();
       this.spin();
     },
@@ -242,42 +229,38 @@ export default {
     },
     handleTouchStart(event) {
       const touch = event.changedTouches?.[0];
-
-      if (!touch) {
-        return;
-      }
-
+      if (!touch) return;
       this.touchStartX = touch.clientX;
       this.touchStartY = touch.clientY;
     },
     handleTouchEnd(event) {
       const touch = event.changedTouches?.[0];
-
-      if (!touch) {
-        return;
-      }
-
+      if (!touch) return;
       const deltaX = touch.clientX - this.touchStartX;
       const deltaY = touch.clientY - this.touchStartY;
-
       if (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaY) >= SWIPE_THRESHOLD) {
         this.spin();
       }
     },
     drawRouletteWheel() {
-      if (!this.ctx) {
-        return;
-      }
+      if (!this.ctx) return;
 
       this.ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
+
+      this.ctx.save();
+      this.ctx.beginPath();
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.6, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#caa85d";
+      this.ctx.fill();
+      this.ctx.restore();
 
       sectorsRoulette.forEach((sector, index) => {
         const angle = this.startAngle + index * this.arc;
         const halfArc = angle + this.arc / 2;
         const lines = this.getSectorLines(sector);
-        const isTesla = index === 7;
-        const fontSize = isTesla ? this.teslaFontSize : this.defaultFontSize;
-        const lineHeight = fontSize * 1.1;
+        const isMainPrize = index === 7;
+        const fontSize = isMainPrize ? this.teslaFontSize : this.defaultFontSize;
+        const lineHeight = fontSize * 1.05;
         const textOffset = ((lines.length - 1) * lineHeight) / 2;
 
         this.ctx.beginPath();
@@ -288,7 +271,7 @@ export default {
         this.ctx.fillStyle = colorsSectorRoulette[index];
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = "#fdf1f0";
+        this.ctx.strokeStyle = "#caa85d";
         this.ctx.stroke();
 
         this.ctx.save();
@@ -300,7 +283,7 @@ export default {
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = this.getTextColor(index);
-        this.ctx.font = `${isTesla ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${isTesla ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily}`;
+        this.ctx.font = `${isMainPrize ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${isMainPrize ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily}`;
 
         lines.forEach((line, lineIndex) => {
           this.ctx.fillText(line, 0, lineIndex * lineHeight - textOffset);
@@ -310,32 +293,28 @@ export default {
       });
 
       this.ctx.beginPath();
-      this.ctx.fillStyle = "rgba(255, 250, 248, 0.92)";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 1.4, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#456a40";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 1.3, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.beginPath();
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 0.62, 0, Math.PI * 2);
       this.ctx.fill();
     },
     getSectorLines(sector) {
       if (typeof sector === "string") {
-        return sector.split("\\n");
+        return sector.split(" ");
       }
-
       return Object.values(sector);
     },
     getTextColor(index) {
-      if (index === 3) {
-        return "#FFFFFF";
-      }
-
-      if (index === 1 || index === 5) {
-        return "#FFFFFF";
-      }
-
-      return "#111111";
+      return index === 0 || index === 2 || index === 4 || index === 6 || index === 7
+        ? "#f8f0d8"
+        : "#244230";
     },
     spin(spinConfig = {}) {
-      if (!this.canSpin) {
-        return;
-      }
+      if (!this.canSpin) return;
 
       const winnerIndex = typeof spinConfig.winnerIndex === "number"
         ? spinConfig.winnerIndex
@@ -343,9 +322,7 @@ export default {
 
       if (typeof winnerIndex !== "number") {
         this.updateState({ mutationType: "setSpinRoullete", payload: true });
-        if (typeof spinConfig.onComplete === "function") {
-          spinConfig.onComplete(false);
-        }
+        if (typeof spinConfig.onComplete === "function") spinConfig.onComplete(false);
         return;
       }
 
@@ -355,7 +332,6 @@ export default {
       const duration = Math.max(200, Number(spinConfig.duration) || SPIN_DURATION);
 
       this.isSpinning = true;
-      this.showAnimation = true;
       this.updateState({ mutationType: "setSpinRoullete", payload: false });
 
       const animate = (timestamp) => {
@@ -377,7 +353,6 @@ export default {
     },
     finishSpin(winnerIndex, spinConfig = {}) {
       this.stopAnimation();
-
       this.startAngle = this.normalizeRadians(this.startAngle);
       this.drawRouletteWheel();
       this.updateState({ mutationType: "setInitialAngle", payload: this.startAngle });
@@ -397,143 +372,83 @@ export default {
         this.$emit("showImg", { type: RESULT_BY_INDEX[winnerIndex] || RESULT_BY_INDEX[FALLBACK_INDEX] });
       }
 
-      if (typeof spinConfig.onComplete === "function") {
-        spinConfig.onComplete(true);
-      }
+      if (typeof spinConfig.onComplete === "function") spinConfig.onComplete(true);
     },
     stopAnimation() {
       if (this.animationFrame) {
         window.cancelAnimationFrame(this.animationFrame);
         this.animationFrame = null;
       }
-
-      this.showAnimation = false;
       this.isSpinning = false;
     },
     async runCanvasStressTest(iterations = 300, duration = STRESS_TEST_DURATION) {
-      if (this.stressTest.active || this.isSpinning) {
-        return false;
-      }
+      if (this.stressTest.active || this.isSpinning) return false;
 
       const totalIterations = Math.max(1, Number(iterations) || 300);
       const spinDuration = Math.max(200, Number(duration) || STRESS_TEST_DURATION);
 
-      this.stressTest = {
-        active: true,
-        total: totalIterations,
-        completed: 0,
-        duration: spinDuration
-      };
+      this.stressTest = { active: true, total: totalIterations, completed: 0, duration: spinDuration };
 
       for (let step = 0; step < totalIterations; step += 1) {
-        if (!this.stressTest.active) {
-          break;
-        }
-
+        if (!this.stressTest.active) break;
         const randomIndex = Math.floor(Math.random() * sectorsRoulette.length);
-
         await new Promise((resolve) => {
-          this.spin({
-            winnerIndex: randomIndex,
-            duration: spinDuration,
-            skipPersist: true,
-            skipResult: true,
-            onComplete: resolve
-          });
+          this.spin({ winnerIndex: randomIndex, duration: spinDuration, skipPersist: true, skipResult: true, onComplete: resolve });
         });
-
         this.stressTest.completed = step + 1;
       }
 
       const wasCompleted = this.stressTest.completed === this.stressTest.total;
-
-      this.stressTest = {
-        active: false,
-        total: 0,
-        completed: 0,
-        duration: spinDuration
-      };
-
+      this.stressTest = { active: false, total: 0, completed: 0, duration: spinDuration };
       return wasCompleted;
     },
     stopCanvasStressTest() {
-      this.stressTest = {
-        active: false,
-        total: 0,
-        completed: 0,
-        duration: STRESS_TEST_DURATION
-      };
+      this.stressTest = { active: false, total: 0, completed: 0, duration: STRESS_TEST_DURATION };
     },
     registerDebugApi() {
-      if (typeof window === "undefined") {
-        return;
-      }
-
+      if (typeof window === "undefined") return;
       window.__rouletteDebug = {
         spinTo: (index) => this.spin({ winnerIndex: Number(index) }),
-        runCanvasStressTest: (iterations = 300, duration = STRESS_TEST_DURATION) => (
-          this.runCanvasStressTest(iterations, duration)
-        ),
+        runCanvasStressTest: (iterations = 300, duration = STRESS_TEST_DURATION) => this.runCanvasStressTest(iterations, duration),
         stopCanvasStressTest: () => this.stopCanvasStressTest(),
-        getState: () => ({
-          isSpinning: this.isSpinning,
-          canvasSize: this.canvasSize,
-          pendingResize: this.pendingResize,
-          stressTest: { ...this.stressTest }
-        })
+        getState: () => ({ isSpinning: this.isSpinning, canvasSize: this.canvasSize, pendingResize: this.pendingResize, stressTest: { ...this.stressTest } })
       };
     },
     unregisterDebugApi() {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      if (window.__rouletteDebug) {
-        delete window.__rouletteDebug;
-      }
+      if (typeof window === "undefined") return;
+      if (window.__rouletteDebug) delete window.__rouletteDebug;
     },
     calculateTargetAngle(winnerIndex, currentAngle) {
       const currentDegrees = this.toDegrees(this.normalizeRadians(currentAngle));
       const targetDegrees = getTargetDegreesForIndex(winnerIndex, this.arc);
       const delta = this.normalizeDegrees(targetDegrees - currentDegrees) + FULL_SPINS * 360;
-
       return currentAngle + this.toRadians(delta);
     },
     generateNumberToShow() {
       const forcedConfiguration = this.generateProbabilityPriceByScheduler();
       const probabilities = Array.isArray(forcedConfiguration) ? forcedConfiguration : this.options;
-
       return pickWeightedIndex(probabilities, FALLBACK_INDEX);
     },
     async updateWinnerChoice({ typeWinner, positionWinner }) {
       switch (typeWinner) {
         case "card": {
-          const nextGiftCards = this.giftCards.map((item) => (
-            item.position === positionWinner ? { ...item, given: true } : item
-          ));
+          const nextGiftCards = this.giftCards.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
           this.updateState({ mutationType: "setGiftCards", payload: nextGiftCards });
           await service.setGiftCards(nextGiftCards);
           return;
         }
-
         case "topPrice": {
-          const nextTopPrices = this.topPrices.map((item) => (
-            item.position === positionWinner ? { ...item, given: true } : item
-          ));
+          const nextTopPrices = this.topPrices.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
           this.updateState({ mutationType: "setTopPrices", payload: nextTopPrices });
           await service.setTopPrices(nextTopPrices);
           return;
         }
-
         case "teslaWin": {
-          const nextTeslaPrices = this.teslaPrices.map((item) => (
-            item.position === positionWinner ? { ...item, given: true } : item
-          ));
+          const nextTeslaPrices = this.teslaPrices.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
           this.updateState({ mutationType: "setTeslaPrices", payload: nextTeslaPrices });
           await service.setTeslaWinService(nextTeslaPrices);
           return;
         }
-
         default:
           return;
       }
@@ -541,22 +456,9 @@ export default {
     generateProbabilityPriceByScheduler() {
       const scheduledPrizes = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
       const currentTime = formatTime24h();
-
-      const scheduledWinner = scheduledPrizes.find((item) => (
-        item &&
-        item.given === false &&
-        isTimeWithinRange(currentTime, item.rangeDown, item.rangeTop)
-      ));
-
-      if (!scheduledWinner) {
-        return null;
-      }
-
-      this.updateWinnerChoice({
-        typeWinner: scheduledWinner.type,
-        positionWinner: scheduledWinner.position
-      }).catch(() => null);
-
+      const scheduledWinner = scheduledPrizes.find((item) => item && item.given === false && isTimeWithinRange(currentTime, item.rangeDown, item.rangeTop));
+      if (!scheduledWinner) return null;
+      this.updateWinnerChoice({ typeWinner: scheduledWinner.type, positionWinner: scheduledWinner.position }).catch(() => null);
       return buildForcedOptions(scheduledWinner.type);
     },
     async persistSpinResult(winnerIndex) {
@@ -569,17 +471,14 @@ export default {
         totalGiftCard: "setTotalGiftCard",
         totalSpin: "setTotalSpin"
       };
-
       Object.keys(mutationMap).forEach((key) => {
         this.updateState({ mutationType: mutationMap[key], payload: totals[key] });
       });
-
       await service.saveTotals(totals);
     },
     normalizeRadians(angle) {
       const fullTurn = Math.PI * 2;
       const normalized = angle % fullTurn;
-
       return normalized < 0 ? normalized + fullTurn : normalized;
     },
     normalizeDegrees(angle) {
@@ -604,9 +503,27 @@ export default {
   gap: 1rem;
 }
 
+.pointer-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: -0.85rem;
+  position: relative;
+  z-index: 4;
+}
+
+.wheel-pointer {
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 34px solid #cb3027;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.18));
+}
+
 .wheel-stage {
   position: relative;
-  width: min(100%, 720px);
+  width: min(100%, 362px);
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -617,7 +534,7 @@ export default {
 }
 
 .wheel-stage:focus-visible {
-  outline: 3px solid rgba(255, 80, 28, 0.35);
+  outline: 3px solid rgba(203, 48, 39, 0.35);
   outline-offset: 8px;
   border-radius: 999px;
 }
@@ -626,111 +543,47 @@ export default {
   display: block;
   width: 100%;
   max-width: 100%;
-  filter: drop-shadow(0 25px 45px rgba(43, 53, 58, 0.14));
-}
-
-.wheel-pointer {
-  position: absolute;
-  top: 6%;
-  left: 50%;
-  width: clamp(34px, 6vw, 56px);
-  transform: translateX(-50%);
-  z-index: 2;
 }
 
 .wheel-center {
   position: absolute;
   inset: 50% auto auto 50%;
-  width: clamp(92px, 16vw, 150px);
-  height: clamp(92px, 16vw, 150px);
   transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: rgba(255, 250, 248, 0.95);
-  box-shadow: 0 16px 30px rgba(43, 53, 58, 0.14);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
 }
 
-.wheel-logo {
-  width: 74%;
-  height: 74%;
-  object-fit: contain;
+.wheel-center__ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: rgba(26, 49, 31, 0.9);
+  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+}
+
+.wheel-center__core {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .spin-button {
+  margin-top: 0.45rem;
   border: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ff501c 0%, #ff824f 100%);
-  color: #fff;
-  padding: 0.95rem 1.8rem;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  box-shadow: 0 16px 32px rgba(255, 80, 28, 0.24);
-  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
-}
-
-.spin-button:hover:enabled {
-  transform: translateY(-1px);
-  box-shadow: 0 20px 38px rgba(255, 80, 28, 0.3);
+  border-radius: 0.35rem;
+  background: linear-gradient(180deg, #da3b2f 0%, #c92b22 100%);
+  color: #fff6e7;
+  padding: 0.78rem 1.6rem;
+  min-width: 124px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 18px rgba(201, 43, 34, 0.2);
 }
 
 .spin-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-  box-shadow: none;
-}
-
-.interaction-hint {
-  margin: 0;
-  color: rgba(43, 53, 58, 0.68);
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.vibratingImage {
-  animation: shake 0.48s linear infinite;
-}
-
-@keyframes shake {
-  0% {
-    transform: translateX(-50%);
-  }
-
-  25% {
-    transform: translateX(calc(-50% - 4px)) rotate(-3deg);
-  }
-
-  50% {
-    transform: translateX(-50%) rotate(2deg);
-  }
-
-  75% {
-    transform: translateX(calc(-50% + 4px)) rotate(-3deg);
-  }
-
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-@font-face {
-  font-family: "TeslaRegular";
-  src: url("../assets/fonts/tesla-webfont.woff2") format("woff2"),
-    url("../assets/fonts/tesla-webfont.woff") format("woff");
-  font-weight: normal;
-  font-style: normal;
-}
-
-@media (max-width: 640px) {
-  .wheel-stage {
-    width: 100%;
-  }
-
-  .spin-button {
-    width: 100%;
-  }
 }
 </style>
