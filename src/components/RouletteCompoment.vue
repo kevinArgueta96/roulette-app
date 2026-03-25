@@ -1,6 +1,17 @@
 <template>
   <div class="roulette-shell">
-    <div ref="containerCircule" class="wheel-stage">
+    <div
+      ref="containerCircule"
+      class="wheel-stage"
+      role="button"
+      tabindex="0"
+      aria-label="Girar ruleta"
+      @click="handleWheelInteraction"
+      @keyup.enter.prevent="spin"
+      @keyup.space.prevent="spin"
+      @touchstart.passive="handleTouchStart"
+      @touchend.passive="handleTouchEnd"
+    >
       <canvas ref="myCanvas" class="wheel-canvas"></canvas>
 
       <img
@@ -18,6 +29,10 @@
     <button class="spin-button" type="button" :disabled="!canSpin" @click="spin">
       {{ isSpinning ? "Girando..." : "Girar ruleta" }}
     </button>
+
+    <p class="interaction-hint">
+      Puedes girarla con el botón o tocando / deslizando la ruleta.
+    </p>
   </div>
 </template>
 
@@ -44,6 +59,7 @@ import {
 const FULL_SPINS = 6;
 const SPIN_DURATION = 4600;
 const STRESS_TEST_DURATION = 650;
+const SWIPE_THRESHOLD = 36;
 
 export default {
   name: "RouletteCompoment",
@@ -59,6 +75,8 @@ export default {
       showAnimation: false,
       isSpinning: false,
       pendingResize: false,
+      touchStartX: 0,
+      touchStartY: 0,
       stressTest: {
         active: false,
         total: 0,
@@ -219,6 +237,33 @@ export default {
       event.preventDefault();
       this.spin();
     },
+    handleWheelInteraction() {
+      this.spin();
+    },
+    handleTouchStart(event) {
+      const touch = event.changedTouches?.[0];
+
+      if (!touch) {
+        return;
+      }
+
+      this.touchStartX = touch.clientX;
+      this.touchStartY = touch.clientY;
+    },
+    handleTouchEnd(event) {
+      const touch = event.changedTouches?.[0];
+
+      if (!touch) {
+        return;
+      }
+
+      const deltaX = touch.clientX - this.touchStartX;
+      const deltaY = touch.clientY - this.touchStartY;
+
+      if (Math.abs(deltaX) >= SWIPE_THRESHOLD || Math.abs(deltaY) >= SWIPE_THRESHOLD) {
+        this.spin();
+      }
+    },
     drawRouletteWheel() {
       if (!this.ctx) {
         return;
@@ -230,7 +275,7 @@ export default {
         const angle = this.startAngle + index * this.arc;
         const halfArc = angle + this.arc / 2;
         const lines = this.getSectorLines(sector);
-        const isTesla = index === 1;
+        const isTesla = index === 7;
         const fontSize = isTesla ? this.teslaFontSize : this.defaultFontSize;
         const lineHeight = fontSize * 1.1;
         const textOffset = ((lines.length - 1) * lineHeight) / 2;
@@ -270,14 +315,18 @@ export default {
       this.ctx.fill();
     },
     getSectorLines(sector) {
-      return typeof sector === "string" ? [sector] : Object.values(sector);
-    },
-    getTextColor(index) {
-      if (index === 1) {
-        return "#C9CBCC";
+      if (typeof sector === "string") {
+        return sector.split("\\n");
       }
 
-      if (index === 2 || index === 5 || index === 6) {
+      return Object.values(sector);
+    },
+    getTextColor(index) {
+      if (index === 3) {
+        return "#FFFFFF";
+      }
+
+      if (index === 1 || index === 5) {
         return "#FFFFFF";
       }
 
@@ -562,6 +611,15 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wheel-stage:focus-visible {
+  outline: 3px solid rgba(255, 80, 28, 0.35);
+  outline-offset: 8px;
+  border-radius: 999px;
 }
 
 .wheel-canvas {
@@ -623,6 +681,13 @@ export default {
   opacity: 0.55;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.interaction-hint {
+  margin: 0;
+  color: rgba(43, 53, 58, 0.68);
+  font-size: 0.95rem;
+  text-align: center;
 }
 
 .vibratingImage {

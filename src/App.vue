@@ -18,7 +18,12 @@
             <p class="roulette-copy__eyebrow">Roulette App</p>
             <h1>Ruleta de premios</h1>
             <p>
-              Gira con el boton o usando <code>Enter</code> y <code>Espacio</code>.
+              Categorías iniciales: <strong>LAHJAKASSI</strong>, <strong>Yllätyspalkinto</strong>,
+              <strong>Kokeile uudestaan</strong> y <strong>sin premio</strong> en las secciones verdes.
+            </p>
+            <p class="roulette-copy__interaction">
+              Se puede iniciar con botón o tocando la ruleta. Mi preferencia: dejar
+              <strong>botón principal</strong> y además permitir toque/swipe como gesto secundario.
             </p>
           </div>
 
@@ -61,41 +66,29 @@ import { mapActions } from "vuex";
 import service from "@/services/totals.service";
 
 const RESULT_CONFIG = {
-  replay: {
-    srcImg: "gift/replay.gif",
+  repeat: {
+    srcImg: "",
     duration: 2500,
     sizeGift: 18,
     confetti: false
   },
-  individualBox: {
-    srcImg: "gift/gifts_storytel_individual.gif",
+  mainPrize: {
+    srcImg: "",
     duration: 7000,
     sizeGift: 18,
     confetti: true
   },
-  giftCard: {
-    srcImg: "gift/gift_card.gif",
-    duration: 7000,
+  surpriseWin: {
+    srcImg: "",
+    duration: 6000,
     sizeGift: 18,
     confetti: true
   },
-  differentBoxes: {
-    srcImg: "gift/gifts_storytel_boxes.gif",
-    duration: 7000,
+  noWin: {
+    srcImg: "",
+    duration: 3200,
     sizeGift: 18,
-    confetti: true
-  },
-  topPrice: {
-    srcImg: "gift/gifts_storytel_boxes.gif",
-    duration: 7000,
-    sizeGift: 16,
-    confetti: true
-  },
-  tesla: {
-    srcImg: "gift/tesla_win.gif",
-    duration: 7000,
-    sizeGift: 16,
-    confetti: true
+    confetti: false
   }
 };
 
@@ -119,7 +112,7 @@ export default {
   },
   computed: {
     hasResult() {
-      return Boolean(this.srcImg);
+      return Boolean(this.winType);
     }
   },
   mounted() {
@@ -239,10 +232,13 @@ export default {
   font-size: clamp(0.95rem, 1.6vw, 1.1rem);
 }
 
-.roulette-copy code {
-  font-family: inherit;
-  font-weight: 700;
+.roulette-copy strong {
   color: #2b353a;
+}
+
+.roulette-copy__interaction {
+  max-width: 58ch;
+  margin-inline: auto;
 }
 
 .roulette-copy__eyebrow {

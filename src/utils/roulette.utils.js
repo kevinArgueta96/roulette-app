@@ -1,16 +1,16 @@
 import { calculateIndex } from "./calculate_roulette";
 
-export const FALLBACK_INDEX = 6;
+export const FALLBACK_INDEX = 0;
 
 export const RESULT_BY_INDEX = {
-  0: "giftCard",
-  1: "tesla",
-  2: "differentBoxes",
-  3: "giftCard",
-  4: "individualBox",
-  5: "differentBoxes",
-  6: "replay",
-  7: "topPrice"
+  0: "noWin",
+  1: "surpriseWin",
+  2: "noWin",
+  3: "repeat",
+  4: "noWin",
+  5: "surpriseWin",
+  6: "noWin",
+  7: "mainPrize"
 };
 
 export const RANDOM_START_ANGLES = [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
@@ -81,45 +81,33 @@ export const pickWeightedIndex = (probabilities, fallbackIndex = FALLBACK_INDEX)
 
 export const buildForcedOptions = (typeWinner) => {
   switch (typeWinner) {
+    case "topPrice":
+      return [
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "YLLÄTYSPALKINTO", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "KOKEILE UUDESTAAN", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "YLLÄTYSPALKINTO", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "LAHJAKASSI", probability: 1 }
+      ];
+
     case "card": {
       const firstWins = Math.round(Math.random());
       const secondWins = firstWins === 1 ? 0 : 1;
 
       return [
-        { option: "LAHJAKORTTI", probability: firstWins },
-        { option: "TESLA", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "LAHJAKORTTI", probability: secondWins },
-        { option: "TUOTEPALKINTO", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "UUDESTAAN", probability: 0 },
-        { option: "PÄÄPALKINTO", probability: 0 }
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "YLLÄTYSPALKINTO", probability: firstWins },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "KOKEILE UUDESTAAN", probability: 0 },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "YLLÄTYSPALKINTO", probability: secondWins },
+        { option: "EI VOITTOA", probability: 0 },
+        { option: "LAHJAKASSI", probability: 0 }
       ];
     }
-
-    case "topPrice":
-      return [
-        { option: "LAHJAKORTTI", probability: 0 },
-        { option: "TESLA", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "LAHJAKORTTI", probability: 0 },
-        { option: "TUOTEPALKINTO", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "UUDESTAAN", probability: 0 },
-        { option: "PÄÄPALKINTO", probability: 1 }
-      ];
-
-    case "teslaWin":
-      return [
-        { option: "LAHJAKORTTI", probability: 0 },
-        { option: "TESLA", probability: 1 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "LAHJAKORTTI", probability: 0 },
-        { option: "TUOTEPALKINTO", probability: 0 },
-        { option: "YLLÄTYSPALKINTO", probability: 0 },
-        { option: "UUDESTAAN", probability: 0 },
-        { option: "PÄÄPALKINTO", probability: 0 }
-      ];
 
     default:
       return null;
@@ -137,27 +125,24 @@ export const buildNextTotals = (currentTotals, winnerIndex) => {
   };
 
   switch (winnerIndex) {
-    case 0:
-    case 3:
-      totals.totalGiftCard += 1;
-      break;
-
-    case 2:
+    case 1:
     case 5:
       totals.totalSpecialSurprise += 1;
       break;
 
-    case 4:
-      totals.totalSpecialPrice += 1;
-      break;
-
-    case 6:
+    case 3:
       totals.totalReplay += 1;
       break;
 
-    case 1:
     case 7:
       totals.totalTopPrice += 1;
+      break;
+
+    case 0:
+    case 2:
+    case 4:
+    case 6:
+      totals.totalSpecialPrice += 1;
       break;
 
     default:
