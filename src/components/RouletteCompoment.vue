@@ -18,7 +18,7 @@
     >
       <canvas ref="myCanvas" class="wheel-canvas"></canvas>
 
-      <div class="wheel-center">
+      <div class="wheel-center" :style="wheelCenterStyle">
         <div class="wheel-center__ring">
           <div class="wheel-center__logo">Parrano</div>
         </div>
@@ -121,6 +121,11 @@ export default {
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
     },
+    wheelCenterStyle() {
+      return {
+        transform: `translate(-50%, -50%) rotate(${this.startAngle}rad)`
+      };
+    },
     currentTotals() {
       return {
         totalReplay: this.totalReplay,
@@ -199,7 +204,10 @@ export default {
       }
 
       const bounds = container.getBoundingClientRect();
-      const nextSize = Math.max(340, Math.floor(Math.min(bounds.width, bounds.height, 560)));
+      const availableWidth = bounds.width * 1;
+      const availableHeight = bounds.height * 0.99;
+      const proportionalSize = Math.min(availableWidth, availableHeight);
+      const nextSize = Math.max(340, Math.floor(proportionalSize));
       const devicePixelRatio = window.devicePixelRatio || 1;
 
       this.canvasSize = nextSize;
@@ -496,14 +504,14 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.4rem;
+  gap: 0.4rem;
 }
 
 .pointer-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: -1.45rem;
+  margin-bottom: -2.2rem;
   position: relative;
   z-index: 4;
 }
@@ -542,7 +550,7 @@ export default {
 .wheel-center {
   position: absolute;
   inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
+  transform-origin: center;
 }
 
 .wheel-center__ring {
@@ -587,4 +595,10 @@ export default {
     width: min(100%, 500px);
   }
 }
+
+
 </style>
+e>
+
+e>
+

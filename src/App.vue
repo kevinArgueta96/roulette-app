@@ -172,7 +172,7 @@ export default {
   height: 100%;
   overflow: hidden;
   background: #f5efdd;
-  padding: 2.1rem 2.2rem 0;
+  padding: 0.3rem 1.3rem 0;
 }
 
 .screen-header {
@@ -210,10 +210,11 @@ export default {
 .wheel-region {
   position: relative;
   z-index: 3;
-  height: calc(100% - 3.2rem);
+  height: calc(100% - 0.8rem);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 0;
 }
 
 .result-toast {
@@ -325,4 +326,7 @@ export default {
     width: min(260px, calc(100% - 2rem));
   }
 }
+
+
 </style>
+yle>
