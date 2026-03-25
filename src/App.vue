@@ -2,42 +2,29 @@
   <div id="app" class="app-shell">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
-    <div class="screen-title">ROULETTE LAHJAKASSI</div>
+    <main class="tablet-stage">
+      <section class="tablet-canvas">
+        <RouletteCompoment @showImg="showImg" />
 
-    <main class="device-shell">
-      <div class="device-frame">
-        <section class="device-screen">
-          <header class="screen-header">
-            <div class="brand">Parrano</div>
-            <button class="menu-button" type="button" aria-label="Menu">
-              <span></span><span></span><span></span>
-            </button>
-          </header>
-
-          <section class="roulette-stage">
-            <RouletteCompoment @showImg="showImg" />
+        <transition name="fade-up">
+          <section v-if="hasResult" class="result-toast" :class="`result-toast--${winType}`">
+            <p class="result-toast__eyebrow">{{ resultCopy.kicker }}</p>
+            <h2>{{ resultCopy.title }}</h2>
+            <p>{{ resultCopy.description }}</p>
           </section>
+        </transition>
 
-          <transition name="fade-up">
-            <section v-if="hasResult" class="result-toast" :class="`result-toast--${winType}`">
-              <p class="result-toast__eyebrow">{{ resultCopy.kicker }}</p>
-              <h2>{{ resultCopy.title }}</h2>
-              <p>{{ resultCopy.description }}</p>
-            </section>
-          </transition>
+        <div v-if="loadWarning" class="status-banner">
+          {{ loadWarning }}
+        </div>
 
-          <div v-if="loadWarning" class="status-banner">
-            {{ loadWarning }}
-          </div>
+        <div v-if="isLoading" class="loading-overlay">
+          <span class="status-spinner"></span>
+          <p>Cargando configuracion…</p>
+        </div>
 
-          <div v-if="isLoading" class="loading-overlay">
-            <span class="status-spinner"></span>
-            <p>Cargando configuracion…</p>
-          </div>
-
-          <div class="bottom-wave"></div>
-        </section>
-      </div>
+        <div class="bottom-wave"></div>
+      </section>
     </main>
   </div>
 </template>
@@ -160,92 +147,42 @@ export default {
 <style scoped>
 .app-shell {
   min-height: 100vh;
-  background: #f7f1df;
-  padding: 1rem 1rem 2rem;
+  background: #f5efdd;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+}
+
+.tablet-stage {
+  width: min(100%, 1100px);
+  aspect-ratio: 4 / 3;
   display: flex;
-  flex-direction: column;
   align-items: center;
-}
-
-.screen-title {
-  width: 100%;
-  max-width: 520px;
-  color: #1f5a3f;
-  font-size: clamp(2rem, 4.5vw, 3.3rem);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  text-align: center;
-  margin-bottom: 0.8rem;
-}
-
-.device-shell {
-  width: 100%;
-  display: flex;
   justify-content: center;
 }
 
-.device-frame {
-  width: min(100%, 430px);
-  background: #0f0f0f;
-  border-radius: 2rem;
-  padding: 0.9rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
-}
-
-.device-screen {
+.tablet-canvas {
   position: relative;
-  min-height: 760px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  border-radius: 1.5rem;
-  background: #f7f1df;
-  padding: 1.5rem 1.4rem 2.2rem;
-}
-
-.screen-header {
+  background: #f5efdd;
+  border-radius: 2rem;
+  padding: clamp(1.5rem, 3vw, 2.4rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.brand {
-  color: #1f5a3f;
-  font-size: 1.9rem;
-  font-weight: 700;
-  font-style: italic;
-}
-
-.menu-button {
-  background: transparent;
-  border: 0;
-  padding: 0.3rem;
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.menu-button span {
-  width: 18px;
-  height: 2px;
-  background: #1f5a3f;
-  display: block;
-  border-radius: 999px;
-}
-
-.roulette-stage {
-  position: relative;
-  z-index: 2;
-  margin-top: 1.2rem;
+  justify-content: center;
 }
 
 .result-toast {
-  position: relative;
-  z-index: 3;
-  margin: 1rem auto 0;
-  width: min(100%, 280px);
+  position: absolute;
+  top: 1.6rem;
+  right: 1.6rem;
+  z-index: 5;
+  width: min(290px, 34%);
   border-radius: 1rem;
   padding: 0.95rem 1rem;
-  text-align: center;
-  background: rgba(255, 251, 243, 0.96);
+  background: rgba(255, 251, 243, 0.97);
   border: 2px solid rgba(205, 174, 104, 0.62);
   box-shadow: 0 16px 28px rgba(45, 53, 40, 0.1);
 }
@@ -288,9 +225,11 @@ export default {
 }
 
 .status-banner {
-  position: relative;
-  z-index: 3;
-  margin-top: 0.8rem;
+  position: absolute;
+  left: 1.6rem;
+  right: 1.6rem;
+  bottom: 1.3rem;
+  z-index: 5;
   border-radius: 1rem;
   padding: 0.8rem 1rem;
   background: rgba(255, 80, 28, 0.08);
@@ -302,11 +241,11 @@ export default {
 .loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   display: grid;
   place-items: center;
   gap: 0.6rem;
-  background: rgba(247, 241, 223, 0.92);
+  background: rgba(245, 239, 221, 0.92);
   text-align: center;
 }
 
@@ -321,10 +260,10 @@ export default {
 
 .bottom-wave {
   position: absolute;
-  left: -6%;
-  right: -6%;
-  bottom: -120px;
-  height: 250px;
+  left: -10%;
+  right: -10%;
+  bottom: -18%;
+  height: 42%;
   background: #2e5e39;
   border-radius: 50% 50% 0 0;
 }
@@ -346,14 +285,21 @@ export default {
   }
 }
 
-@media (max-width: 480px) {
-  .device-screen {
-    min-height: 680px;
-    padding-inline: 1rem;
+@media (max-width: 900px) {
+  .tablet-stage {
+    aspect-ratio: auto;
+    min-height: 100vh;
   }
 
-  .brand {
-    font-size: 1.55rem;
+  .tablet-canvas {
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .result-toast {
+    width: min(280px, calc(100% - 2rem));
+    right: 1rem;
+    top: 1rem;
   }
 }
 </style>

@@ -101,22 +101,22 @@ export default {
       return this.canvasSize / 2;
     },
     outerRadius() {
-      return this.canvasSize * 0.47;
+      return this.canvasSize * 0.468;
     },
     innerRadius() {
-      return this.canvasSize * 0.11;
+      return this.canvasSize * 0.14;
     },
     textRadius() {
-      return this.canvasSize * 0.35;
+      return this.canvasSize * 0.34;
     },
     borderWidth() {
-      return Math.max(6, this.canvasSize * 0.012);
+      return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      return Math.max(12, this.canvasSize * 0.03);
+      return Math.max(12, this.canvasSize * 0.027);
     },
     teslaFontSize() {
-      return Math.max(15, this.canvasSize * 0.038);
+      return Math.max(15, this.canvasSize * 0.034);
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
@@ -199,7 +199,7 @@ export default {
       }
 
       const bounds = container.getBoundingClientRect();
-      const nextSize = Math.max(260, Math.floor(Math.min(bounds.width, 362)));
+      const nextSize = Math.max(320, Math.floor(Math.min(bounds.width, bounds.height, 640)));
       const devicePixelRatio = window.devicePixelRatio || 1;
 
       this.canvasSize = nextSize;
@@ -208,7 +208,6 @@ export default {
       this.canvas.style.width = `${nextSize}px`;
       this.canvas.style.height = `${nextSize}px`;
       this.resetCanvasState(devicePixelRatio);
-
       this.drawRouletteWheel();
     },
     resetCanvasState(devicePixelRatio = window.devicePixelRatio || 1) {
@@ -247,12 +246,15 @@ export default {
 
       this.ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
 
-      this.ctx.save();
       this.ctx.beginPath();
-      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.6, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#caa85d";
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#d0ad62";
       this.ctx.fill();
-      this.ctx.restore();
+
+      this.ctx.beginPath();
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.25, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#b58a3b";
+      this.ctx.fill();
 
       sectorsRoulette.forEach((sector, index) => {
         const angle = this.startAngle + index * this.arc;
@@ -260,7 +262,7 @@ export default {
         const lines = this.getSectorLines(sector);
         const isMainPrize = index === 7;
         const fontSize = isMainPrize ? this.teslaFontSize : this.defaultFontSize;
-        const lineHeight = fontSize * 1.05;
+        const lineHeight = fontSize * 1.02;
         const textOffset = ((lines.length - 1) * lineHeight) / 2;
 
         this.ctx.beginPath();
@@ -271,7 +273,7 @@ export default {
         this.ctx.fillStyle = colorsSectorRoulette[index];
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = "#caa85d";
+        this.ctx.strokeStyle = "#d6b46b";
         this.ctx.stroke();
 
         this.ctx.save();
@@ -293,25 +295,26 @@ export default {
       });
 
       this.ctx.beginPath();
-      this.ctx.fillStyle = "#456a40";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 1.3, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#4d7347";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 1.34, 0, Math.PI * 2);
       this.ctx.fill();
 
       this.ctx.beginPath();
-      this.ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 0.62, 0, Math.PI * 2);
+      this.ctx.fillStyle = "rgba(21, 34, 21, 0.58)";
+      this.ctx.arc(this.center, this.center, this.innerRadius * 0.56, 0, Math.PI * 2);
       this.ctx.fill();
     },
     getSectorLines(sector) {
       if (typeof sector === "string") {
-        return sector.split(" ");
+        const compact = sector.replace("KOKEILE UUDESTAAN", "KOKEILE\nUUDESTAAN");
+        return compact.split("\n");
       }
       return Object.values(sector);
     },
     getTextColor(index) {
       return index === 0 || index === 2 || index === 4 || index === 6 || index === 7
-        ? "#f8f0d8"
-        : "#244230";
+        ? "#f7efd6"
+        : "#234431";
     },
     spin(spinConfig = {}) {
       if (!this.canSpin) return;
@@ -337,7 +340,6 @@ export default {
       const animate = (timestamp) => {
         const progress = Math.min((timestamp - startTime) / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-
         this.startAngle = currentAngle + (targetAngle - currentAngle) * eased;
         this.drawRouletteWheel();
 
@@ -383,10 +385,8 @@ export default {
     },
     async runCanvasStressTest(iterations = 300, duration = STRESS_TEST_DURATION) {
       if (this.stressTest.active || this.isSpinning) return false;
-
       const totalIterations = Math.max(1, Number(iterations) || 300);
       const spinDuration = Math.max(200, Number(duration) || STRESS_TEST_DURATION);
-
       this.stressTest = { active: true, total: totalIterations, completed: 0, duration: spinDuration };
 
       for (let step = 0; step < totalIterations; step += 1) {
@@ -497,17 +497,22 @@ export default {
 
 <style scoped>
 .roulette-shell {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  gap: 1.3rem;
 }
 
 .pointer-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: -0.85rem;
+  margin-bottom: -1.2rem;
   position: relative;
   z-index: 4;
 }
@@ -515,15 +520,15 @@ export default {
 .wheel-pointer {
   width: 0;
   height: 0;
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  border-top: 34px solid #cb3027;
-  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.18));
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 44px solid #cb3027;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
 }
 
 .wheel-stage {
   position: relative;
-  width: min(100%, 362px);
+  width: min(100%, 640px);
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -552,31 +557,30 @@ export default {
 }
 
 .wheel-center__ring {
-  width: 72px;
-  height: 72px;
+  width: clamp(76px, 10vw, 104px);
+  height: clamp(76px, 10vw, 104px);
   border-radius: 999px;
-  background: rgba(26, 49, 31, 0.9);
-  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.08);
+  background: rgba(56, 88, 52, 0.92);
+  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.08);
   display: grid;
   place-items: center;
 }
 
 .wheel-center__core {
-  width: 30px;
-  height: 30px;
+  width: clamp(28px, 3.8vw, 40px);
+  height: clamp(28px, 3.8vw, 40px);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(21, 34, 21, 0.55);
 }
 
 .spin-button {
-  margin-top: 0.45rem;
   border: 0;
-  border-radius: 0.35rem;
+  border-radius: 0.45rem;
   background: linear-gradient(180deg, #da3b2f 0%, #c92b22 100%);
   color: #fff6e7;
-  padding: 0.78rem 1.6rem;
-  min-width: 124px;
-  font-size: 0.92rem;
+  padding: 0.9rem 2rem;
+  min-width: 170px;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   box-shadow: 0 10px 18px rgba(201, 43, 34, 0.2);
@@ -585,5 +589,17 @@ export default {
 .spin-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .wheel-stage {
+    width: min(100%, 520px);
+  }
+
+  .wheel-pointer {
+    border-left-width: 13px;
+    border-right-width: 13px;
+    border-top-width: 36px;
+  }
 }
 </style>
