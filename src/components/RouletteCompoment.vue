@@ -107,7 +107,7 @@ export default {
       return 0;
     },
     textRadius() {
-      return this.canvasSize * 0.35;
+      return this.canvasSize * 0.31;
     },
     borderWidth() {
       return Math.max(7, this.canvasSize * 0.014);
@@ -280,7 +280,7 @@ export default {
           this.center + Math.cos(halfArc) * this.textRadius,
           this.center + Math.sin(halfArc) * this.textRadius
         );
-        this.ctx.rotate(halfArc + Math.PI / 2);
+        this.ctx.rotate(halfArc);
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = this.getTextColor(index);
@@ -530,9 +530,7 @@ export default {
 }
 
 .wheel-stage:focus-visible {
-  outline: 3px solid rgba(203, 48, 39, 0.35);
-  outline-offset: 8px;
-  border-radius: 999px;
+  outline: none;
 }
 
 .wheel-canvas {
