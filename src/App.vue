@@ -33,7 +33,7 @@
         </div>
 
         <svg class="bottom-wave" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 160 C120 35 320 15 500 15 C680 15 880 35 1000 160 L1000 260 L0 260 Z" fill="#2f6039" />
+          <path d="M0 82 C120 142 320 186 500 186 C680 186 880 142 1000 82 L1000 260 L0 260 Z" fill="#2f6039" />
         </svg>
       </section>
     </main>
