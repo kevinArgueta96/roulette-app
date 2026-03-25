@@ -204,8 +204,8 @@ export default {
       }
 
       const bounds = container.getBoundingClientRect();
-      const availableWidth = bounds.width * 1;
-      const availableHeight = bounds.height * 0.99;
+      const availableWidth = bounds.width * 1.04;
+      const availableHeight = bounds.height * 1.04;
       const proportionalSize = Math.min(availableWidth, availableHeight);
       const nextSize = Math.max(340, Math.floor(proportionalSize));
       const devicePixelRatio = window.devicePixelRatio || 1;
@@ -503,15 +503,16 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding-top: 3.7rem;
 }
 
 .pointer-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: -2.2rem;
+  margin-bottom: -2.7rem;
   position: relative;
   z-index: 4;
 }
@@ -583,6 +584,7 @@ export default {
   letter-spacing: 0.02em;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(110, 20, 16, 0.28);
+  margin-top: 1.1rem;
 }
 
 .spin-button:disabled {
