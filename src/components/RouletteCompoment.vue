@@ -21,7 +21,6 @@
       <div class="wheel-center">
         <div class="wheel-center__ring">
           <div class="wheel-center__logo">Parrano</div>
-          <div class="wheel-center__play"></div>
         </div>
       </div>
     </div>
@@ -105,7 +104,7 @@ export default {
       return this.canvasSize * 0.468;
     },
     innerRadius() {
-      return this.canvasSize * 0.145;
+      return 0;
     },
     textRadius() {
       return this.canvasSize * 0.35;
@@ -269,12 +268,11 @@ export default {
         this.ctx.beginPath();
         this.ctx.moveTo(this.center, this.center);
         this.ctx.arc(this.center, this.center, this.outerRadius, angle, angle + this.arc, false);
-        this.ctx.arc(this.center, this.center, this.innerRadius, angle + this.arc, angle, true);
         this.ctx.closePath();
         this.ctx.fillStyle = colorsSectorRoulette[index];
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = "#d8bb71";
+        this.ctx.strokeStyle = colorsSectorRoulette[index];
         this.ctx.stroke();
 
         this.ctx.save();
@@ -295,15 +293,7 @@ export default {
         this.ctx.restore();
       });
 
-      this.ctx.beginPath();
-      this.ctx.fillStyle = "#4d7347";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 1.28, 0, Math.PI * 2);
-      this.ctx.fill();
-
-      this.ctx.beginPath();
-      this.ctx.fillStyle = "rgba(22, 28, 23, 0.38)";
-      this.ctx.arc(this.center, this.center, this.innerRadius * 0.84, 0, Math.PI * 2);
-      this.ctx.fill();
+      
     },
     getSectorLines(sector) {
       if (typeof sector === "string") {
@@ -529,7 +519,7 @@ export default {
 
 .wheel-stage {
   position: relative;
-  width: min(100%, 560px);
+  width: min(100%, 640px);
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -558,45 +548,35 @@ export default {
 }
 
 .wheel-center__ring {
-  width: clamp(78px, 9vw, 98px);
-  height: clamp(78px, 9vw, 98px);
+  width: clamp(104px, 11.5vw, 126px);
+  height: clamp(104px, 11.5vw, 126px);
   border-radius: 999px;
-  background: linear-gradient(180deg, #375d3b 0%, #223a24 100%);
+  background: #4a7446;
+  border: 7px solid #d8bb71;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2rem;
-  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.08);
 }
 
 .wheel-center__logo {
   color: #f7f0dd;
   font-style: italic;
-  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  font-size: clamp(0.78rem, 1vw, 0.92rem);
   line-height: 1;
-}
-
-.wheel-center__play {
-  width: 0;
-  height: 0;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  border-left: 14px solid rgba(255, 255, 255, 0.95);
-  margin-left: 0.18rem;
 }
 
 .spin-button {
   border: 0;
-  border-radius: 0.35rem;
-  background: linear-gradient(180deg, #da3b2f 0%, #c92b22 100%);
+  border-radius: 0.22rem;
+  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
   color: #fff6e7;
-  padding: 0.72rem 2rem;
-  min-width: 154px;
-  font-size: 0.95rem;
+  padding: 0.58rem 1.5rem;
+  min-width: 110px;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: 0 8px 16px rgba(201, 43, 34, 0.16);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(110, 20, 16, 0.28);
 }
 
 .spin-button:disabled {

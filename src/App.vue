@@ -32,7 +32,9 @@
           <p>Cargando configuracion…</p>
         </div>
 
-        <div class="bottom-wave"></div>
+        <svg class="bottom-wave" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 160 C120 35 320 15 500 15 C680 15 880 35 1000 160 L1000 260 L0 260 Z" fill="#2f6039" />
+        </svg>
       </section>
     </main>
   </div>
@@ -289,12 +291,12 @@ export default {
 
 .bottom-wave {
   position: absolute;
-  left: -8%;
-  right: -8%;
-  bottom: -24%;
-  height: 44%;
-  background: #2f6039;
-  border-radius: 0 0 50% 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 28%;
+  display: block;
 }
 
 .fade-up-enter-active,
