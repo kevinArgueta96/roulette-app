@@ -258,12 +258,15 @@ export default {
   importLocalSnapshot(payload) {
     return setStoredSnapshot(payload);
   },
-  resetLocalSnapshotCounters() {
-    return updateStoredSnapshot((snapshot) => ({
-      ...snapshot,
+  resetLocalSnapshotCounters(payload) {
+    const baseSnapshot = normalizeBootstrapPayload(payload || getStoredSnapshot() || {});
+
+    return setStoredSnapshot({
+      ...baseSnapshot,
       totals: normalizeTotals({}),
-      winDistribution: resetWinDistributionCounters(snapshot?.winDistribution)
-    }));
+      winDistribution: resetWinDistributionCounters(baseSnapshot.winDistribution),
+      errors: []
+    });
   },
   exportLocalSnapshot() {
     const snapshot = getStoredSnapshot();

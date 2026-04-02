@@ -7,21 +7,25 @@
           <h4 class="block-title">Sector counts and outcome weights</h4>
         </div>
         <div class="total-field" :class="{ 'total-field--error': errors.totalSectors || errors.sectorCounts }">
-          <label class="field-label" for="total-sectors">Total sectors</label>
-          <input
-            id="total-sectors"
-            class="number-input"
-            type="number"
-            min="1"
-            :value="localConfig.totalSectors"
-            @input="onTotalSectorsChange($event.target.value)"
-            @blur="validateSectorCounts"
-          />
+          <span class="field-label">Total sectors</span>
+          <strong class="field-readonly">{{ localConfig.totalSectors }}</strong>
         </div>
       </div>
 
       <p v-if="errors.totalSectors || errors.sectorCounts" class="config-error">
         {{ errors.totalSectors || errors.sectorCounts }}
+      </p>
+
+      <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal > 100 }">
+        <div>
+          <p class="probability-summary__eyebrow">Fallback probability budget</p>
+          <h5>Category C + Category D</h5>
+        </div>
+        <strong>{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+      </div>
+
+      <p class="probability-summary__copy">
+        Repeat and No win share the fallback pool. Their combined total must stay at or below 100.00%.
       </p>
 
       <div class="outcome-grid">
@@ -40,31 +44,27 @@
           <p class="outcome-description">{{ outcome.description }}</p>
 
           <div class="outcome-fields">
-            <div class="field-group">
-              <label class="field-label" :for="`${outcome.key}-sectors`">Sector count</label>
-              <input
-                :id="`${outcome.key}-sectors`"
-                class="number-input"
-                type="number"
-                min="0"
-                :value="localConfig[outcome.key].sectorCount"
-                @input="onOutcomeChange(outcome.key, 'sectorCount', $event.target.value)"
-                @blur="validateSectorCounts"
-              />
+            <div class="field-group field-group--readonly">
+              <span class="field-label">Sector count</span>
+              <strong class="field-readonly">{{ localConfig[outcome.key].sectorCount }}</strong>
             </div>
 
-            <div class="field-group">
-              <label class="field-label" :for="`${outcome.key}-weight`">Base weight</label>
+            <div v-if="!outcome.hasSlots" class="field-group">
+              <label class="field-label" :for="`${outcome.key}-weight`">Fallback split (%)</label>
               <input
                 :id="`${outcome.key}-weight`"
                 class="number-input"
-                type="number"
-                min="0"
-                step="0.01"
-                :value="localConfig[outcome.key].baseWeight"
+                type="text"
+                inputmode="decimal"
+                :value="formatPercentInput(localConfig[outcome.key].baseWeight)"
                 @input="onOutcomeChange(outcome.key, 'baseWeight', $event.target.value, true)"
-                @blur="validateOutcome(outcome.key)"
+                @blur="applyConfigChange"
               />
+            </div>
+
+            <div v-else class="field-group field-group--readonly">
+              <span class="field-label">Probability source</span>
+              <strong class="field-readonly">Final hourly probability</strong>
             </div>
 
             <div v-if="outcome.hasDailyLimit" class="field-group">
@@ -76,7 +76,7 @@
                 min="0"
                 :value="localConfig[outcome.key].dailyLimit"
                 @input="onOutcomeChange(outcome.key, 'dailyLimit', $event.target.value)"
-                @blur="validateOutcome(outcome.key)"
+                @blur="applyConfigChange"
               />
             </div>
 
@@ -89,10 +89,19 @@
           <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
 
           <div v-if="outcome.hasSlots" class="slots-block">
+            <div class="slots-budget" :class="{ 'slots-budget--error': errors.timelineBudget }">
+              <span>Fallback split total</span>
+              <strong>{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+            </div>
+            <p class="slots-help">
+              Repeat + No win must total 100.00%. Main win and Small win use hourly percentages, and the remaining percentage is distributed between Repeat and No win using this split.
+            </p>
+            <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
+
             <div class="slots-header" v-if="localConfig[outcome.key].slots.length">
               <span>Start</span>
               <span>End</span>
-              <span>Weight</span>
+              <span>Probability</span>
               <span>Limit</span>
               <span>Given</span>
               <span>Actions</span>
@@ -100,7 +109,7 @@
 
             <div
               v-for="(slot, slotIndex) in localConfig[outcome.key].slots"
-              :key="`${outcome.key}-${slotIndex}`"
+              :key="slot._editorId"
               class="slot-row"
             >
               <div class="slot-field">
@@ -111,6 +120,7 @@
                   type="time"
                   :value="slot.startTime"
                   @input="onSlotChange(outcome.key, slotIndex, 'startTime', $event.target.value)"
+                  @change="applyConfigChange"
                 />
               </div>
               <div class="slot-field">
@@ -121,18 +131,19 @@
                   type="time"
                   :value="slot.endTime"
                   @input="onSlotChange(outcome.key, slotIndex, 'endTime', $event.target.value)"
+                  @change="applyConfigChange"
                 />
               </div>
               <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-weight-${slotIndex}`">Weight</label>
+                <label class="slot-label" :for="`${outcome.key}-weight-${slotIndex}`">Probability (%)</label>
                 <input
                   :id="`${outcome.key}-weight-${slotIndex}`"
                   class="slot-input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  :value="slot.weight"
+                  type="text"
+                  inputmode="decimal"
+                  :value="formatPercentInput(slot.weight)"
                   @input="onSlotChange(outcome.key, slotIndex, 'weight', $event.target.value, true)"
+                  @blur="applyConfigChange"
                 />
               </div>
               <div class="slot-field">
@@ -144,6 +155,7 @@
                   min="0"
                   :value="slot.limit"
                   @input="onSlotChange(outcome.key, slotIndex, 'limit', $event.target.value)"
+                  @blur="applyConfigChange"
                 />
               </div>
               <div class="slot-given">
@@ -169,7 +181,7 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, createDefaultSlot, normalizeWinDistribution } from "@/utils";
+import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, normalizeWinDistribution } from "@/utils";
 
 const OUTCOMES = [
   {
@@ -216,28 +228,173 @@ export default {
     return {
       outcomes: OUTCOMES,
       localConfig: DEFAULT_WIN_DISTRIBUTION(),
+      nextSlotId: 0,
       errors: {
         totalSectors: "",
         sectorCounts: "",
         mainWin: "",
         smallWin: "",
+        timelineBudget: "",
         repeat: "",
         noWin: ""
       }
     };
   },
   computed: {
-    ...mapGetters(["winDistribution"])
+    ...mapGetters(["winDistribution"]),
+    fallbackSplitTotal() {
+      return this.clampPercent(this.localConfig.repeat?.baseWeight) + this.clampPercent(this.localConfig.noWin?.baseWeight);
+    }
   },
   watch: {
     winDistribution: {
       immediate: true,
       handler(value) {
-        this.localConfig = normalizeWinDistribution(value);
+        const normalized = normalizeWinDistribution(value);
+        const current = this.toPersistedConfig(this.localConfig);
+
+        if (JSON.stringify(normalized) === JSON.stringify(current)) {
+          return;
+        }
+
+        this.localConfig = this.toEditorConfig(normalized);
       }
     }
   },
   methods: {
+    replaceOutcomeConfig(outcomeKey, patch) {
+      this.localConfig = {
+        ...this.localConfig,
+        [outcomeKey]: {
+          ...this.localConfig[outcomeKey],
+          ...patch
+        }
+      };
+    },
+    parsePercent(rawValue) {
+      const cleaned = String(rawValue ?? "")
+        .replace(",", ".")
+        .replace(/[^0-9.]/g, "");
+      const firstDot = cleaned.indexOf(".");
+      const normalized = firstDot >= 0
+        ? `${cleaned.slice(0, firstDot + 1)}${cleaned.slice(firstDot + 1).replace(/\./g, "")}`
+        : cleaned;
+
+      return this.clampPercent(normalized);
+    },
+    formatPercentInput(value) {
+      return `${this.clampPercent(value).toFixed(2)}%`;
+    },
+    clampPercent(rawValue) {
+      return Math.min(100, Math.max(0, Number(rawValue) || 0));
+    },
+    timeToMinutes(value) {
+      if (!value || typeof value !== "string" || !value.includes(":")) return 0;
+      const [hours, minutes] = value.split(":").map((item) => Number(item) || 0);
+      return (hours * 60) + minutes;
+    },
+    minutesToTime(value) {
+      const safe = Math.max(0, Math.min((23 * 60) + 59, value));
+      const hours = Math.floor(safe / 60);
+      const minutes = safe % 60;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    },
+    createEditorSlot(slot) {
+      return {
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        limit: slot.limit,
+        given: slot.given,
+        weight: this.clampPercent((Number(slot.weight) || 0) * 100),
+        _editorId: `slot-${this.nextSlotId++}`
+      };
+    },
+    createNextSlot(outcomeKey) {
+      const currentSlots = this.localConfig[outcomeKey].slots || [];
+      const lastSlot = currentSlots[currentSlots.length - 1];
+      const startMinutes = lastSlot
+        ? this.timeToMinutes(lastSlot.endTime)
+        : 9 * 60;
+      const endMinutes = Math.min(startMinutes + 60, (23 * 60) + 59);
+
+      return this.createEditorSlot({
+        startTime: this.minutesToTime(startMinutes),
+        endTime: this.minutesToTime(endMinutes > startMinutes ? endMinutes : Math.min(startMinutes + 30, (23 * 60) + 59)),
+        limit: 1,
+        given: 0,
+        weight: 10
+      });
+    },
+    toEditorConfig(value) {
+      const normalized = normalizeWinDistribution(value);
+
+      return {
+        totalSectors: normalized.totalSectors,
+        mainWin: {
+          ...normalized.mainWin,
+          baseWeight: this.clampPercent(normalized.mainWin.baseWeight * 100),
+          slots: normalized.mainWin.slots.map((slot) => this.createEditorSlot(slot))
+        },
+        smallWin: {
+          ...normalized.smallWin,
+          baseWeight: this.clampPercent(normalized.smallWin.baseWeight * 100),
+          slots: normalized.smallWin.slots.map((slot) => this.createEditorSlot(slot))
+        },
+        repeat: {
+          ...normalized.repeat,
+          baseWeight: this.clampPercent(normalized.repeat.baseWeight * 100)
+        },
+        noWin: {
+          ...normalized.noWin,
+          baseWeight: this.clampPercent(normalized.noWin.baseWeight * 100)
+        },
+        lastResetDate: normalized.lastResetDate
+      };
+    },
+    toPersistedConfig(value) {
+      const source = value && typeof value === "object" ? value : DEFAULT_WIN_DISTRIBUTION();
+      return normalizeWinDistribution({
+        totalSectors: source.totalSectors,
+        mainWin: {
+          ...source.mainWin,
+          baseWeight: this.clampPercent(source.mainWin?.baseWeight) / 100,
+          slots: (source.mainWin?.slots || []).map((slot) => ({
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            limit: Math.max(0, Number(slot.limit) || 0),
+            given: Math.max(0, Number(slot.given) || 0),
+            weight: this.clampPercent(slot.weight) / 100
+          }))
+        },
+        smallWin: {
+          ...source.smallWin,
+          baseWeight: this.clampPercent(source.smallWin?.baseWeight) / 100,
+          slots: (source.smallWin?.slots || []).map((slot) => ({
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            limit: Math.max(0, Number(slot.limit) || 0),
+            given: Math.max(0, Number(slot.given) || 0),
+            weight: this.clampPercent(slot.weight) / 100
+          }))
+        },
+        repeat: {
+          ...source.repeat,
+          baseWeight: this.clampPercent(source.repeat?.baseWeight) / 100
+        },
+        noWin: {
+          ...source.noWin,
+          baseWeight: this.clampPercent(source.noWin?.baseWeight) / 100
+        },
+        lastResetDate: source.lastResetDate || ""
+      });
+    },
+    applyConfigChange() {
+      if (!this.validate()) {
+        return;
+      }
+
+      this.$emit("config-change", this.toPersistedConfig(this.localConfig));
+    },
     onTotalSectorsChange(rawValue) {
       this.localConfig = {
         ...this.localConfig,
@@ -247,11 +404,10 @@ export default {
     },
     onOutcomeChange(outcomeKey, field, rawValue, isFloat = false) {
       const nextValue = isFloat
-        ? Math.max(0, Number(rawValue) || 0)
+        ? this.parsePercent(rawValue)
         : Math.max(0, parseInt(rawValue, 10) || 0);
 
-      this.$set(this.localConfig, outcomeKey, {
-        ...this.localConfig[outcomeKey],
+      this.replaceOutcomeConfig(outcomeKey, {
         [field]: nextValue
       });
 
@@ -265,34 +421,36 @@ export default {
       const nextValue = field.includes("Time")
         ? rawValue
         : isFloat
-          ? Math.max(0, Number(rawValue) || 0)
+          ? this.parsePercent(rawValue)
           : Math.max(0, parseInt(rawValue, 10) || 0);
 
       const slots = this.localConfig[outcomeKey].slots.map((slot, index) =>
         index === slotIndex ? { ...slot, [field]: nextValue } : slot
       );
 
-      this.$set(this.localConfig, outcomeKey, {
-        ...this.localConfig[outcomeKey],
+      this.replaceOutcomeConfig(outcomeKey, {
         slots
       });
 
       this.validateOutcome(outcomeKey);
     },
     addSlot(outcomeKey) {
-      const slots = [...this.localConfig[outcomeKey].slots, createDefaultSlot()];
-      this.$set(this.localConfig, outcomeKey, {
-        ...this.localConfig[outcomeKey],
+      const slots = [...this.localConfig[outcomeKey].slots, this.createNextSlot(outcomeKey)];
+      this.replaceOutcomeConfig(outcomeKey, {
         slots
+      });
+      this.$nextTick(() => {
+        this.applyConfigChange();
       });
     },
     removeSlot(outcomeKey, slotIndex) {
       const slots = this.localConfig[outcomeKey].slots.filter((_, index) => index !== slotIndex);
-      this.$set(this.localConfig, outcomeKey, {
-        ...this.localConfig[outcomeKey],
+      this.replaceOutcomeConfig(outcomeKey, {
         slots
       });
-      this.validateOutcome(outcomeKey);
+      this.$nextTick(() => {
+        this.applyConfigChange();
+      });
     },
     validateSectorCounts() {
       if (this.localConfig.totalSectors < 1) {
@@ -313,8 +471,10 @@ export default {
     },
     validateOutcome(outcomeKey) {
       const outcome = this.localConfig[outcomeKey];
-      if (Number(outcome.baseWeight) < 0) {
-        this.errors[outcomeKey] = "Base weight cannot be negative.";
+      this.errors.timelineBudget = "";
+
+      if (Number(outcome.baseWeight) < 0 || Number(outcome.baseWeight) > 100) {
+        this.errors[outcomeKey] = `${OUTCOME_META[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
         return false;
       }
 
@@ -323,10 +483,47 @@ export default {
         return false;
       }
 
+      if (OUTCOME_META[outcomeKey].hasDailyLimit && Number(outcome.givenToday) > Number(outcome.dailyLimit)) {
+        this.errors[outcomeKey] = "Given today cannot be greater than the daily limit.";
+        return false;
+      }
+
       if (OUTCOME_META[outcomeKey].hasSlots) {
+        const invalidSlot = outcome.slots.find((slot) => {
+          const start = this.timeToMinutes(slot.startTime);
+          const end = this.timeToMinutes(slot.endTime);
+          return !slot.startTime || !slot.endTime || start >= end || Number(slot.weight) > 100;
+        });
+
+        if (invalidSlot) {
+          this.errors[outcomeKey] = "Each time range needs a valid start/end and probability between 0% and 100%.";
+          return false;
+        }
+
+        const orderedSlots = outcome.slots
+          .map((slot) => ({
+            start: this.timeToMinutes(slot.startTime),
+            end: this.timeToMinutes(slot.endTime)
+          }))
+          .sort((left, right) => left.start - right.start);
+
+        for (let index = 1; index < orderedSlots.length; index += 1) {
+          if (orderedSlots[index].start < orderedSlots[index - 1].end) {
+            this.errors[outcomeKey] = "Time ranges cannot overlap inside the same outcome.";
+            return false;
+          }
+        }
+
         const slotLimitTotal = outcome.slots.reduce((sum, slot) => sum + (Number(slot.limit) || 0), 0);
         if (slotLimitTotal > outcome.dailyLimit) {
           this.errors[outcomeKey] = `Slot limits total (${slotLimitTotal}) exceeds daily limit (${outcome.dailyLimit}).`;
+          return false;
+        }
+
+        const slotBudgetError = this.validateTimelinePrizeCap();
+
+        if (slotBudgetError) {
+          this.errors.timelineBudget = slotBudgetError;
           return false;
         }
       }
@@ -334,13 +531,61 @@ export default {
       this.errors[outcomeKey] = "";
       return true;
     },
+    validateTimelinePrizeCap() {
+      const ranges = [
+        ...this.localConfig.mainWin.slots.map((slot) => ({
+          start: this.timeToMinutes(slot.startTime),
+          end: this.timeToMinutes(slot.endTime),
+          weight: Number(slot.weight) || 0,
+          key: "mainWin"
+        })),
+        ...this.localConfig.smallWin.slots.map((slot) => ({
+          start: this.timeToMinutes(slot.startTime),
+          end: this.timeToMinutes(slot.endTime),
+          weight: Number(slot.weight) || 0,
+          key: "smallWin"
+        }))
+      ];
+
+      if (this.fallbackSplitTotal !== 100) {
+        return `Repeat + No win must total 100.00%. Current total: ${this.fallbackSplitTotal.toFixed(2)}%.`;
+      }
+
+      if (!ranges.length) {
+        return "";
+      }
+
+      const boundaries = [...new Set(ranges.flatMap((range) => [range.start, range.end]))].sort((a, b) => a - b);
+
+      for (let index = 0; index < boundaries.length - 1; index += 1) {
+        const sample = boundaries[index] + ((boundaries[index + 1] - boundaries[index]) / 2);
+        const mainWeight = this.findSlotWeightAt("mainWin", sample);
+        const smallWeight = this.findSlotWeightAt("smallWin", sample);
+        const total = mainWeight + smallWeight;
+
+        if (total > 100.001) {
+          return `Main win + Small win cannot exceed 100.00% in the same time range. Current total: ${total.toFixed(2)}%.`;
+        }
+      }
+
+      return "";
+    },
+    findSlotWeightAt(outcomeKey, minutes) {
+      const match = this.localConfig[outcomeKey].slots.find((slot) => {
+        const start = this.timeToMinutes(slot.startTime);
+        const end = this.timeToMinutes(slot.endTime);
+        return minutes >= start && minutes < end;
+      });
+
+      return match ? (Number(match.weight) || 0) : 0;
+    },
     validate() {
       const sectorsOk = this.validateSectorCounts();
       const outcomesOk = OUTCOME_KEYS.every((key) => this.validateOutcome(key));
       return sectorsOk && outcomesOk;
     },
     getConfig() {
-      return normalizeWinDistribution(this.localConfig);
+      return this.toPersistedConfig(this.localConfig);
     }
   }
 };
@@ -401,6 +646,10 @@ export default {
   color: rgba(49, 88, 70, 0.6);
 }
 
+.slot-label {
+  display: none;
+}
+
 .number-input,
 .slot-input {
   width: 100%;
@@ -430,6 +679,50 @@ export default {
   color: #b92d22;
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.probability-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 251, 243, 0.92);
+  border: 1px solid rgba(205, 174, 104, 0.24);
+}
+
+.probability-summary--error {
+  border-color: rgba(185, 45, 34, 0.28);
+  background: rgba(255, 243, 241, 0.96);
+}
+
+.probability-summary__eyebrow {
+  margin: 0 0 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  font-size: 0.62rem;
+  color: #1f5a3f;
+}
+
+.probability-summary h5 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1d2b22;
+}
+
+.probability-summary strong {
+  font-size: 1.1rem;
+  color: #1f5a3f;
+  font-variant-numeric: tabular-nums;
+}
+
+.probability-summary__copy {
+  margin: -0.35rem 0 0;
+  color: rgba(29, 43, 34, 0.66);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .outcome-grid {
@@ -518,7 +811,7 @@ export default {
 .slots-header,
 .slot-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 6.2rem 6.2rem 4rem 2.2rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(7.5rem, 0.85fr) minmax(6.5rem, 0.75fr) 4.5rem 2.4rem;
   gap: 0.7rem;
   align-items: end;
 }
@@ -537,6 +830,8 @@ export default {
 }
 
 .slot-field {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -603,6 +898,10 @@ export default {
 
   .slots-header {
     display: none;
+  }
+
+  .slot-label {
+    display: inline;
   }
 
   .slot-row {

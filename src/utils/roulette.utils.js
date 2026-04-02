@@ -10,7 +10,7 @@ export const OUTCOME_META = {
     textColor: "#d9bf74",
     resultType: "mainPrize",
     defaultSectorCount: 1,
-    defaultBaseWeight: 0.03,
+    defaultBaseWeight: 0,
     hasDailyLimit: true,
     hasSlots: true
   },
@@ -20,7 +20,7 @@ export const OUTCOME_META = {
     textColor: "#2d5b38",
     resultType: "surpriseWin",
     defaultSectorCount: 4,
-    defaultBaseWeight: 0.12,
+    defaultBaseWeight: 0,
     hasDailyLimit: true,
     hasSlots: true
   },
@@ -30,7 +30,7 @@ export const OUTCOME_META = {
     textColor: "#2d5b38",
     resultType: "repeat",
     defaultSectorCount: 3,
-    defaultBaseWeight: 0.1,
+    defaultBaseWeight: 0.3,
     hasDailyLimit: false,
     hasSlots: false
   },
@@ -40,7 +40,7 @@ export const OUTCOME_META = {
     textColor: "#f6edd1",
     resultType: "noWin",
     defaultSectorCount: 8,
-    defaultBaseWeight: 0.07,
+    defaultBaseWeight: 0.7,
     hasDailyLimit: false,
     hasSlots: false
   }
@@ -139,7 +139,7 @@ export const normalizeTotals = (payload) => {
   };
 };
 
-const normalizeSlot = (slot, fallbackWeight) => {
+const normalizeSlot = (slot, fallbackWeight = 0) => {
   const source = slot && typeof slot === "object" ? slot : {};
 
   return {
@@ -394,11 +394,11 @@ export const buildNextTotals = (currentTotals, outcomeKey) => {
 
 const buildOutcomeWeights = (distribution, currentTime) => {
   const normalized = normalizeWinDistribution(distribution);
-  const weights = {
+  const slotWeights = {
     mainWin: 0,
     smallWin: 0,
-    repeat: Math.max(0, normalized.repeat.baseWeight),
-    noWin: Math.max(0, normalized.noWin.baseWeight)
+    repeat: 0,
+    noWin: 0
   };
 
   ["mainWin", "smallWin"].forEach((key) => {
@@ -406,10 +406,21 @@ const buildOutcomeWeights = (distribution, currentTime) => {
     const activeSlotIndex = findActiveSlotIndex(category.slots, currentTime);
     const activeSlot = activeSlotIndex >= 0 ? category.slots[activeSlotIndex] : null;
     const available = category.givenToday < category.dailyLimit && activeSlot && activeSlot.given < activeSlot.limit;
-    weights[key] = available ? Math.max(0, Number(activeSlot.weight) || category.baseWeight) : 0;
+    slotWeights[key] = available ? Math.max(0, Number(activeSlot.weight) || 0) : 0;
   });
 
-  return weights;
+  const reserved = Math.min(1, slotWeights.mainWin + slotWeights.smallWin);
+  const remaining = Math.max(0, 1 - reserved);
+  const fallbackSplit = Math.max(0, normalized.repeat.baseWeight) + Math.max(0, normalized.noWin.baseWeight);
+  const repeatShare = fallbackSplit > 0 ? Math.max(0, normalized.repeat.baseWeight) / fallbackSplit : 0;
+  const noWinShare = fallbackSplit > 0 ? Math.max(0, normalized.noWin.baseWeight) / fallbackSplit : 0;
+
+  return {
+    mainWin: slotWeights.mainWin,
+    smallWin: slotWeights.smallWin,
+    repeat: remaining * repeatShare,
+    noWin: remaining * noWinShare
+  };
 };
 
 export const buildDynamicProbabilities = (distribution, currentTime) => {

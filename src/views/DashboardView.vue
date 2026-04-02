@@ -39,14 +39,23 @@
           <button class="ghost-btn" type="button" @click="triggerImport">
             Import JSON
           </button>
+          <button
+            class="ghost-btn"
+            type="button"
+            :disabled="isRefreshing || isSaving"
+            @click="onRestoreDefaults"
+          >
+            Restore defaults
+          </button>
           <button class="ghost-btn" type="button" :disabled="!hasLocalSnapshot" @click="exportLocalJson">
             Export JSON
           </button>
           <button
             class="ghost-btn ghost-btn--danger"
             type="button"
-            :disabled="dataSource !== 'local' || !hasLocalSnapshot || isRefreshing || isSaving"
-            @click="onResetLocalJson"
+            :class="{ 'ghost-btn--disabled': !canResetLocalJson }"
+            :aria-disabled="!canResetLocalJson ? 'true' : 'false'"
+            @click="handleResetLocalClick"
           >
             Reset local JSON
           </button>
@@ -61,7 +70,7 @@
     </section>
 
     <section class="dashboard-layout">
-      <div class="dashboard-main">
+      <div class="dashboard-top-grid">
         <section class="panel summary-panel panel--overview">
           <div class="summary-panel__header">
             <div>
@@ -101,20 +110,6 @@
           </div>
         </section>
 
-        <section class="panel totals-panel panel--totals">
-          <div class="panel-heading">
-            <div>
-              <p class="panel-eyebrow">Win Rules</p>
-              <h3>Distribution by category</h3>
-            </div>
-            <p class="panel-copy">Set daily limits per category and distribute wins across hourly slots.</p>
-          </div>
-          <DashboardWinConfig ref="winConfig" />
-        </section>
-
-      </div>
-
-      <aside class="dashboard-side">
         <section class="panel side-panel panel--status">
           <div class="panel-heading">
             <div>
@@ -169,7 +164,18 @@
             <li>The wheel repaints from the saved rules configuration.</li>
           </ul>
         </section>
-      </aside>
+      </div>
+
+      <section class="panel totals-panel panel--totals">
+        <div class="panel-heading">
+          <div>
+            <p class="panel-eyebrow">Win Rules</p>
+            <h3>Distribution by category</h3>
+          </div>
+          <p class="panel-copy">Set daily limits per category and distribute wins across hourly slots.</p>
+        </div>
+        <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
+      </section>
     </section>
 
     <transition name="toast-in">
@@ -178,6 +184,31 @@
         <p class="feedback-toast__msg">{{ toast.message }}</p>
       </div>
     </transition>
+
+    <div v-if="showResetLocalModal" class="modal-overlay" @click.self="closeResetLocalModal">
+        <section
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-local-title"
+          aria-describedby="reset-local-copy"
+        >
+          <p class="panel-eyebrow">Confirm action</p>
+          <h3 id="reset-local-title">Reset local JSON?</h3>
+          <p id="reset-local-copy" class="modal-copy">
+            This will reset local counters and all current slot delivery counts to 0, while keeping the active wheel rules.
+          </p>
+
+          <div class="modal-actions">
+            <button class="ghost-btn" type="button" @click="closeResetLocalModal">
+              Cancel
+            </button>
+            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetLocalJson">
+              {{ isRefreshing ? "Resetting..." : "Reset local JSON" }}
+            </button>
+          </div>
+        </section>
+      </div>
   </div>
 </template>
 
@@ -185,6 +216,7 @@
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import DashboardWinConfig from "@/components/DashboardWinConfig.vue";
+import { DEFAULT_WIN_DISTRIBUTION } from "@/utils";
 
 const FIREBASE_FIELD_MAP = {
   totalReplay: "totalReplay",
@@ -205,6 +237,7 @@ export default {
       isSaving: false,
       isRefreshing: false,
       dataSource: "remote",
+      showResetLocalModal: false,
       toast: { visible: false, type: "success", message: "" }
     };
   },
@@ -248,6 +281,9 @@ export default {
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
+    },
+    canResetLocalJson() {
+      return this.dataSource === "local" && this.hasLocalSnapshot && !this.isRefreshing && !this.isSaving;
     }
   },
   mounted() {
@@ -282,6 +318,20 @@ export default {
           totalSpin: this.totalSpin
         },
         winDistribution: this.winDistribution
+      };
+    },
+    buildDefaultBootstrapSnapshot() {
+      return {
+        options: this.options,
+        totals: {
+          totalReplay: 0,
+          totalSpecialPrice: 0,
+          totalSpecialSurprise: 0,
+          totalTopPrice: 0,
+          totalGiftCard: 0,
+          totalSpin: 0
+        },
+        winDistribution: DEFAULT_WIN_DISTRIBUTION()
       };
     },
     showToast(type, message) {
@@ -321,7 +371,6 @@ export default {
 
       try {
         const updatedDistribution = this.$refs.winConfig.getConfig();
-        this.$store.commit("setWinDistribution", updatedDistribution);
 
         const [distOk] = await Promise.all([
           service.saveWinDistribution(updatedDistribution)
@@ -350,7 +399,54 @@ export default {
         this.isRefreshing = false;
       }
     },
-    async onResetLocalJson() {
+    async onRestoreDefaults() {
+      this.isRefreshing = true;
+
+      try {
+        const snapshot = this.buildDefaultBootstrapSnapshot();
+
+        if (this.dataSource === "local") {
+          service.importLocalSnapshot(snapshot);
+        } else {
+          const [totalsOk, distOk] = await Promise.all([
+            service.saveTotals(snapshot.totals),
+            service.saveWinDistribution(snapshot.winDistribution)
+          ]);
+
+          if (!totalsOk || !distOk) {
+            throw new Error("save-failed");
+          }
+        }
+
+        this.hydrateBootstrapData({ ...snapshot, errors: [] });
+        this.showToast("success", this.dataSource === "local"
+          ? "Default local rules restored."
+          : "Default online rules restored.");
+      } catch {
+        this.showToast("error", "Unable to restore the default rules.");
+      } finally {
+        this.isRefreshing = false;
+      }
+    },
+    handleResetLocalClick() {
+      if (!this.canResetLocalJson) {
+        this.showToast("error", "Switch to local mode and load a local JSON snapshot before resetting.");
+        return;
+      }
+
+      this.openResetLocalModal();
+    },
+    openResetLocalModal() {
+      this.showResetLocalModal = true;
+    },
+    closeResetLocalModal() {
+      if (this.isRefreshing) {
+        return;
+      }
+
+      this.showResetLocalModal = false;
+    },
+    async confirmResetLocalJson() {
       if (this.dataSource !== "local" || !service.hasLocalSnapshot()) {
         return;
       }
@@ -358,8 +454,9 @@ export default {
       this.isRefreshing = true;
 
       try {
-        const snapshot = service.resetLocalSnapshotCounters();
+        const snapshot = service.resetLocalSnapshotCounters(this.buildBootstrapSnapshot());
         this.hydrateBootstrapData({ ...snapshot, errors: [] });
+        this.showResetLocalModal = false;
         this.showToast("success", "Local JSON counters reset to 0.");
       } catch {
         this.showToast("error", "Unable to reset the local JSON.");
@@ -398,7 +495,10 @@ export default {
       link.download = "roulette-win-rules-v4.json";
       link.click();
       window.URL.revokeObjectURL(url);
-      this.showToast("success", "Win rules JSON exported.");
+        this.showToast("success", "Win rules JSON exported.");
+    },
+    onWinConfigChange(nextConfig) {
+      this.$store.commit("setWinDistribution", nextConfig);
     }
   },
   beforeDestroy() {
@@ -429,6 +529,50 @@ export default {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.2rem 0.65rem 1.6rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(18, 23, 20, 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(100%, 28rem);
+  border-radius: 1.25rem;
+  padding: 1.35rem;
+  background: rgba(255, 251, 244, 0.98);
+  border: 1px solid rgba(205, 174, 104, 0.24);
+  box-shadow: 0 22px 42px rgba(20, 25, 22, 0.2);
+}
+
+.modal-card h3 {
+  margin: 0;
+  color: #1f2b22;
+  font-size: 1.3rem;
+}
+
+.modal-copy {
+  margin: 0.65rem 0 0;
+  color: rgba(31, 43, 34, 0.72);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+.ghost-btn--disabled {
+  opacity: 0.58;
 }
 
 .panel {
@@ -558,26 +702,15 @@ export default {
 
 .dashboard-layout {
   display: flex;
-  align-items: stretch;
-  gap: 1rem;
-}
-
-.dashboard-main,
-.dashboard-side {
-  display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.dashboard-main {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.dashboard-side {
-  flex: 0 0 32%;
-  min-width: 280px;
-  max-width: 380px;
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr) minmax(280px, 0.9fr);
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .summary-panel {
@@ -585,7 +718,6 @@ export default {
 }
 
 .totals-panel {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -686,12 +818,6 @@ export default {
   grid-column: 1 / -1;
 }
 
-.dashboard-side {
-  position: relative;
-  top: auto;
-  align-self: start;
-}
-
 .side-panel--soft {
   background: linear-gradient(180deg, rgba(251, 246, 233, 0.98) 0%, rgba(245, 236, 214, 0.96) 100%);
 }
@@ -774,16 +900,8 @@ export default {
 }
 
 @media (max-width: 1080px) {
-  .dashboard-layout {
-    flex-direction: column;
-  }
-
-  .dashboard-side {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: none;
-    position: relative;
-    top: auto;
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
   }
 }
 
