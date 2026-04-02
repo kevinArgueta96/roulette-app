@@ -20,7 +20,11 @@
 
       <div class="wheel-center" :style="wheelCenterStyle">
         <div class="wheel-center__ring">
-          <div class="wheel-center__logo">Parrano</div>
+          <img
+            class="wheel-center__logo"
+            src="@/assets/brand/image_center.png"
+            alt="Parrano"
+          />
         </div>
       </div>
     </div>
@@ -590,21 +594,21 @@ export default {
 }
 
 .wheel-center__ring {
-  width: clamp(104px, 11.5vw, 126px);
-  height: clamp(104px, 11.5vw, 126px);
+  width: clamp(60px, 6.8vw, 74px);
+  height: clamp(60px, 6.8vw, 74px);
   border-radius: 999px;
   background: #4a7446;
-  border: 7px solid #d8bb71;
+  border: 4px solid #d8bb71;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .wheel-center__logo {
-  color: #f7f0dd;
-  font-style: italic;
-  font-size: clamp(0.78rem, 1vw, 0.92rem);
-  line-height: 1;
+  display: block;
+  width: 94%;
+  height: auto;
+  object-fit: contain;
 }
 
 .spin-button {
@@ -690,9 +694,9 @@ export default {
   }
 
   .wheel-center__ring {
-    width: clamp(82px, 12vh, 98px);
-    height: clamp(82px, 12vh, 98px);
-    border-width: 5px;
+    width: clamp(48px, 7vh, 58px);
+    height: clamp(48px, 7vh, 58px);
+    border-width: 3px;
   }
 
   .spin-button {

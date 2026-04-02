@@ -5,7 +5,7 @@
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
-          <div class="brand">Parrano</div>
+          <img class="brand-logo" src="@/assets/brand/new-logo.png" alt="Parrano" />
           <button class="menu-button" type="button" aria-label="Menu">
             <span></span><span></span><span></span>
           </button>
@@ -204,11 +204,11 @@ export default {
   justify-content: space-between;
 }
 
-.brand {
-  color: #1f5a3f;
-  font-size: clamp(1.5rem, 2vw, 2rem);
-  font-weight: 700;
-  font-style: italic;
+.brand-logo {
+  display: block;
+  width: clamp(138px, 18vw, 208px);
+  height: auto;
+  object-fit: contain;
 }
 
 .menu-button {
