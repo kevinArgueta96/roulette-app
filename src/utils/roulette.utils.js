@@ -50,9 +50,9 @@ export const normalizeTotals = (payload) => {
   return {
     totalReplay: Number(source.totalReplay) || 0,
     totalSpecialPrice: Number(source.totalSpecialPrice) || 0,
-    totalSpecialSurprise: Number(source.totalSpecialSurprise) || 0,
+    totalSpecialSurprise: Number(source.totalSpecialSurprise || source.totalSpecialSurprice) || 0,
     totalTopPrice: Number(source.totalTopPrice) || 0,
-    totalGiftCard: Number(source.totalGiftCard) || 0,
+    totalGiftCard: Number(source.totalGiftCard || source.totalGitfCard) || 0,
     totalSpin: Number(source.totalSpin) || 0
   };
 };
