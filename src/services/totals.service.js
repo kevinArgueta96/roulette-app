@@ -1,8 +1,8 @@
 import { CONFIG } from "../../env.config";
 import {
   normalizeOptions,
-  normalizePrizeCollection,
-  normalizeTotals
+  normalizeTotals,
+  normalizeWinDistribution
 } from "@/utils";
 
 const REQUEST_TIMEOUT_MS = 8000;
@@ -19,9 +19,7 @@ function normalizeBootstrapPayload(payload) {
   return {
     options: normalizeOptions(source.options || source.roulette || []),
     totals: normalizeTotals(source.totals || source.totalPrices || source.total_prices || {}),
-    giftCards: normalizePrizeCollection(source.giftCards || source.gift_cards || []),
-    topPrices: normalizePrizeCollection(source.topPrices || source.top_prices || []),
-    teslaPrices: normalizePrizeCollection(source.teslaPrices || source.tesla_prices || source.teslaWin || []),
+    winDistribution: normalizeWinDistribution(source.winDistribution || source["win-distribution"] || null),
     errors: Array.isArray(source.errors) ? source.errors : []
   };
 }
@@ -135,31 +133,13 @@ async function getTotals() {
   return response === null ? null : normalizeTotals(response);
 }
 
-async function getGiftCards() {
+async function getWinDistribution() {
   if (getDataSourceMode() === "local") {
-    return getStoredSnapshot()?.giftCards || [];
+    return getStoredSnapshot()?.winDistribution || null;
   }
 
-  const response = await requestJson("gift-cards.json");
-  return response === null ? null : normalizePrizeCollection(response);
-}
-
-async function getTopPrices() {
-  if (getDataSourceMode() === "local") {
-    return getStoredSnapshot()?.topPrices || [];
-  }
-
-  const response = await requestJson("top-prices.json");
-  return response === null ? null : normalizePrizeCollection(response);
-}
-
-async function getTeslaWin() {
-  if (getDataSourceMode() === "local") {
-    return getStoredSnapshot()?.teslaPrices || [];
-  }
-
-  const response = await requestJson("tesla-win.json");
-  return response === null ? null : normalizePrizeCollection(response);
+  const response = await requestJson("win-distribution.json");
+  return response === null ? null : normalizeWinDistribution(response);
 }
 
 async function getBootstrapData() {
@@ -174,42 +154,22 @@ async function getBootstrapData() {
     }
   }
 
-  const [options, totals, giftCards, topPrices, teslaPrices] = await Promise.all([
+  const [options, totals, winDistribution] = await Promise.all([
     getOptions(),
     getTotals(),
-    getGiftCards(),
-    getTopPrices(),
-    getTeslaWin()
+    getWinDistribution()
   ]);
 
   const errors = [];
 
-  if (options === null) {
-    errors.push("options");
-  }
-
-  if (totals === null) {
-    errors.push("totals");
-  }
-
-  if (giftCards === null) {
-    errors.push("giftCards");
-  }
-
-  if (topPrices === null) {
-    errors.push("topPrices");
-  }
-
-  if (teslaPrices === null) {
-    errors.push("teslaPrices");
-  }
+  if (options === null) errors.push("options");
+  if (totals === null) errors.push("totals");
+  if (winDistribution === null) errors.push("winDistribution");
 
   return {
     options: options || [],
     totals: totals || null,
-    giftCards: giftCards || [],
-    topPrices: topPrices || [],
-    teslaPrices: teslaPrices || [],
+    winDistribution: winDistribution || null,
     errors
   };
 }
@@ -226,53 +186,25 @@ async function saveTotals(data) {
   return Boolean(await putJson("total-prices.json", data));
 }
 
-async function setGiftCards(data) {
+async function saveWinDistribution(data) {
   if (getDataSourceMode() === "local") {
     updateStoredSnapshot((snapshot) => ({
       ...snapshot,
-      giftCards: normalizePrizeCollection(data)
+      winDistribution: normalizeWinDistribution(data)
     }));
     return true;
   }
 
-  return Boolean(await putJson("gift-cards.json", data));
-}
-
-async function setTopPrices(data) {
-  if (getDataSourceMode() === "local") {
-    updateStoredSnapshot((snapshot) => ({
-      ...snapshot,
-      topPrices: normalizePrizeCollection(data)
-    }));
-    return true;
-  }
-
-  return Boolean(await putJson("top-prices.json", data));
-}
-
-async function setTeslaWinService(data) {
-  if (getDataSourceMode() === "local") {
-    updateStoredSnapshot((snapshot) => ({
-      ...snapshot,
-      teslaPrices: normalizePrizeCollection(data)
-    }));
-    return true;
-  }
-
-  return Boolean(await putJson("tesla-win.json", data));
+  return Boolean(await putJson("win-distribution.json", data));
 }
 
 export default {
   getBootstrapData,
   getOptions,
   getTotals,
-  getGiftCards,
-  getTopPrices,
-  getTeslaWin,
+  getWinDistribution,
   saveTotals,
-  setGiftCards,
-  setTopPrices,
-  setTeslaWinService,
+  saveWinDistribution,
   getDataSourceMode,
   setDataSourceMode,
   importLocalSnapshot(payload) {

@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import { initialOptionsConfigRoulette } from "@/config/config-roulette.js";
-import { RANDOM_START_ANGLES } from "@/utils";
+import { RANDOM_START_ANGLES, DEFAULT_WIN_DISTRIBUTION } from "@/utils";
 
 Vue.use(Vuex);
 
@@ -14,9 +14,7 @@ const createState = () => ({
   totalTopPrice: 0,
   totalGiftCard: 0,
   totalSpin: 0,
-  giftCards: [],
-  topPrices: [],
-  teslaPrices: [],
+  winDistribution: DEFAULT_WIN_DISTRIBUTION(),
   initialAngle: RANDOM_START_ANGLES[0],
   spinRoullete: true
 });
@@ -29,6 +27,7 @@ const totalKeys = [
   "totalGiftCard",
   "totalSpin"
 ];
+
 
 export default new Vuex.Store({
   state: createState(),
@@ -65,14 +64,58 @@ export default new Vuex.Store({
     setTotalSpin(state, payload) {
       state.totalSpin = Number(payload) || 0;
     },
-    setGiftCards(state, payload) {
-      state.giftCards = Array.isArray(payload) ? payload : [];
+    setWinDistribution(state, payload) {
+      if (payload && typeof payload === "object") {
+        state.winDistribution = {
+          ...DEFAULT_WIN_DISTRIBUTION(),
+          ...payload,
+          mainWin: { ...DEFAULT_WIN_DISTRIBUTION().mainWin, ...(payload.mainWin || {}) },
+          smallWin: { ...DEFAULT_WIN_DISTRIBUTION().smallWin, ...(payload.smallWin || {}) }
+        };
+      }
     },
-    setTopPrices(state, payload) {
-      state.topPrices = Array.isArray(payload) ? payload : [];
+    incrementMainWinGiven(state, slotIndex) {
+      const dist = state.winDistribution;
+      state.winDistribution = {
+        ...dist,
+        mainWin: {
+          ...dist.mainWin,
+          givenToday: dist.mainWin.givenToday + 1,
+          slots: dist.mainWin.slots.map((slot, i) =>
+            i === slotIndex ? { ...slot, given: slot.given + 1 } : slot
+          )
+        }
+      };
     },
-    setTeslaPrices(state, payload) {
-      state.teslaPrices = Array.isArray(payload) ? payload : [];
+    incrementSmallWinGiven(state, slotIndex) {
+      const dist = state.winDistribution;
+      state.winDistribution = {
+        ...dist,
+        smallWin: {
+          ...dist.smallWin,
+          givenToday: dist.smallWin.givenToday + 1,
+          slots: dist.smallWin.slots.map((slot, i) =>
+            i === slotIndex ? { ...slot, given: slot.given + 1 } : slot
+          )
+        }
+      };
+    },
+    resetDailyCounters(state, newDate) {
+      const dist = state.winDistribution;
+      state.winDistribution = {
+        ...dist,
+        lastResetDate: newDate,
+        mainWin: {
+          ...dist.mainWin,
+          givenToday: 0,
+          slots: dist.mainWin.slots.map((slot) => ({ ...slot, given: 0 }))
+        },
+        smallWin: {
+          ...dist.smallWin,
+          givenToday: 0,
+          slots: dist.smallWin.slots.map((slot) => ({ ...slot, given: 0 }))
+        }
+      };
     },
     setInitialAngle(state, payload) {
       state.initialAngle = Number(payload) || 0;
@@ -98,16 +141,8 @@ export default new Vuex.Store({
         commit("setTotals", payload.totals);
       }
 
-      if (payload?.giftCards) {
-        commit("setGiftCards", payload.giftCards);
-      }
-
-      if (payload?.topPrices) {
-        commit("setTopPrices", payload.topPrices);
-      }
-
-      if (payload?.teslaPrices) {
-        commit("setTeslaPrices", payload.teslaPrices);
+      if (payload?.winDistribution) {
+        commit("setWinDistribution", payload.winDistribution);
       }
     },
     updateState({ commit }, { mutationType, payload }) {

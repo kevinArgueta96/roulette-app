@@ -1,4 +1,5 @@
 import { calculateIndex } from "./calculate_roulette";
+import { isTimeWithinRange } from "./time.utils";
 
 export const FALLBACK_INDEX = 1;
 
@@ -162,6 +163,116 @@ export const buildNextTotals = (currentTotals, winnerIndex) => {
   }
 
   return totals;
+};
+
+// ─── Win Distribution helpers ──────────────────────────────────────────────
+
+export const DEFAULT_WIN_DISTRIBUTION = () => ({
+  mainWin: { dailyLimit: 5, givenToday: 0, slots: [] },
+  smallWin: { dailyLimit: 20, givenToday: 0, slots: [] },
+  lastResetDate: ""
+});
+
+export const normalizeWinDistribution = (payload) => {
+  const defaults = DEFAULT_WIN_DISTRIBUTION();
+
+  if (!payload || typeof payload !== "object") {
+    return defaults;
+  }
+
+  const normalizeCategory = (cat, defaultCat) => {
+    const source = cat && typeof cat === "object" ? cat : {};
+    const slots = Array.isArray(source.slots)
+      ? source.slots.map((s) => ({
+          startTime: String(s.startTime || s.start || ""),
+          endTime: String(s.endTime || s.end || ""),
+          limit: Math.max(0, Number(s.limit) || 0),
+          given: Math.max(0, Number(s.given) || 0)
+        }))
+      : defaultCat.slots;
+
+    return {
+      dailyLimit: Math.max(0, Number(source.dailyLimit) || defaultCat.dailyLimit),
+      givenToday: Math.max(0, Number(source.givenToday) || 0),
+      slots
+    };
+  };
+
+  return {
+    mainWin: normalizeCategory(payload.mainWin, defaults.mainWin),
+    smallWin: normalizeCategory(payload.smallWin, defaults.smallWin),
+    lastResetDate: String(payload.lastResetDate || "")
+  };
+};
+
+const todayDateString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+export const shouldResetDaily = (lastResetDate) => {
+  return lastResetDate !== todayDateString();
+};
+
+export const findActiveSlotIndex = (slots, currentTime) => {
+  if (!Array.isArray(slots) || !currentTime) return -1;
+
+  return slots.findIndex((slot) => {
+    if (!slot.startTime || !slot.endTime) return false;
+    return isTimeWithinRange(currentTime, slot.startTime, slot.endTime);
+  });
+};
+
+/**
+ * Builds a 12-element probability array based on winDistribution limits and current time.
+ * Sector mapping:
+ *   0 → mainPrize (LAHJAKASSI)
+ *   2, 6, 10 → smallWin (YLLÄTYSPALKINTO)
+ *   4, 8 → repeat (KOKEILE UUDESTAAN)
+ *   1, 3, 5, 7, 9, 11 → noWin
+ */
+export const buildDynamicProbabilities = (winDistribution, currentTime) => {
+  const dist = winDistribution || DEFAULT_WIN_DISTRIBUTION();
+  const mainCat = dist.mainWin || DEFAULT_WIN_DISTRIBUTION().mainWin;
+  const smallCat = dist.smallWin || DEFAULT_WIN_DISTRIBUTION().smallWin;
+
+  const mainSlotIdx = findActiveSlotIndex(mainCat.slots, currentTime);
+  const smallSlotIdx = findActiveSlotIndex(smallCat.slots, currentTime);
+
+  const mainSlot = mainSlotIdx >= 0 ? mainCat.slots[mainSlotIdx] : null;
+  const smallSlot = smallSlotIdx >= 0 ? smallCat.slots[smallSlotIdx] : null;
+
+  // Main win available if: daily limit not reached AND active slot has remaining quota
+  const mainAvailable =
+    mainCat.givenToday < mainCat.dailyLimit &&
+    mainSlot !== null &&
+    mainSlot.given < mainSlot.limit;
+
+  // Small win available if: daily limit not reached AND active slot has remaining quota
+  const smallAvailable =
+    smallCat.givenToday < smallCat.dailyLimit &&
+    smallSlot !== null &&
+    smallSlot.given < smallSlot.limit;
+
+  const MAIN_WEIGHT = 0.03;
+  const SMALL_WEIGHT = 0.12;
+  const REPEAT_WEIGHT = 0.10;
+  const NO_WIN_WEIGHT = 0.07;
+
+  return [
+    mainAvailable ? MAIN_WEIGHT : 0,  // 0: LAHJAKASSI
+    NO_WIN_WEIGHT,                     // 1: noWin
+    smallAvailable ? SMALL_WEIGHT : 0, // 2: YLLÄTYSPALKINTO
+    NO_WIN_WEIGHT,                     // 3: noWin
+    REPEAT_WEIGHT,                     // 4: KOKEILE UUDESTAAN
+    NO_WIN_WEIGHT,                     // 5: noWin
+    smallAvailable ? SMALL_WEIGHT : 0, // 6: YLLÄTYSPALKINTO
+    NO_WIN_WEIGHT,                     // 7: noWin
+    REPEAT_WEIGHT,                     // 8: KOKEILE UUDESTAAN
+    NO_WIN_WEIGHT,                     // 9: noWin
+    smallAvailable ? SMALL_WEIGHT : 0, // 10: YLLÄTYSPALKINTO
+    NO_WIN_WEIGHT                      // 11: noWin
+  ].map((probability, index) => ({ option: String(index), probability }));
 };
 
 export const getTargetDegreesForIndex = (winnerIndex, arc) => {

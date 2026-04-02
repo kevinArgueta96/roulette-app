@@ -40,13 +40,14 @@ import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import {
   formatTime24h,
-  isTimeWithinRange,
   pickWeightedIndex,
   RESULT_BY_INDEX,
   FALLBACK_INDEX,
-  buildForcedOptions,
   buildNextTotals,
-  getTargetDegreesForIndex
+  getTargetDegreesForIndex,
+  buildDynamicProbabilities,
+  findActiveSlotIndex,
+  shouldResetDaily
 } from "@/utils";
 import {
   sectorsRoulette,
@@ -87,9 +88,7 @@ export default {
   computed: {
     ...mapGetters([
       "options",
-      "giftCards",
-      "topPrices",
-      "teslaPrices",
+      "winDistribution",
       "totalReplay",
       "totalSpecialPrice",
       "totalSpecialSurprise",
@@ -459,41 +458,17 @@ export default {
       return currentAngle + this.toRadians(delta);
     },
     generateNumberToShow() {
-      const forcedConfiguration = this.generateProbabilityPriceByScheduler();
-      const probabilities = Array.isArray(forcedConfiguration) ? forcedConfiguration : this.options;
-      return pickWeightedIndex(probabilities, FALLBACK_INDEX);
-    },
-    async updateWinnerChoice({ typeWinner, positionWinner }) {
-      switch (typeWinner) {
-        case "card": {
-          const nextGiftCards = this.giftCards.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
-          this.updateState({ mutationType: "setGiftCards", payload: nextGiftCards });
-          await service.setGiftCards(nextGiftCards);
-          return;
-        }
-        case "topPrice": {
-          const nextTopPrices = this.topPrices.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
-          this.updateState({ mutationType: "setTopPrices", payload: nextTopPrices });
-          await service.setTopPrices(nextTopPrices);
-          return;
-        }
-        case "teslaWin": {
-          const nextTeslaPrices = this.teslaPrices.map((item) => item.position === positionWinner ? { ...item, given: true } : item);
-          this.updateState({ mutationType: "setTeslaPrices", payload: nextTeslaPrices });
-          await service.setTeslaWinService(nextTeslaPrices);
-          return;
-        }
-        default:
-          return;
-      }
-    },
-    generateProbabilityPriceByScheduler() {
-      const scheduledPrizes = [...this.giftCards, ...this.topPrices, ...this.teslaPrices];
       const currentTime = formatTime24h();
-      const scheduledWinner = scheduledPrizes.find((item) => item && item.given === false && isTimeWithinRange(currentTime, item.rangeDown, item.rangeTop));
-      if (!scheduledWinner) return null;
-      this.updateWinnerChoice({ typeWinner: scheduledWinner.type, positionWinner: scheduledWinner.position }).catch(() => null);
-      return buildForcedOptions(scheduledWinner.type);
+
+      if (shouldResetDaily(this.winDistribution?.lastResetDate)) {
+        const today = new Date();
+        const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        this.updateState({ mutationType: "resetDailyCounters", payload: dateStr });
+        service.saveWinDistribution({ ...this.winDistribution, lastResetDate: dateStr }).catch(() => null);
+      }
+
+      const probabilities = buildDynamicProbabilities(this.winDistribution, currentTime);
+      return pickWeightedIndex(probabilities, FALLBACK_INDEX);
     },
     async persistSpinResult(winnerIndex) {
       const totals = buildNextTotals(this.currentTotals, winnerIndex);
@@ -508,6 +483,20 @@ export default {
       Object.keys(mutationMap).forEach((key) => {
         this.updateState({ mutationType: mutationMap[key], payload: totals[key] });
       });
+
+      const currentTime = formatTime24h();
+      const isMainWin = winnerIndex === 0;
+      const isSmallWin = [2, 6, 10].includes(winnerIndex);
+
+      if (isMainWin || isSmallWin) {
+        const category = isMainWin ? "mainWin" : "smallWin";
+        const slots = this.winDistribution?.[category]?.slots || [];
+        const activeSlotIdx = findActiveSlotIndex(slots, currentTime);
+        const mutation = isMainWin ? "incrementMainWinGiven" : "incrementSmallWinGiven";
+        this.updateState({ mutationType: mutation, payload: activeSlotIdx });
+        await service.saveWinDistribution(this.winDistribution).catch(() => null);
+      }
+
       await service.saveTotals(totals);
     },
     normalizeRadians(angle) {

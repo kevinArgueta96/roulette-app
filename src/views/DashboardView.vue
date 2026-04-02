@@ -67,34 +67,41 @@
 
           <div class="stats-grid">
             <article class="stat-card">
-              <p class="stat-card__label">Spins</p>
+              <p class="stat-card__label">Total spins</p>
               <strong>{{ totalSpin }}</strong>
+            </article>
+            <article class="stat-card stat-card--highlight">
+              <p class="stat-card__label">Main wins today</p>
+              <strong>{{ mainWinsToday }} <span class="stat-limit">/ {{ mainWinsLimit }}</span></strong>
+            </article>
+            <article class="stat-card stat-card--highlight">
+              <p class="stat-card__label">Small wins today</p>
+              <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
             </article>
             <article class="stat-card">
               <p class="stat-card__label">Replay</p>
               <strong>{{ totalReplay }}</strong>
             </article>
             <article class="stat-card">
-              <p class="stat-card__label">Special prize</p>
+              <p class="stat-card__label">No win</p>
               <strong>{{ totalSpecialPrice }}</strong>
             </article>
             <article class="stat-card">
-              <p class="stat-card__label">Surprise</p>
+              <p class="stat-card__label">Surprise wins</p>
               <strong>{{ totalSpecialSurprise }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Top prize</p>
-              <strong>{{ totalTopPrice }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Gift cards</p>
-              <strong>{{ totalGiftCard }}</strong>
             </article>
           </div>
         </section>
 
         <section class="panel totals-panel panel--totals">
-          <DashboardTotalsEditor ref="totalsEditor" />
+          <div class="panel-heading">
+            <div>
+              <p class="panel-eyebrow">Win Rules</p>
+              <h3>Distribution by category</h3>
+            </div>
+            <p class="panel-copy">Set daily limits and configure hour slots for each prize category.</p>
+          </div>
+          <DashboardWinConfig ref="winConfig" />
         </section>
 
       </div>
@@ -118,16 +125,16 @@
               <strong>{{ options.length }}</strong>
             </div>
             <div class="status-item">
-              <span>Pending gift cards</span>
-              <strong>{{ pendingGiftCards }}</strong>
+              <span>Main win slots</span>
+              <strong>{{ winDistribution && winDistribution.mainWin ? winDistribution.mainWin.slots.length : 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>Pending top prizes</span>
-              <strong>{{ pendingTopPrices }}</strong>
+              <span>Small win slots</span>
+              <strong>{{ winDistribution && winDistribution.smallWin ? winDistribution.smallWin.slots.length : 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>Pending Tesla prizes</span>
-              <strong>{{ pendingTeslaPrices }}</strong>
+              <span>Last daily reset</span>
+              <strong>{{ winDistribution && winDistribution.lastResetDate ? winDistribution.lastResetDate : "—" }}</strong>
             </div>
           </div>
         </section>
@@ -152,28 +159,6 @@
       </aside>
     </section>
 
-    <section class="panel editors-panel editors-panel--full panel--schedules">
-      <div class="panel-heading">
-        <div>
-          <p class="panel-eyebrow">Schedules</p>
-          <h3>Scheduled prizes</h3>
-        </div>
-        <p class="panel-copy">Edit time slots and delivery state for each prize group.</p>
-      </div>
-
-      <div class="schedule-grid">
-        <div class="schedule-grid__item schedule-grid__item--full">
-          <DashboardScheduleEditor title="Gift Cards" type="card" />
-        </div>
-        <div class="schedule-grid__item">
-          <DashboardScheduleEditor title="Top Prizes" type="top" />
-        </div>
-        <div class="schedule-grid__item">
-          <DashboardScheduleEditor title="Tesla" type="tesla" />
-        </div>
-      </div>
-    </section>
-
     <transition name="toast-in">
       <div v-if="toast.visible" class="feedback-toast" :class="`feedback-toast--${toast.type}`">
         <span class="feedback-toast__icon" aria-hidden="true">{{ toast.type === "success" ? "◆" : "◇" }}</span>
@@ -186,8 +171,7 @@
 <script>
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
-import DashboardTotalsEditor from "@/components/DashboardTotalsEditor.vue";
-import DashboardScheduleEditor from "@/components/DashboardScheduleEditor.vue";
+import DashboardWinConfig from "@/components/DashboardWinConfig.vue";
 
 const FIREBASE_FIELD_MAP = {
   totalReplay: "totalReplay",
@@ -201,8 +185,7 @@ const FIREBASE_FIELD_MAP = {
 export default {
   name: "DashboardView",
   components: {
-    DashboardTotalsEditor,
-    DashboardScheduleEditor
+    DashboardWinConfig
   },
   data() {
     return {
@@ -215,9 +198,7 @@ export default {
   computed: {
     ...mapGetters([
       "options",
-      "giftCards",
-      "topPrices",
-      "teslaPrices",
+      "winDistribution",
       "totalReplay",
       "totalSpecialPrice",
       "totalSpecialSurprise",
@@ -225,14 +206,17 @@ export default {
       "totalGiftCard",
       "totalSpin"
     ]),
-    pendingGiftCards() {
-      return this.giftCards.filter((item) => item && item.given === false).length;
+    mainWinsToday() {
+      return this.winDistribution?.mainWin?.givenToday ?? 0;
     },
-    pendingTopPrices() {
-      return this.topPrices.filter((item) => item && item.given === false).length;
+    mainWinsLimit() {
+      return this.winDistribution?.mainWin?.dailyLimit ?? 0;
     },
-    pendingTeslaPrices() {
-      return this.teslaPrices.filter((item) => item && item.given === false).length;
+    smallWinsToday() {
+      return this.winDistribution?.smallWin?.givenToday ?? 0;
+    },
+    smallWinsLimit() {
+      return this.winDistribution?.smallWin?.dailyLimit ?? 0;
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -269,9 +253,7 @@ export default {
           totalGiftCard: this.totalGiftCard,
           totalSpin: this.totalSpin
         },
-        giftCards: this.giftCards,
-        topPrices: this.topPrices,
-        teslaPrices: this.teslaPrices
+        winDistribution: this.winDistribution
       };
     },
     showToast(type, message) {
@@ -302,23 +284,28 @@ export default {
       this.hydrateBootstrapData(bootstrapData);
     },
     async onSave() {
-      if (!this.$refs.totalsEditor.validate()) {
-        this.showToast("error", "Fix the values before saving.");
+      if (!this.$refs.winConfig.validate()) {
+        this.showToast("error", "Fix the win configuration before saving.");
         return;
       }
 
       this.isSaving = true;
 
       try {
-        const [totalsOk, giftOk, topOk, teslaOk] = await Promise.all([
-          service.saveTotals(this.buildFirebaseTotalsPayload()),
-          service.setGiftCards(this.giftCards),
-          service.setTopPrices(this.topPrices),
-          service.setTeslaWinService(this.teslaPrices)
+        const winConfig = this.$refs.winConfig.getConfig();
+        const updatedDistribution = {
+          ...this.winDistribution,
+          mainWin: { ...this.winDistribution?.mainWin, ...winConfig.mainWin },
+          smallWin: { ...this.winDistribution?.smallWin, ...winConfig.smallWin }
+        };
+        this.$store.commit("setWinDistribution", updatedDistribution);
+
+        const [distOk] = await Promise.all([
+          service.saveWinDistribution(updatedDistribution)
         ]);
 
-        if (totalsOk && giftOk && topOk && teslaOk) {
-          this.showToast("success", this.dataSource === "local" ? "Changes saved to local JSON." : "All changes were saved successfully.");
+        if (distOk) {
+          this.showToast("success", this.dataSource === "local" ? "Changes saved to local JSON." : "Win distribution saved successfully.");
         } else {
           this.showToast("error", "Some data could not be saved. Try again.");
         }
@@ -597,6 +584,11 @@ export default {
   border: 1px solid rgba(214, 189, 132, 0.18);
 }
 
+.stat-card--highlight {
+  border-color: rgba(205, 174, 104, 0.35);
+  background: linear-gradient(180deg, rgba(255, 252, 240, 0.98) 0%, rgba(252, 245, 220, 0.96) 100%);
+}
+
 .stat-card__label {
   margin: 0 0 0.35rem;
   text-transform: uppercase;
@@ -611,6 +603,16 @@ export default {
   font-size: clamp(1.45rem, 2.3vw, 2rem);
   line-height: 1;
   color: #1d2b22;
+}
+
+.stat-limit {
+  font-size: 0.85em;
+  color: rgba(29, 43, 34, 0.45);
+  font-weight: 400;
+}
+
+.totals-panel {
+  padding: 1rem 1.1rem;
 }
 
 .editors-panel,
