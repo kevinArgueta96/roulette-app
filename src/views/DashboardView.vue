@@ -12,7 +12,7 @@
       <div class="toolbar-copy">
         <p class="toolbar-eyebrow">Control panel</p>
         <h2>Dashboard</h2>
-        <p>Manage prize quantities, schedules, and the active data source for the roulette.</p>
+        <p>Manage daily limits, hourly distribution, and the active data source for the roulette.</p>
       </div>
 
       <div class="toolbar-actions">
@@ -42,6 +42,14 @@
           <button class="ghost-btn" type="button" :disabled="!hasLocalSnapshot" @click="exportLocalJson">
             Export JSON
           </button>
+          <button
+            class="ghost-btn ghost-btn--danger"
+            type="button"
+            :disabled="dataSource !== 'local' || !hasLocalSnapshot || isRefreshing || isSaving"
+            @click="onResetLocalJson"
+          >
+            Reset local JSON
+          </button>
           <button class="ghost-btn" type="button" :disabled="isRefreshing" @click="onRefresh">
             {{ isRefreshing ? "Refreshing..." : "Refresh" }}
           </button>
@@ -67,10 +75,6 @@
 
           <div class="stats-grid">
             <article class="stat-card">
-              <p class="stat-card__label">Total spins</p>
-              <strong>{{ totalSpin }}</strong>
-            </article>
-            <article class="stat-card stat-card--highlight">
               <p class="stat-card__label">Main wins today</p>
               <strong>{{ mainWinsToday }} <span class="stat-limit">/ {{ mainWinsLimit }}</span></strong>
             </article>
@@ -78,17 +82,21 @@
               <p class="stat-card__label">Small wins today</p>
               <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
             </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Replay</p>
-              <strong>{{ totalReplay }}</strong>
+            <article class="stat-card stat-card--highlight">
+              <p class="stat-card__label">Total spins</p>
+              <strong>{{ totalSpin }}</strong>
             </article>
             <article class="stat-card">
-              <p class="stat-card__label">No win</p>
-              <strong>{{ totalSpecialPrice }}</strong>
+              <p class="stat-card__label">Main win slots</p>
+              <strong>{{ winDistribution && winDistribution.mainWin ? winDistribution.mainWin.slots.length : 0 }}</strong>
             </article>
             <article class="stat-card">
-              <p class="stat-card__label">Surprise wins</p>
-              <strong>{{ totalSpecialSurprise }}</strong>
+              <p class="stat-card__label">Small win slots</p>
+              <strong>{{ winDistribution && winDistribution.smallWin ? winDistribution.smallWin.slots.length : 0 }}</strong>
+            </article>
+            <article class="stat-card">
+              <p class="stat-card__label">Last reset</p>
+              <strong class="stat-date">{{ winDistribution && winDistribution.lastResetDate ? winDistribution.lastResetDate : "—" }}</strong>
             </article>
           </div>
         </section>
@@ -99,7 +107,7 @@
               <p class="panel-eyebrow">Win Rules</p>
               <h3>Distribution by category</h3>
             </div>
-            <p class="panel-copy">Set daily limits and configure hour slots for each prize category.</p>
+            <p class="panel-copy">Set daily limits per category and distribute wins across hourly slots.</p>
           </div>
           <DashboardWinConfig ref="winConfig" />
         </section>
@@ -121,16 +129,20 @@
               <strong>{{ dataSource === "local" ? "Local" : "Online" }}</strong>
             </div>
             <div class="status-item">
-              <span>Configured sectors</span>
-              <strong>{{ options.length }}</strong>
+              <span>Main wins remaining</span>
+              <strong>{{ Math.max(0, mainWinsLimit - mainWinsToday) }}</strong>
             </div>
             <div class="status-item">
-              <span>Main win slots</span>
-              <strong>{{ winDistribution && winDistribution.mainWin ? winDistribution.mainWin.slots.length : 0 }}</strong>
+              <span>Small wins remaining</span>
+              <strong>{{ Math.max(0, smallWinsLimit - smallWinsToday) }}</strong>
             </div>
             <div class="status-item">
-              <span>Small win slots</span>
-              <strong>{{ winDistribution && winDistribution.smallWin ? winDistribution.smallWin.slots.length : 0 }}</strong>
+              <span>No win outcome</span>
+              <strong>Dynamic</strong>
+            </div>
+            <div class="status-item">
+              <span>Repeat outcome</span>
+              <strong>Dynamic</strong>
             </div>
             <div class="status-item">
               <span>Last daily reset</span>
@@ -142,18 +154,19 @@
         <section class="panel side-panel side-panel--soft panel--workflow">
           <div class="panel-heading">
             <div>
-              <p class="panel-eyebrow">Workflow</p>
-              <h3>Local mode</h3>
+              <p class="panel-eyebrow">How it works</p>
+              <h3>Dynamic outcome engine</h3>
             </div>
           </div>
 
           <p class="mode-help">
-            Switch to local mode to work without a backend. You can import a manual JSON file, edit it here, and export it again.
+            Main win and small win are capped by daily limits and by the active hourly slot. No win and repeat take over automatically once configured wins are exhausted.
           </p>
           <ul class="mode-list">
-            <li>Online: reads and writes directly to Firebase.</li>
-            <li>Local: uses a JSON snapshot stored in the browser.</li>
-            <li>If no local snapshot exists, one is created from the current state.</li>
+            <li>Main win: daily limit + slot limit must both be available.</li>
+            <li>Small win: daily limit + slot limit must both be available.</li>
+            <li>No win and repeat: stay available when configured wins run out.</li>
+            <li>Switch to local mode to test the full configuration with a manual JSON snapshot.</li>
           </ul>
         </section>
       </aside>
@@ -327,6 +340,23 @@ export default {
         this.isRefreshing = false;
       }
     },
+    async onResetLocalJson() {
+      if (this.dataSource !== "local" || !service.hasLocalSnapshot()) {
+        return;
+      }
+
+      this.isRefreshing = true;
+
+      try {
+        const snapshot = service.resetLocalSnapshotCounters();
+        this.hydrateBootstrapData({ ...snapshot, errors: [] });
+        this.showToast("success", "Local JSON counters reset to 0.");
+      } catch {
+        this.showToast("error", "Unable to reset the local JSON.");
+      } finally {
+        this.isRefreshing = false;
+      }
+    },
     triggerImport() {
       this.$refs.localFileInput?.click();
     },
@@ -342,9 +372,9 @@ export default {
         service.setDataSourceMode("local");
         this.dataSource = "local";
         this.hydrateBootstrapData({ ...snapshot, errors: [] });
-        this.showToast("success", "Local JSON imported successfully.");
+        this.showToast("success", "Win rules JSON imported successfully.");
       } catch {
-        this.showToast("error", "Unable to import the JSON file.");
+        this.showToast("error", "Unable to import the rules JSON file.");
       } finally {
         event.target.value = "";
       }
@@ -355,10 +385,10 @@ export default {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "roulette-local-config.json";
+      link.download = "roulette-win-rules-v2.json";
       link.click();
       window.URL.revokeObjectURL(url);
-      this.showToast("success", "Local snapshot exported.");
+      this.showToast("success", "Win rules JSON exported.");
     }
   },
   beforeDestroy() {
@@ -504,6 +534,12 @@ export default {
   border-color: rgba(31, 90, 63, 0.16);
 }
 
+.ghost-btn--danger {
+  color: #b92d22;
+  border-color: rgba(185, 45, 34, 0.18);
+  background: rgba(255, 244, 242, 0.92);
+}
+
 .primary-btn {
   background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
   color: #fff8ec;
@@ -541,6 +577,8 @@ export default {
 .totals-panel {
   flex: 1 1 auto;
   display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .summary-panel__header,

@@ -7,6 +7,7 @@
           <div>
             <p class="category-eyebrow">{{ cat.eyebrow }}</p>
             <h4 class="category-name">{{ cat.label }}</h4>
+            <p class="category-description">{{ cat.description }}</p>
           </div>
         </div>
 
@@ -47,6 +48,14 @@
 
       <!-- Hour slots -->
       <div class="slots-list">
+        <div class="slots-head" v-if="localConfig[cat.key].slots.length">
+          <span>Slot</span>
+          <span>Start</span>
+          <span>End</span>
+          <span>Limit</span>
+          <span>Given</span>
+          <span class="slots-head__actions">Actions</span>
+        </div>
         <div
           v-for="(slot, idx) in localConfig[cat.key].slots"
           :key="idx"
@@ -54,32 +63,33 @@
         >
           <span class="slot-idx">{{ String(idx + 1).padStart(2, "0") }}</span>
 
-          <div class="slot-times">
-            <div class="slot-time-field">
-              <label :for="`${cat.key}-start-${idx}`" class="slot-time-label">Start</label>
-              <input
-                :id="`${cat.key}-start-${idx}`"
-                type="time"
-                class="slot-time-input"
-                :value="slot.startTime"
-                @change="onSlotChange(cat.key, idx, 'startTime', $event.target.value)"
-              />
-            </div>
-            <span class="slot-sep" aria-hidden="true">—</span>
-            <div class="slot-time-field">
-              <label :for="`${cat.key}-end-${idx}`" class="slot-time-label">End</label>
-              <input
-                :id="`${cat.key}-end-${idx}`"
-                type="time"
-                class="slot-time-input"
-                :value="slot.endTime"
-                @change="onSlotChange(cat.key, idx, 'endTime', $event.target.value)"
-              />
-            </div>
+          <div class="slot-time-field">
+            <label :for="`${cat.key}-start-${idx}`" class="slot-time-label slot-time-label--row">Start</label>
+            <input
+              :id="`${cat.key}-start-${idx}`"
+              :name="`${cat.key}-start-${idx}`"
+              type="time"
+              class="slot-time-input"
+              autocomplete="off"
+              :value="slot.startTime"
+              @input="onSlotChange(cat.key, idx, 'startTime', $event.target.value)"
+            />
+          </div>
+          <div class="slot-time-field">
+            <label :for="`${cat.key}-end-${idx}`" class="slot-time-label slot-time-label--row">End</label>
+            <input
+              :id="`${cat.key}-end-${idx}`"
+              :name="`${cat.key}-end-${idx}`"
+              type="time"
+              class="slot-time-input"
+              autocomplete="off"
+              :value="slot.endTime"
+              @input="onSlotChange(cat.key, idx, 'endTime', $event.target.value)"
+            />
           </div>
 
           <div class="slot-limit-field">
-            <label :for="`${cat.key}-limit-${idx}`" class="slot-time-label">Limit</label>
+            <label :for="`${cat.key}-limit-${idx}`" class="slot-time-label slot-time-label--row">Limit</label>
             <input
               :id="`${cat.key}-limit-${idx}`"
               type="number"
@@ -119,8 +129,18 @@
 import { mapGetters } from "vuex";
 
 const CATEGORIES = [
-  { key: "mainWin", label: "LAHJAKASSI", eyebrow: "Main Win" },
-  { key: "smallWin", label: "YLLÄTYSPALKINTO", eyebrow: "Small Win" }
+  {
+    key: "mainWin",
+    label: "Main win",
+    eyebrow: "Category A",
+    description: "High-value outcome with the strictest daily and time-slot limits."
+  },
+  {
+    key: "smallWin",
+    label: "Small win",
+    eyebrow: "Category B",
+    description: "Mid-tier reward distributed more frequently across configured hours."
+  }
 ];
 
 export default {
@@ -167,14 +187,14 @@ export default {
     },
     onDailyLimitChange(catKey, rawValue) {
       const val = Math.max(0, parseInt(rawValue, 10) || 0);
-      this.localConfig[catKey] = { ...this.localConfig[catKey], dailyLimit: val };
+      this.$set(this.localConfig, catKey, { ...this.localConfig[catKey], dailyLimit: val });
       this.validateCategory(catKey);
     },
     onSlotChange(catKey, slotIdx, field, value) {
       const slots = this.localConfig[catKey].slots.map((slot, i) =>
         i === slotIdx ? { ...slot, [field]: value } : slot
       );
-      this.localConfig[catKey] = { ...this.localConfig[catKey], slots };
+      this.$set(this.localConfig, catKey, { ...this.localConfig[catKey], slots });
       this.validateCategory(catKey);
     },
     addSlot(catKey) {
@@ -182,11 +202,11 @@ export default {
         ...this.localConfig[catKey].slots,
         { startTime: "09:00", endTime: "18:00", limit: 1, given: 0 }
       ];
-      this.localConfig[catKey] = { ...this.localConfig[catKey], slots };
+      this.$set(this.localConfig, catKey, { ...this.localConfig[catKey], slots });
     },
     removeSlot(catKey, idx) {
       const slots = this.localConfig[catKey].slots.filter((_, i) => i !== idx);
-      this.localConfig[catKey] = { ...this.localConfig[catKey], slots };
+      this.$set(this.localConfig, catKey, { ...this.localConfig[catKey], slots });
       this.validateCategory(catKey);
     },
     validateCategory(catKey) {
@@ -229,12 +249,15 @@ export default {
 .win-config__category {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.68) 0%, rgba(246, 250, 245, 0.86) 100%);
+  border: 1px solid rgba(122, 151, 131, 0.14);
 }
 
 .win-config__category + .win-config__category {
-  padding-top: 2rem;
-  border-top: 1px solid rgba(205, 174, 104, 0.18);
+  margin-top: 0.2rem;
 }
 
 /* Category header */
@@ -273,22 +296,35 @@ export default {
 
 .category-name {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: #1d2b22;
   letter-spacing: 0.04em;
+}
+
+.category-description {
+  margin: 0.2rem 0 0;
+  max-width: 42rem;
+  color: rgba(29, 43, 34, 0.6);
+  line-height: 1.45;
+  font-size: 0.84rem;
 }
 
 .category-daily {
   display: flex;
   align-items: center;
   gap: 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.95rem;
+  background: rgba(255, 251, 243, 0.8);
+  border: 1px solid rgba(205, 174, 104, 0.14);
 }
 
 .daily-field {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  min-width: 5rem;
 }
 
 .daily-label {
@@ -301,10 +337,10 @@ export default {
 
 .daily-input {
   width: 5rem;
-  background: transparent;
-  border: none;
-  border-bottom: 1.5px solid rgba(205, 174, 104, 0.35);
-  padding: 0.3rem 0;
+  background: #fff;
+  border: 1px solid rgba(122, 151, 131, 0.18);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.7rem;
   font-family: inherit;
   font-size: 1.1rem;
   font-weight: 700;
@@ -312,14 +348,17 @@ export default {
   outline: none;
   -moz-appearance: textfield;
   appearance: textfield;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.daily-input:focus { border-bottom-color: #cdae68; }
+.daily-input:focus {
+  border-color: #7a9783;
+  box-shadow: 0 0 0 3px rgba(122, 151, 131, 0.14);
+}
 .daily-input::-webkit-inner-spin-button,
 .daily-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-.daily-field--error .daily-input { border-bottom-color: #b92d22; color: #b92d22; }
+.daily-field--error .daily-input { border-color: #b92d22; color: #b92d22; }
 
 .daily-given {
   display: flex;
@@ -336,9 +375,9 @@ export default {
 
 /* Progress bar */
 .daily-progress {
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
-  background: rgba(205, 174, 104, 0.15);
+  background: rgba(122, 151, 131, 0.14);
   overflow: hidden;
 }
 
@@ -362,32 +401,51 @@ export default {
 .slots-list {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.slots-head {
+  display: grid;
+  grid-template-columns: 2.1rem minmax(0, 1fr) minmax(0, 1fr) 5.5rem 4rem 2rem;
+  gap: 0.8rem;
+  padding: 0 0.8rem;
+  color: rgba(49, 88, 70, 0.56);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.slots-head__actions {
+  text-align: right;
 }
 
 .slot-row {
   display: grid;
-  grid-template-columns: 1.8rem 1fr auto auto 1.6rem;
+  grid-template-columns: 2.1rem minmax(0, 1fr) minmax(0, 1fr) 5.5rem 4rem 2rem;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: 0.8rem;
-  background: rgba(255, 251, 243, 0.85);
-  border: 1px solid rgba(205, 174, 104, 0.18);
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.85rem 0.9rem;
+  border-radius: 0.95rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(122, 151, 131, 0.14);
+  box-sizing: border-box;
 }
 
 .slot-idx {
-  font-size: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(205, 174, 104, 0.7);
-}
-
-.slot-times {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
+  color: rgba(49, 88, 70, 0.62);
+  background: rgba(122, 151, 131, 0.12);
 }
 
 .slot-time-field {
@@ -405,27 +463,36 @@ export default {
   color: rgba(29, 43, 34, 0.4);
 }
 
+.slot-time-label--row {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .slot-time-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(205, 174, 104, 0.3);
-  padding: 0.2rem 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(122, 151, 131, 0.16);
+  border-radius: 0.65rem;
+  padding: 0.62rem 0.75rem;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: #1d2b22;
   outline: none;
-  width: 6.5rem;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.slot-time-input:focus { border-bottom-color: #cdae68; }
-
-.slot-sep {
-  color: rgba(205, 174, 104, 0.45);
-  font-size: 0.8rem;
-  margin-top: 1rem;
-  flex-shrink: 0;
+.slot-time-input:focus {
+  border-color: #7a9783;
+  box-shadow: 0 0 0 3px rgba(122, 151, 131, 0.14);
 }
 
 .slot-limit-field {
@@ -435,23 +502,27 @@ export default {
 }
 
 .slot-limit-input {
-  width: 3.5rem;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(205, 174, 104, 0.3);
-  padding: 0.2rem 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(122, 151, 131, 0.16);
+  border-radius: 0.65rem;
+  padding: 0.62rem 0.4rem;
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #1d2b22;
   outline: none;
   text-align: center;
+  font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
   appearance: textfield;
 }
 .slot-limit-input::-webkit-inner-spin-button,
 .slot-limit-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.slot-limit-input:focus { border-bottom-color: #cdae68; }
+.slot-limit-input:focus {
+  border-color: #7a9783;
+  box-shadow: 0 0 0 3px rgba(122, 151, 131, 0.14);
+}
 
 .slot-given {
   display: flex;
@@ -466,6 +537,7 @@ export default {
   font-weight: 700;
   color: #1f5a3f;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .slot-given__label {
@@ -477,14 +549,16 @@ export default {
 }
 
 .slot-remove {
-  background: transparent;
+  background: rgba(185, 45, 34, 0.05);
   border: none;
   color: rgba(185, 45, 34, 0.45);
   font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
-  padding: 0.15rem 0.25rem;
-  border-radius: 0.3rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 999px;
   transition: color 0.2s, background 0.2s;
 }
 .slot-remove:hover {
@@ -493,16 +567,18 @@ export default {
 }
 
 .slots-empty {
-  font-size: 0.78rem;
-  color: rgba(29, 43, 34, 0.45);
-  padding: 0.6rem 0;
-  font-style: italic;
+  font-size: 0.8rem;
+  color: rgba(29, 43, 34, 0.52);
+  padding: 0.95rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 251, 243, 0.72);
+  border: 1px dashed rgba(122, 151, 131, 0.2);
 }
 
 .add-slot-btn {
   align-self: flex-start;
-  background: transparent;
-  border: 1px dashed rgba(205, 174, 104, 0.45);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px dashed rgba(122, 151, 131, 0.34);
   color: #1f5a3f;
   font-family: inherit;
   font-size: 0.78rem;
@@ -514,8 +590,8 @@ export default {
   transition: background 0.2s, border-color 0.2s;
 }
 .add-slot-btn:hover {
-  background: rgba(205, 174, 104, 0.07);
-  border-color: rgba(205, 174, 104, 0.65);
+  background: rgba(122, 151, 131, 0.08);
+  border-color: rgba(122, 151, 131, 0.55);
 }
 
 .err-fade-enter-active,
@@ -523,13 +599,56 @@ export default {
 .err-fade-enter,
 .err-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 
-@media (max-width: 600px) {
-  .slot-row {
-    grid-template-columns: 1.8rem 1fr auto 1.6rem;
-    row-gap: 0.5rem;
+@media (max-width: 900px) {
+  .slots-head {
+    display: none;
   }
-  .slot-given { grid-column: 3; }
-  .slot-times { grid-column: 2 / -1; flex-wrap: wrap; }
-  .slot-limit-field { grid-column: 2; }
+
+  .slot-row {
+    grid-template-columns: 2.1rem minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: 0.7rem;
+  }
+
+  .slot-limit-field {
+    grid-column: 2;
+  }
+
+  .slot-given {
+    grid-column: 3;
+  }
+
+  .slot-remove {
+    grid-column: 1;
+    justify-self: center;
+  }
+
+  .slot-time-label--row {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    border: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .category-daily {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .slot-row {
+    grid-template-columns: 2.1rem 1fr;
+  }
+
+  .slot-time-field,
+  .slot-limit-field,
+  .slot-given {
+    grid-column: 2;
+  }
 }
 </style>

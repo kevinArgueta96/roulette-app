@@ -8,19 +8,38 @@ import {
 const REQUEST_TIMEOUT_MS = 8000;
 const LOCAL_MODE_KEY = "roulette-data-mode";
 const LOCAL_SNAPSHOT_KEY = "roulette-local-snapshot";
+const LOCAL_SNAPSHOT_VERSION = 2;
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
+function isDirectWinDistribution(payload) {
+  return Boolean(
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    (payload.mainWin || payload.smallWin || Object.prototype.hasOwnProperty.call(payload, "lastResetDate"))
+  );
+}
+
 function normalizeBootstrapPayload(payload) {
   const source = payload && typeof payload === "object" ? payload : {};
+  const bootstrapSource = isDirectWinDistribution(source)
+    ? { winDistribution: source }
+    : source;
 
   return {
-    options: normalizeOptions(source.options || source.roulette || []),
-    totals: normalizeTotals(source.totals || source.totalPrices || source.total_prices || {}),
-    winDistribution: normalizeWinDistribution(source.winDistribution || source["win-distribution"] || null),
-    errors: Array.isArray(source.errors) ? source.errors : []
+    schemaVersion: LOCAL_SNAPSHOT_VERSION,
+    rulesModel: "win-distribution-v2",
+    options: normalizeOptions(bootstrapSource.options || bootstrapSource.roulette || []),
+    totals: normalizeTotals(bootstrapSource.totals || bootstrapSource.totalPrices || bootstrapSource.total_prices || {}),
+    winDistribution: normalizeWinDistribution(
+      bootstrapSource.winDistribution ||
+      bootstrapSource["win-distribution"] ||
+      (isDirectWinDistribution(bootstrapSource) ? bootstrapSource : null)
+    ),
+    errors: Array.isArray(bootstrapSource.errors) ? bootstrapSource.errors : []
   };
 }
 
@@ -47,7 +66,10 @@ function setStoredSnapshot(snapshot) {
   }
 
   const normalized = normalizeBootstrapPayload(snapshot);
-  window.localStorage.setItem(LOCAL_SNAPSHOT_KEY, JSON.stringify(normalized));
+  window.localStorage.setItem(LOCAL_SNAPSHOT_KEY, JSON.stringify({
+    ...normalized,
+    exportedAt: new Date().toISOString()
+  }));
   return normalized;
 }
 
@@ -55,6 +77,25 @@ function updateStoredSnapshot(updater) {
   const currentSnapshot = getStoredSnapshot() || normalizeBootstrapPayload({});
   const nextSnapshot = updater(currentSnapshot);
   return setStoredSnapshot(nextSnapshot);
+}
+
+function resetWinDistributionCounters(distribution) {
+  const normalized = normalizeWinDistribution(distribution);
+
+  return {
+    ...normalized,
+    lastResetDate: "",
+    mainWin: {
+      ...normalized.mainWin,
+      givenToday: 0,
+      slots: normalized.mainWin.slots.map((slot) => ({ ...slot, given: 0 }))
+    },
+    smallWin: {
+      ...normalized.smallWin,
+      givenToday: 0,
+      slots: normalized.smallWin.slots.map((slot) => ({ ...slot, given: 0 }))
+    }
+  };
 }
 
 function getDataSourceMode() {
@@ -210,8 +251,25 @@ export default {
   importLocalSnapshot(payload) {
     return setStoredSnapshot(payload);
   },
+  resetLocalSnapshotCounters() {
+    return updateStoredSnapshot((snapshot) => ({
+      ...snapshot,
+      totals: normalizeTotals({}),
+      winDistribution: resetWinDistributionCounters(snapshot?.winDistribution)
+    }));
+  },
   exportLocalSnapshot() {
-    return getStoredSnapshot();
+    const snapshot = getStoredSnapshot();
+    if (!snapshot) {
+      return null;
+    }
+
+    return {
+      ...snapshot,
+      schemaVersion: LOCAL_SNAPSHOT_VERSION,
+      rulesModel: "win-distribution-v2",
+      exportedAt: new Date().toISOString()
+    };
   },
   hasLocalSnapshot() {
     return Boolean(getStoredSnapshot());
