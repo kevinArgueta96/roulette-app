@@ -162,13 +162,13 @@
       </div>
 
       <div class="schedule-grid">
-        <div class="schedule-grid__item">
+        <div class="schedule-grid__item schedule-grid__item--full">
           <DashboardScheduleEditor title="Gift Cards" type="card" />
         </div>
         <div class="schedule-grid__item">
           <DashboardScheduleEditor title="Top Prizes" type="top" />
         </div>
-        <div class="schedule-grid__item schedule-grid__item--full">
+        <div class="schedule-grid__item">
           <DashboardScheduleEditor title="Tesla" type="tesla" />
         </div>
       </div>
