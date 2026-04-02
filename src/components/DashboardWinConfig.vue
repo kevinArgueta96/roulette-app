@@ -171,7 +171,6 @@
 import { mapGetters } from "vuex";
 import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, createDefaultSlot, normalizeWinDistribution } from "@/utils";
 
-const CATEGORIES = [
 const OUTCOMES = [
   {
     key: "mainWin",
