@@ -14,11 +14,11 @@ It currently includes:
 
 ## Current Technical Stack
 
-- Vue 2
+- Vue 2.7
 - Vuex
-- Bootstrap / BootstrapVue
 - Canvas rendering
 - Electron support
+- Node 22 / npm 10
 
 ## Main Purpose
 
@@ -31,6 +31,8 @@ The app is designed for branded event activations where users spin a roulette an
 ```bash
 npm install
 ```
+
+The project is currently pinned to Node 22 through the `engines` field in `package.json`.
 
 ### Run in development
 
