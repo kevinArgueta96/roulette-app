@@ -363,13 +363,13 @@ export default {
   }
 
   .wheel-region {
-    align-items: flex-start;
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
+    align-items: center;
+    padding-top: 0.2rem;
+    padding-bottom: 2.8rem;
   }
 
   .bottom-wave {
-    height: 18%;
+    height: 12%;
   }
 }
 
@@ -383,9 +383,9 @@ export default {
   }
 
   .wheel-region {
-    align-items: flex-start;
-    padding-top: 0.1rem;
-    padding-bottom: 0.2rem;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 2.4rem;
   }
 
   .result-toast {
@@ -401,7 +401,7 @@ export default {
   }
 
   .bottom-wave {
-    height: 14%;
+    height: 10%;
   }
 }
 </style>

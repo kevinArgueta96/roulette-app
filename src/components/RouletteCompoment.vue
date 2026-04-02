@@ -537,7 +537,7 @@ export default {
   align-items: center;
   justify-content: flex-start;
   gap: 0.55rem;
-  padding-top: 3.7rem;
+  padding-top: 4rem;
 }
 
 .pointer-wrap {
@@ -640,13 +640,13 @@ export default {
 
 @media (orientation: landscape) {
   .roulette-shell {
-    justify-content: flex-start;
-    gap: 0.3rem;
+    justify-content: center;
+    gap: 0.25rem;
     padding-top: 0;
   }
 
   .pointer-wrap {
-    margin-bottom: -1.4rem;
+    margin-bottom: -1rem;
   }
 
   .wheel-pointer {
@@ -657,24 +657,24 @@ export default {
 
   .wheel-stage {
     width: min(100%, 470px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 8.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 8.5rem));
+    max-width: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
   }
 
   .spin-button {
-    margin-top: 0.35rem;
+    margin-top: 0.1rem;
   }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
   .roulette-shell {
-    justify-content: flex-start;
-    gap: 0.2rem;
+    justify-content: center;
+    gap: 0.1rem;
     padding-top: 0;
   }
 
   .pointer-wrap {
-    margin-bottom: -1.2rem;
+    margin-bottom: -0.8rem;
   }
 
   .wheel-pointer {
@@ -685,8 +685,8 @@ export default {
 
   .wheel-stage {
     width: min(100%, 420px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 7.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 7.5rem));
+    max-width: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
   }
 
   .wheel-center__ring {
@@ -696,7 +696,7 @@ export default {
   }
 
   .spin-button {
-    margin-top: 0.15rem;
+    margin-top: 0;
     padding: 0.5rem 1.2rem;
     min-width: 96px;
     font-size: 0.76rem;
