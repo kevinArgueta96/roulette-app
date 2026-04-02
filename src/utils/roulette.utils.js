@@ -7,7 +7,7 @@ export const OUTCOME_META = {
   mainWin: {
     label: "LAHJAKASSI",
     color: "#1B1A17",
-    textColor: "#f6edd1",
+    textColor: "#d9bf74",
     resultType: "mainPrize",
     defaultSectorCount: 1,
     defaultBaseWeight: 0.03,
