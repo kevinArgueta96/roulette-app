@@ -101,13 +101,32 @@ export default {
     }
   },
   mounted() {
+    this.syncViewportHeight();
+    window.addEventListener("resize", this.syncViewportHeight, { passive: true });
+    window.addEventListener("orientationchange", this.handleOrientationChange, { passive: true });
     this.loadInitialData();
   },
   beforeDestroy() {
+    window.removeEventListener("resize", this.syncViewportHeight);
+    window.removeEventListener("orientationchange", this.handleOrientationChange);
     this.clearTimers();
   },
   methods: {
     ...mapActions(["initializeRandomAngle", "hydrateBootstrapData", "updateState"]),
+    syncViewportHeight() {
+      if (typeof document === "undefined") {
+        return;
+      }
+
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", `${viewportHeight}px`);
+    },
+    handleOrientationChange() {
+      this.syncViewportHeight();
+      window.setTimeout(() => {
+        this.syncViewportHeight();
+      }, 250);
+    },
     async loadInitialData() {
       this.isLoading = true;
       this.loadWarning = "";
@@ -157,19 +176,21 @@ export default {
 
 <style scoped>
 .app-shell {
-  min-height: 100vh;
+  min-height: var(--app-height, 100vh);
   background: #f5efdd;
 }
 
 .tablet-stage {
   width: 100vw;
-  height: 100vh;
+  height: var(--app-height, 100vh);
 }
 
 .tablet-canvas {
   position: relative;
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: #f5efdd;
   padding: 0 1.05rem 0;
@@ -210,7 +231,8 @@ export default {
 .wheel-region {
   position: relative;
   z-index: 3;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -317,7 +339,11 @@ export default {
 
 @media (max-width: 900px) {
   .tablet-canvas {
-    padding: 1rem 1rem 0;
+    padding: 1rem 0.8rem 0;
+  }
+
+  .wheel-region {
+    padding-top: 4.6rem;
   }
 
   .result-toast {
@@ -327,7 +353,55 @@ export default {
   }
 }
 
+@media (orientation: landscape) {
+  .tablet-canvas {
+    padding: 0.6rem 0.9rem 0;
+  }
 
+  .screen-header {
+    min-height: 2.4rem;
+  }
+
+  .wheel-region {
+    align-items: flex-start;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .bottom-wave {
+    height: 18%;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .tablet-canvas {
+    padding: 0.5rem 0.75rem 0;
+  }
+
+  .screen-header {
+    min-height: 2.25rem;
+  }
+
+  .wheel-region {
+    align-items: flex-start;
+    padding-top: 0.1rem;
+    padding-bottom: 0.2rem;
+  }
+
+  .result-toast {
+    top: 3.2rem;
+    right: 0.75rem;
+    width: min(240px, calc(100% - 1.5rem));
+  }
+
+  .status-banner {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .bottom-wave {
+    height: 14%;
+  }
+}
 </style>
-yle>
->

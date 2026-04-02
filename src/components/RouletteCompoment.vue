@@ -66,6 +66,7 @@ export default {
       ctx: null,
       resizeObserver: null,
       resizeRaf: null,
+      resizeTimeout: null,
       animationFrame: null,
       isSpinning: false,
       pendingResize: false,
@@ -143,10 +144,16 @@ export default {
     this.observeResize();
     this.registerDebugApi();
     document.addEventListener("keyup", this.spinRoulleteByEnter);
+    window.addEventListener("orientationchange", this.handleOrientationChange, { passive: true });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", this.handleResize, { passive: true });
+    }
   },
   beforeDestroy() {
     document.removeEventListener("keyup", this.spinRoulleteByEnter);
     window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("orientationchange", this.handleOrientationChange);
     this.unregisterDebugApi();
     this.stopAnimation();
 
@@ -158,6 +165,15 @@ export default {
     if (this.resizeRaf) {
       window.cancelAnimationFrame(this.resizeRaf);
       this.resizeRaf = null;
+    }
+
+    if (this.resizeTimeout) {
+      window.clearTimeout(this.resizeTimeout);
+      this.resizeTimeout = null;
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener("resize", this.handleResize);
     }
   },
   methods: {
@@ -193,6 +209,17 @@ export default {
         this.updateCanvasSize();
       });
     },
+    handleOrientationChange() {
+      this.handleResize();
+
+      if (this.resizeTimeout) {
+        window.clearTimeout(this.resizeTimeout);
+      }
+
+      this.resizeTimeout = window.setTimeout(() => {
+        this.handleResize();
+      }, 250);
+    },
     updateCanvasSize() {
       if (!this.canvas || !this.ctx) {
         return;
@@ -204,11 +231,15 @@ export default {
       }
 
       const bounds = container.getBoundingClientRect();
-      const availableWidth = bounds.width * 1.04;
-      const availableHeight = bounds.height * 1.04;
-      const proportionalSize = Math.min(availableWidth, availableHeight);
-      const nextSize = Math.max(340, Math.floor(proportionalSize));
+      const availableWidth = Math.max(0, bounds.width);
+      const availableHeight = Math.max(0, bounds.height);
+      const proportionalSize = Math.min(availableWidth, availableHeight) * 0.98;
+      const nextSize = Math.max(220, Math.floor(proportionalSize));
       const devicePixelRatio = window.devicePixelRatio || 1;
+
+      if (!nextSize) {
+        return;
+      }
 
       this.canvasSize = nextSize;
       this.canvas.width = nextSize * devicePixelRatio;
@@ -500,6 +531,7 @@ export default {
   z-index: 2;
   width: 100%;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -528,7 +560,10 @@ export default {
 
 .wheel-stage {
   position: relative;
+  flex: 0 1 auto;
   width: min(100%, 640px);
+  max-width: min(100%, calc(100vh - 12rem));
+  max-height: min(100%, calc(var(--app-height, 100vh) - 12rem));
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -573,6 +608,9 @@ export default {
 }
 
 .spin-button {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
   border: 0;
   border-radius: 0.22rem;
   background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
@@ -595,12 +633,73 @@ export default {
 @media (max-width: 900px) {
   .wheel-stage {
     width: min(100%, 500px);
+    max-width: min(100%, calc(var(--app-height, 100vh) - 8rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 8rem));
   }
 }
 
+@media (orientation: landscape) {
+  .roulette-shell {
+    justify-content: flex-start;
+    gap: 0.3rem;
+    padding-top: 0;
+  }
 
+  .pointer-wrap {
+    margin-bottom: -1.4rem;
+  }
+
+  .wheel-pointer {
+    border-left-width: 14px;
+    border-right-width: 14px;
+    border-top-width: 38px;
+  }
+
+  .wheel-stage {
+    width: min(100%, 470px);
+    max-width: min(100%, calc(var(--app-height, 100vh) - 8.5rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 8.5rem));
+  }
+
+  .spin-button {
+    margin-top: 0.35rem;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .roulette-shell {
+    justify-content: flex-start;
+    gap: 0.2rem;
+    padding-top: 0;
+  }
+
+  .pointer-wrap {
+    margin-bottom: -1.2rem;
+  }
+
+  .wheel-pointer {
+    border-left-width: 13px;
+    border-right-width: 13px;
+    border-top-width: 34px;
+  }
+
+  .wheel-stage {
+    width: min(100%, 420px);
+    max-width: min(100%, calc(var(--app-height, 100vh) - 7.5rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 7.5rem));
+  }
+
+  .wheel-center__ring {
+    width: clamp(82px, 12vh, 98px);
+    height: clamp(82px, 12vh, 98px);
+    border-width: 5px;
+  }
+
+  .spin-button {
+    margin-top: 0.15rem;
+    padding: 0.5rem 1.2rem;
+    min-width: 96px;
+    font-size: 0.76rem;
+  }
+}
 </style>
-e>
-
-e>
-
