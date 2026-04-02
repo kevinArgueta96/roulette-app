@@ -202,11 +202,14 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 3rem;
+  margin-top: 0.6rem;
 }
 
 .brand-logo {
   display: block;
-  width: clamp(138px, 18vw, 208px);
+  width: clamp(110px, 14vw, 168px);
+  max-height: 2.15rem;
   height: auto;
   object-fit: contain;
 }
@@ -214,10 +217,14 @@ export default {
 .menu-button {
   background: transparent;
   border: 0;
-  padding: 0.3rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  padding: 0;
   display: inline-flex;
   flex-direction: column;
   gap: 4px;
+  align-items: center;
+  justify-content: center;
 }
 
 .menu-button span {
@@ -342,6 +349,11 @@ export default {
     padding: 1rem 0.8rem 0;
   }
 
+  .screen-header {
+    min-height: 2.6rem;
+    margin-top: 0.35rem;
+  }
+
   .wheel-region {
     padding-top: 4.6rem;
   }
@@ -350,6 +362,11 @@ export default {
     right: 1rem;
     top: 4.4rem;
     width: min(260px, calc(100% - 2rem));
+  }
+
+  .brand-logo {
+    width: clamp(100px, 30vw, 138px);
+    max-height: 1.9rem;
   }
 }
 
@@ -360,6 +377,7 @@ export default {
 
   .screen-header {
     min-height: 2.4rem;
+    margin-top: 0.4rem;
   }
 
   .wheel-region {
@@ -376,6 +394,10 @@ export default {
 @media (max-height: 560px) and (orientation: landscape) {
   .tablet-canvas {
     padding: 0.5rem 0.75rem 0;
+  }
+
+  .screen-header {
+    margin-top: 0.2rem;
   }
 
   .screen-header {

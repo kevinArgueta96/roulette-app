@@ -594,8 +594,8 @@ export default {
 }
 
 .wheel-center__ring {
-  width: clamp(60px, 6.8vw, 74px);
-  height: clamp(60px, 6.8vw, 74px);
+  width: clamp(88px, 9.88vw, 107px);
+  height: clamp(88px, 9.88vw, 107px);
   border-radius: 999px;
   background: #4a7446;
   border: 4px solid #d8bb71;
@@ -606,7 +606,7 @@ export default {
 
 .wheel-center__logo {
   display: block;
-  width: 94%;
+  width: 143%;
   height: auto;
   object-fit: contain;
 }
@@ -694,8 +694,8 @@ export default {
   }
 
   .wheel-center__ring {
-    width: clamp(48px, 7vh, 58px);
-    height: clamp(48px, 7vh, 58px);
+    width: clamp(70px, 10.16vh, 84px);
+    height: clamp(70px, 10.16vh, 84px);
     border-width: 3px;
   }
 
