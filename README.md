@@ -46,6 +46,21 @@ npm run serve
 npm run build
 ```
 
+## Netlify Deployment
+
+This repository is already configured for Netlify.
+
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Node version: `22`
+
+Files included for deployment:
+
+- [netlify.toml](/Users/kevs/Documents/DEV_PROJECTS/4.%20FRONT-END/roulette-app/netlify.toml)
+- [.node-version](/Users/kevs/Documents/DEV_PROJECTS/4.%20FRONT-END/roulette-app/.node-version)
+
+The Electron postinstall step is skipped automatically on Netlify and other CI environments.
+
 ### Lint
 
 ```bash

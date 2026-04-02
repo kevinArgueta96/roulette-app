@@ -16,8 +16,8 @@
     "dist-linux-dev": "vue-cli-service electron:build --mode development --linux rpm",
     "dist-windows": "vue-cli-service electron:build --windows",
     "dist-windows-dev": "vue-cli-service electron:build --mode development --windows",
-    "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "postinstall": "node scripts/postinstall.js",
+    "postuninstall": "node scripts/postinstall.js"
   },
   "main": "background.js",
   "engines": {
