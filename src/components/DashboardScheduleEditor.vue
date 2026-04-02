@@ -8,7 +8,7 @@
 
     <div v-if="!items.length" class="empty-state">
       <span class="empty-state__icon" aria-hidden="true">◇</span>
-      <p>Sin entradas configuradas</p>
+      <p>No scheduled entries</p>
     </div>
 
     <div v-else class="schedule-rows">
@@ -22,11 +22,13 @@
 
         <div class="row-fields">
           <div class="time-field">
-            <label :for="`${type}-start-${index}`" class="time-label">Inicio</label>
+            <label :for="`${type}-start-${index}`" class="time-label">Start</label>
             <input
               :id="`${type}-start-${index}`"
+              :name="`${type}-start-${index}`"
               type="time"
               class="time-input"
+              autocomplete="off"
               :value="item.rangeDown"
               @change="updateItem(index, 'rangeDown', $event.target.value)"
             />
@@ -35,11 +37,13 @@
           <span class="time-sep" aria-hidden="true">—</span>
 
           <div class="time-field">
-            <label :for="`${type}-end-${index}`" class="time-label">Fin</label>
+            <label :for="`${type}-end-${index}`" class="time-label">End</label>
             <input
               :id="`${type}-end-${index}`"
+              :name="`${type}-end-${index}`"
               type="time"
               class="time-input"
+              autocomplete="off"
               :value="item.rangeTop"
               @change="updateItem(index, 'rangeTop', $event.target.value)"
             />
@@ -57,7 +61,7 @@
           <span class="given-toggle__track" aria-hidden="true">
             <span class="given-toggle__thumb"></span>
           </span>
-          <span class="given-toggle__label">Entregado</span>
+          <span class="given-toggle__label">Delivered</span>
         </label>
       </div>
     </div>
@@ -77,13 +81,15 @@ export default {
     type: {
       type: String,
       required: true,
-      validator: (v) => ["card", "top"].includes(v)
+      validator: (v) => ["card", "top", "tesla"].includes(v)
     }
   },
   computed: {
-    ...mapGetters(["giftCards", "topPrices"]),
+    ...mapGetters(["giftCards", "topPrices", "teslaPrices"]),
     items() {
-      return this.type === "card" ? this.giftCards : this.topPrices;
+      if (this.type === "card") return this.giftCards;
+      if (this.type === "top") return this.topPrices;
+      return this.teslaPrices;
     }
   },
   methods: {
@@ -91,7 +97,12 @@ export default {
       const updated = this.items.map((item, i) =>
         i === index ? { ...item, [field]: value } : { ...item }
       );
-      const mutation = this.type === "card" ? "setGiftCards" : "setTopPrices";
+      const mutationMap = {
+        card: "setGiftCards",
+        top: "setTopPrices",
+        tesla: "setTeslaPrices"
+      };
+      const mutation = mutationMap[this.type];
       this.$store.commit(mutation, updated);
     }
   }
@@ -101,6 +112,7 @@ export default {
 <style scoped>
 .schedule-editor {
   width: 100%;
+  min-width: 0;
 }
 
 .section-heading {
@@ -146,46 +158,56 @@ export default {
 .schedule-rows {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 0.65rem;
 }
 
 .schedule-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 0;
-  border-bottom: 1px solid rgba(205, 174, 104, 0.18);
-  transition: background 0.2s;
-}
-
-.schedule-row:first-child {
-  border-top: 1px solid rgba(205, 174, 104, 0.18);
+  column-gap: 1rem;
+  row-gap: 0.75rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(123, 153, 132, 0.16);
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 249, 246, 0.96) 100%);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .schedule-row--given {
-  opacity: 0.55;
+  background: linear-gradient(180deg, rgba(246, 251, 247, 0.96) 0%, rgba(236, 246, 239, 0.98) 100%);
+  border-color: rgba(64, 117, 83, 0.18);
 }
 
 .row-index {
-  font-size: 0.62rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: rgba(205, 174, 104, 0.7);
-  min-width: 1.6rem;
+  color: #6f7f71;
+  background: rgba(122, 151, 131, 0.12);
   flex-shrink: 0;
 }
 
 .row-fields {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.85rem;
   flex: 1;
+  min-width: 0;
 }
 
 .time-field {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .time-label {
@@ -193,32 +215,35 @@ export default {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(29, 43, 34, 0.45);
+  color: rgba(49, 88, 70, 0.56);
 }
 
 .time-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1.5px solid rgba(205, 174, 104, 0.3);
-  padding: 0.25rem 0;
+  width: 100%;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(123, 153, 132, 0.2);
+  border-radius: 0.7rem;
+  padding: 0.64rem 0.78rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: #1d2b22;
   outline: none;
-  width: 6.8rem;
   cursor: pointer;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .time-input:focus {
-  border-bottom-color: #cdae68;
+  border-color: #7a9783;
+  box-shadow: 0 0 0 3px rgba(122, 151, 131, 0.16);
 }
 
 .time-sep {
-  color: rgba(205, 174, 104, 0.5);
-  font-size: 0.85rem;
-  margin-top: 1rem;
+  color: rgba(122, 151, 131, 0.45);
+  font-size: 0.82rem;
+  margin-top: 1.2rem;
   flex-shrink: 0;
 }
 
@@ -226,9 +251,11 @@ export default {
 .given-toggle {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.55rem;
   cursor: pointer;
   flex-shrink: 0;
+  min-width: 8.5rem;
 }
 
 .given-toggle__input {
@@ -245,8 +272,8 @@ export default {
   width: 2.2rem;
   height: 1.15rem;
   border-radius: 999px;
-  background: rgba(205, 174, 104, 0.2);
-  border: 1.5px solid rgba(205, 174, 104, 0.4);
+  background: rgba(122, 151, 131, 0.18);
+  border: 1.5px solid rgba(122, 151, 131, 0.32);
   transition: background 0.22s, border-color 0.22s;
   flex-shrink: 0;
 }
@@ -259,7 +286,7 @@ export default {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 50%;
-  background: rgba(205, 174, 104, 0.5);
+  background: rgba(122, 151, 131, 0.52);
   transition: transform 0.22s ease, background 0.22s;
 }
 
@@ -274,26 +301,44 @@ export default {
 }
 
 .given-toggle__label {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(29, 43, 34, 0.5);
+  color: rgba(49, 88, 70, 0.74);
   transition: color 0.2s;
+  white-space: nowrap;
 }
 
-.schedule-row:has(.given-toggle__input:checked) .given-toggle__label {
+.given-toggle__input:checked ~ .given-toggle__label {
   color: #1f5a3f;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 860px) {
   .schedule-row {
-    flex-wrap: wrap;
+    grid-template-columns: 2.35rem minmax(0, 1fr);
     gap: 0.7rem;
   }
 
+  .given-toggle {
+    grid-column: 2;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
   .row-fields {
-    flex: 1 1 auto;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .time-field {
+    width: 100%;
+  }
+
+  .time-sep {
+    display: none;
   }
 }
 </style>

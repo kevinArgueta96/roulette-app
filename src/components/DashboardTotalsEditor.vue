@@ -2,7 +2,7 @@
   <div class="totals-editor">
     <div class="section-heading">
       <span class="section-heading__deco" aria-hidden="true"></span>
-      <h3 class="section-heading__text">Configuración de Totales</h3>
+      <h3 class="section-heading__text">Totals Configuration</h3>
       <span class="section-heading__deco" aria-hidden="true"></span>
     </div>
 
@@ -18,15 +18,27 @@
           <input
             :id="field.key"
             type="number"
+            :name="field.key"
             min="0"
             class="field-input"
+            inputmode="numeric"
+            autocomplete="off"
+            :aria-invalid="errors[field.key] ? 'true' : 'false'"
+            :aria-describedby="errors[field.key] ? `${field.key}-error` : null"
             :value="values[field.key]"
             @input="onInput(field.key, $event.target.value)"
             @blur="validateField(field.key)"
           />
         </div>
         <transition name="err-fade">
-          <p v-if="errors[field.key]" class="field-error">{{ errors[field.key] }}</p>
+          <p
+            v-if="errors[field.key]"
+            :id="`${field.key}-error`"
+            class="field-error"
+            aria-live="polite"
+          >
+            {{ errors[field.key] }}
+          </p>
         </transition>
       </div>
     </div>
@@ -99,7 +111,7 @@ export default {
     },
     validateField(key) {
       const val = this.values[key];
-      this.errors[key] = val < 0 ? "El valor no puede ser negativo" : "";
+      this.errors[key] = val < 0 ? "Value cannot be negative" : "";
     },
     validate() {
       let valid = true;
@@ -118,6 +130,9 @@ export default {
 <style scoped>
 .totals-editor {
   width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .section-heading {
@@ -133,27 +148,36 @@ export default {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #1f5a3f;
+  color: #315846;
   white-space: nowrap;
 }
 
 .section-heading__deco {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #cdae68 40%, #e8d5a3 60%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(122, 151, 131, 0.18) 25%, rgba(122, 151, 131, 0.48) 50%, transparent 75%);
   border-radius: 1px;
 }
 
 .totals-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  align-content: stretch;
   gap: 1.2rem 1.6rem;
+  flex: 1 1 auto;
 }
 
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 0;
+  padding: 1rem 1rem;
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 250, 245, 0.96) 100%);
+  border: 1px solid rgba(123, 153, 132, 0.18);
 }
 
 .field-label {
@@ -161,7 +185,7 @@ export default {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(29, 43, 34, 0.55);
+  color: rgba(49, 88, 70, 0.72);
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -185,7 +209,7 @@ export default {
   left: 0;
   right: 0;
   height: 2px;
-  background: #cdae68;
+  background: #7a9783;
   transform: scaleX(0);
   transform-origin: center;
   transition: transform 0.25s ease;
@@ -205,11 +229,12 @@ export default {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1.5px solid rgba(205, 174, 104, 0.35);
-  padding: 0.45rem 0 0.45rem 0;
+  border-bottom: 1.5px solid rgba(122, 151, 131, 0.28);
+  padding: 0.3rem 0 0.15rem 0;
   font-family: inherit;
   font-size: 1.1rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: #1d2b22;
   outline: none;
   -moz-appearance: textfield;
@@ -249,6 +274,12 @@ export default {
 @media (max-width: 900px) {
   .totals-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .totals-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

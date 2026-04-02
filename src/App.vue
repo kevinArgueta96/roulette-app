@@ -53,7 +53,13 @@
           <p>Cargando configuracion…</p>
         </div>
 
-        <svg class="bottom-wave" viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true">
+        <svg
+          v-if="$route.name !== 'dashboard'"
+          class="bottom-wave"
+          viewBox="0 0 1000 260"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
           <path d="M0 112 C120 150 320 170 500 170 C680 170 880 150 1000 112 L1000 260 L0 260 Z" fill="#2f6039" />
         </svg>
       </section>
