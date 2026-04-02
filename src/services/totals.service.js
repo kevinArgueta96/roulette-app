@@ -8,7 +8,7 @@ import {
 const REQUEST_TIMEOUT_MS = 8000;
 const LOCAL_MODE_KEY = "roulette-data-mode";
 const LOCAL_SNAPSHOT_KEY = "roulette-local-snapshot";
-const LOCAL_SNAPSHOT_VERSION = 2;
+const LOCAL_SNAPSHOT_VERSION = 4;
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -19,7 +19,14 @@ function isDirectWinDistribution(payload) {
     payload &&
     typeof payload === "object" &&
     !Array.isArray(payload) &&
-    (payload.mainWin || payload.smallWin || Object.prototype.hasOwnProperty.call(payload, "lastResetDate"))
+    (
+      payload.mainWin ||
+      payload.smallWin ||
+      payload.repeat ||
+      payload.noWin ||
+      Object.prototype.hasOwnProperty.call(payload, "lastResetDate") ||
+      Object.prototype.hasOwnProperty.call(payload, "totalSectors")
+    )
   );
 }
 
@@ -31,7 +38,7 @@ function normalizeBootstrapPayload(payload) {
 
   return {
     schemaVersion: LOCAL_SNAPSHOT_VERSION,
-    rulesModel: "win-distribution-v2",
+    rulesModel: "dynamic-roulette-v1",
     options: normalizeOptions(bootstrapSource.options || bootstrapSource.roulette || []),
     totals: normalizeTotals(bootstrapSource.totals || bootstrapSource.totalPrices || bootstrapSource.total_prices || {}),
     winDistribution: normalizeWinDistribution(
@@ -267,7 +274,7 @@ export default {
     return {
       ...snapshot,
       schemaVersion: LOCAL_SNAPSHOT_VERSION,
-      rulesModel: "win-distribution-v2",
+      rulesModel: "dynamic-roulette-v1",
       exportedAt: new Date().toISOString()
     };
   },

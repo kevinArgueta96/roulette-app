@@ -41,17 +41,16 @@ import service from "@/services/totals.service";
 import {
   formatTime24h,
   pickWeightedIndex,
-  RESULT_BY_INDEX,
-  FALLBACK_INDEX,
   buildNextTotals,
   getTargetDegreesForIndex,
   buildDynamicProbabilities,
+  buildSectorsFromDistribution,
   findActiveSlotIndex,
+  getFallbackIndexForDistribution,
+  getSectorResultType,
   shouldResetDaily
 } from "@/utils";
 import {
-  sectorsRoulette,
-  colorsSectorRoulette,
   textDefaultRouletteStyle,
   textTeslaRouletteStyle
 } from "@/config/config-roulette.js";
@@ -98,8 +97,11 @@ export default {
       "initialAngle",
       "spinRoullete"
     ]),
+    sectors() {
+      return buildSectorsFromDistribution(this.winDistribution);
+    },
     arc() {
-      return (Math.PI * 2) / sectorsRoulette.length;
+      return (Math.PI * 2) / Math.max(1, this.sectors.length);
     },
     center() {
       return this.canvasSize / 2;
@@ -298,11 +300,11 @@ export default {
       this.ctx.fillStyle = "#c9a353";
       this.ctx.fill();
 
-      sectorsRoulette.forEach((sector, index) => {
+      this.sectors.forEach((sector, index) => {
         const angle = this.startAngle + index * this.arc;
         const halfArc = angle + this.arc / 2;
-        const lines = this.getSectorLines(sector);
-        const isMainPrize = index === 7;
+        const lines = this.getSectorLines(sector.label);
+        const isMainPrize = sector.outcomeKey === "mainWin";
         const fontSize = isMainPrize ? this.teslaFontSize : this.defaultFontSize;
         const lineHeight = fontSize * 1.02;
         const textOffset = ((lines.length - 1) * lineHeight) / 2;
@@ -311,10 +313,10 @@ export default {
         this.ctx.moveTo(this.center, this.center);
         this.ctx.arc(this.center, this.center, this.outerRadius, angle, angle + this.arc, false);
         this.ctx.closePath();
-        this.ctx.fillStyle = colorsSectorRoulette[index];
+        this.ctx.fillStyle = sector.color;
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = colorsSectorRoulette[index];
+        this.ctx.strokeStyle = sector.color;
         this.ctx.stroke();
 
         this.ctx.save();
@@ -325,7 +327,7 @@ export default {
         this.ctx.rotate(halfArc);
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
-        this.ctx.fillStyle = this.getTextColor(index);
+        this.ctx.fillStyle = sector.textColor;
         this.ctx.font = `${isMainPrize ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${isMainPrize ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily}`;
 
         lines.forEach((line, lineIndex) => {
@@ -343,11 +345,6 @@ export default {
         return compact.split("\n");
       }
       return Object.values(sector);
-    },
-    getTextColor(index) {
-      return [0, 1, 3, 5, 7, 9, 11].includes(index)
-        ? "#f6edd1"
-        : "#2d5b38";
     },
     spin(spinConfig = {}) {
       if (!this.canSpin) return;
@@ -404,7 +401,8 @@ export default {
       if (spinConfig.skipResult) {
         this.updateState({ mutationType: "setSpinRoullete", payload: true });
       } else {
-        this.$emit("showImg", { type: RESULT_BY_INDEX[winnerIndex] || RESULT_BY_INDEX[FALLBACK_INDEX] });
+        const winnerSector = this.sectors[winnerIndex] || this.sectors[getFallbackIndexForDistribution(this.winDistribution)];
+        this.$emit("showImg", { type: getSectorResultType(winnerSector) });
       }
 
       if (typeof spinConfig.onComplete === "function") spinConfig.onComplete(true);
@@ -424,7 +422,7 @@ export default {
 
       for (let step = 0; step < totalIterations; step += 1) {
         if (!this.stressTest.active) break;
-        const randomIndex = Math.floor(Math.random() * sectorsRoulette.length);
+        const randomIndex = Math.floor(Math.random() * Math.max(1, this.sectors.length));
         await new Promise((resolve) => {
           this.spin({ winnerIndex: randomIndex, duration: spinDuration, skipPersist: true, skipResult: true, onComplete: resolve });
         });
@@ -468,10 +466,12 @@ export default {
       }
 
       const probabilities = buildDynamicProbabilities(this.winDistribution, currentTime);
-      return pickWeightedIndex(probabilities, FALLBACK_INDEX);
+      return pickWeightedIndex(probabilities, getFallbackIndexForDistribution(this.winDistribution));
     },
     async persistSpinResult(winnerIndex) {
-      const totals = buildNextTotals(this.currentTotals, winnerIndex);
+      const winnerSector = this.sectors[winnerIndex] || null;
+      const outcomeKey = winnerSector?.outcomeKey || "noWin";
+      const totals = buildNextTotals(this.currentTotals, outcomeKey);
       const mutationMap = {
         totalReplay: "setTotalReplay",
         totalSpecialPrice: "setTotalSpecialPrice",
@@ -485,8 +485,8 @@ export default {
       });
 
       const currentTime = formatTime24h();
-      const isMainWin = winnerIndex === 0;
-      const isSmallWin = [2, 6, 10].includes(winnerIndex);
+      const isMainWin = outcomeKey === "mainWin";
+      const isSmallWin = outcomeKey === "smallWin";
 
       if (isMainWin || isSmallWin) {
         const category = isMainWin ? "mainWin" : "smallWin";

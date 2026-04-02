@@ -83,20 +83,20 @@
               <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
             </article>
             <article class="stat-card stat-card--highlight">
+              <p class="stat-card__label">Total sectors</p>
+              <strong>{{ totalSectors }}</strong>
+            </article>
+            <article class="stat-card">
+              <p class="stat-card__label">No win sectors</p>
+              <strong>{{ noWinSectors }}</strong>
+            </article>
+            <article class="stat-card">
+              <p class="stat-card__label">Repeat sectors</p>
+              <strong>{{ repeatSectors }}</strong>
+            </article>
+            <article class="stat-card">
               <p class="stat-card__label">Total spins</p>
               <strong>{{ totalSpin }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Main win slots</p>
-              <strong>{{ winDistribution && winDistribution.mainWin ? winDistribution.mainWin.slots.length : 0 }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Small win slots</p>
-              <strong>{{ winDistribution && winDistribution.smallWin ? winDistribution.smallWin.slots.length : 0 }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Last reset</p>
-              <strong class="stat-date">{{ winDistribution && winDistribution.lastResetDate ? winDistribution.lastResetDate : "—" }}</strong>
             </article>
           </div>
         </section>
@@ -129,20 +129,20 @@
               <strong>{{ dataSource === "local" ? "Local" : "Online" }}</strong>
             </div>
             <div class="status-item">
+              <span>Main win sectors</span>
+              <strong>{{ mainWinSectors }}</strong>
+            </div>
+            <div class="status-item">
+              <span>Small win sectors</span>
+              <strong>{{ smallWinSectors }}</strong>
+            </div>
+            <div class="status-item">
               <span>Main wins remaining</span>
               <strong>{{ Math.max(0, mainWinsLimit - mainWinsToday) }}</strong>
             </div>
             <div class="status-item">
               <span>Small wins remaining</span>
               <strong>{{ Math.max(0, smallWinsLimit - smallWinsToday) }}</strong>
-            </div>
-            <div class="status-item">
-              <span>No win outcome</span>
-              <strong>Dynamic</strong>
-            </div>
-            <div class="status-item">
-              <span>Repeat outcome</span>
-              <strong>Dynamic</strong>
             </div>
             <div class="status-item">
               <span>Last daily reset</span>
@@ -160,13 +160,13 @@
           </div>
 
           <p class="mode-help">
-            Main win and small win are capped by daily limits and by the active hourly slot. No win and repeat take over automatically once configured wins are exhausted.
+            Main win and small win can change both their sector count and their active weight by time range. Repeat and no win stay available through their base weights.
           </p>
           <ul class="mode-list">
-            <li>Main win: daily limit + slot limit must both be available.</li>
-            <li>Small win: daily limit + slot limit must both be available.</li>
-            <li>No win and repeat: stay available when configured wins run out.</li>
-            <li>Switch to local mode to test the full configuration with a manual JSON snapshot.</li>
+            <li>Main win: sector count, base weight, daily limit, and slot rules.</li>
+            <li>Small win: sector count, base weight, daily limit, and slot rules.</li>
+            <li>Repeat and no win: sector count plus base weight only.</li>
+            <li>The wheel repaints from the saved rules configuration.</li>
           </ul>
         </section>
       </aside>
@@ -230,6 +230,21 @@ export default {
     },
     smallWinsLimit() {
       return this.winDistribution?.smallWin?.dailyLimit ?? 0;
+    },
+    totalSectors() {
+      return this.winDistribution?.totalSectors ?? 0;
+    },
+    mainWinSectors() {
+      return this.winDistribution?.mainWin?.sectorCount ?? 0;
+    },
+    smallWinSectors() {
+      return this.winDistribution?.smallWin?.sectorCount ?? 0;
+    },
+    repeatSectors() {
+      return this.winDistribution?.repeat?.sectorCount ?? 0;
+    },
+    noWinSectors() {
+      return this.winDistribution?.noWin?.sectorCount ?? 0;
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -305,12 +320,7 @@ export default {
       this.isSaving = true;
 
       try {
-        const winConfig = this.$refs.winConfig.getConfig();
-        const updatedDistribution = {
-          ...this.winDistribution,
-          mainWin: { ...this.winDistribution?.mainWin, ...winConfig.mainWin },
-          smallWin: { ...this.winDistribution?.smallWin, ...winConfig.smallWin }
-        };
+        const updatedDistribution = this.$refs.winConfig.getConfig();
         this.$store.commit("setWinDistribution", updatedDistribution);
 
         const [distOk] = await Promise.all([
@@ -385,7 +395,7 @@ export default {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "roulette-win-rules-v2.json";
+      link.download = "roulette-win-rules-v4.json";
       link.click();
       window.URL.revokeObjectURL(url);
       this.showToast("success", "Win rules JSON exported.");

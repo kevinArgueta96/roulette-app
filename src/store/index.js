@@ -1,7 +1,7 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import { initialOptionsConfigRoulette } from "@/config/config-roulette.js";
-import { RANDOM_START_ANGLES, DEFAULT_WIN_DISTRIBUTION } from "@/utils";
+import { RANDOM_START_ANGLES, DEFAULT_WIN_DISTRIBUTION, normalizeWinDistribution } from "@/utils";
 
 Vue.use(Vuex);
 
@@ -65,14 +65,7 @@ export default new Vuex.Store({
       state.totalSpin = Number(payload) || 0;
     },
     setWinDistribution(state, payload) {
-      if (payload && typeof payload === "object") {
-        state.winDistribution = {
-          ...DEFAULT_WIN_DISTRIBUTION(),
-          ...payload,
-          mainWin: { ...DEFAULT_WIN_DISTRIBUTION().mainWin, ...(payload.mainWin || {}) },
-          smallWin: { ...DEFAULT_WIN_DISTRIBUTION().smallWin, ...(payload.smallWin || {}) }
-        };
-      }
+      state.winDistribution = normalizeWinDistribution(payload);
     },
     incrementMainWinGiven(state, slotIndex) {
       const dist = state.winDistribution;
@@ -100,6 +93,16 @@ export default new Vuex.Store({
         }
       };
     },
+    updateOutcomeConfig(state, { outcomeKey, patch }) {
+      if (!distHasOutcome(state.winDistribution, outcomeKey)) return;
+      state.winDistribution = normalizeWinDistribution({
+        ...state.winDistribution,
+        [outcomeKey]: {
+          ...state.winDistribution[outcomeKey],
+          ...(patch || {})
+        }
+      });
+    },
     resetDailyCounters(state, newDate) {
       const dist = state.winDistribution;
       state.winDistribution = {
@@ -114,6 +117,12 @@ export default new Vuex.Store({
           ...dist.smallWin,
           givenToday: 0,
           slots: dist.smallWin.slots.map((slot) => ({ ...slot, given: 0 }))
+        },
+        repeat: {
+          ...dist.repeat
+        },
+        noWin: {
+          ...dist.noWin
         }
       };
     },
@@ -150,3 +159,7 @@ export default new Vuex.Store({
     }
   }
 });
+
+function distHasOutcome(distribution, outcomeKey) {
+  return Boolean(distribution && Object.prototype.hasOwnProperty.call(distribution, outcomeKey));
+}
