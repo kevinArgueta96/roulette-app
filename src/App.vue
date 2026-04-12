@@ -159,29 +159,31 @@ export default {
 .screen-header {
   position: relative;
   z-index: 3;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: flex-start;
   min-height: 4.8rem;
   margin-top: 0.6rem;
   flex-shrink: 0;
+  column-gap: 0.8rem;
 }
 
 .brand-link {
-  display: flex;
+  display: inline-flex;
+  grid-column: 1;
+  justify-self: start;
   align-items: center;
   text-decoration: none;
   position: relative;
   z-index: 9;
-  transform-origin: top left;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), top 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1), top 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .brand-link--lifted {
   position: fixed;
   left: 50%;
   top: 1.05rem;
-  transform: translateX(-50%) scale(0.62);
+  transform: translateX(-50%);
 }
 
 .brand-logo {
@@ -216,10 +218,9 @@ export default {
 }
 
 .menu-shell {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
+  grid-column: 3;
+  justify-self: end;
+  position: relative;
   z-index: 10;
 }
 
@@ -343,7 +344,7 @@ export default {
 
   .brand-link--lifted {
     top: 1.15rem;
-    transform: translateX(-50%) scale(0.56);
+    transform: translateX(-50%);
   }
 
   .brand-logo {
@@ -364,7 +365,7 @@ export default {
 
   .brand-link--lifted {
     top: 0.75rem;
-    transform: translateX(-50%) scale(0.54);
+    transform: translateX(-50%);
   }
 
   .bottom-wave {
@@ -384,7 +385,7 @@ export default {
 
   .brand-link--lifted {
     top: 0.6rem;
-    transform: translateX(-50%) scale(0.5);
+    transform: translateX(-50%);
   }
 
   .status-banner {
