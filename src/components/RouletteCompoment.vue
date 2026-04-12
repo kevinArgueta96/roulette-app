@@ -31,7 +31,7 @@
 
     <div class="wheel-action-slot">
       <transition name="fade-up">
-        <p v-if="isMainPrizeActive" class="main-prize-copy">Arki ansaitsee parempaa!</p>
+        <p v-if="isMainPrizeActive" class="main-prize-copy">Arki ansaitsee<br>parempaa!</p>
       </transition>
 
       <button v-if="!isMainPrizeActive" class="spin-button" type="button" :disabled="!canSpin" @click="spin">

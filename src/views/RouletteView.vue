@@ -165,8 +165,10 @@ export default {
 .result-label__main-title {
   margin: 0;
   font-family: "Lumios Marker", cursive;
-  font-size: clamp(2.9rem, 7.2vw, 5.5rem);
+  font-size: clamp(4rem, 9vw, 6.6rem);
+  font-weight: 400;
   line-height: 0.88;
+  letter-spacing: 0;
   color: #2e6a49;
   text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
 }
@@ -203,11 +205,15 @@ export default {
 
 .prize-product--left {
   left: 0;
+  transform: rotate(-100deg);
+  transform-origin: center center;
 }
 
 .prize-product--right {
   right: 0;
   width: clamp(190px, 31%, 360px);
+  transform: rotate(80deg);
+  transform-origin: center center;
 }
 
 /* slide-left transition */

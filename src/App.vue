@@ -188,10 +188,11 @@ export default {
 
 .brand-logo {
   display: block;
-  width: clamp(240px, 32vw, 380px);
-  max-height: 4.7rem;
+  width: clamp(216px, 28.8vw, 342px);
+  max-height: 4.23rem;
   height: auto;
   object-fit: contain;
+  margin-top: 0.18rem;
 }
 
 .menu-button {
@@ -222,6 +223,7 @@ export default {
   justify-self: end;
   position: relative;
   z-index: 10;
+  transform: translateX(-2rem);
 }
 
 .menu-dropdown {
@@ -359,8 +361,8 @@ export default {
   }
 
   .brand-logo {
-    width: clamp(210px, 58vw, 320px);
-    max-height: 3.8rem;
+    width: clamp(189px, 52.2vw, 288px);
+    max-height: 3.42rem;
   }
 }
 
