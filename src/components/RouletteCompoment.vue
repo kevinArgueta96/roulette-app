@@ -18,6 +18,39 @@
     >
       <canvas ref="myCanvas" class="wheel-canvas"></canvas>
 
+      <svg
+        v-if="showMainPrizeBurst"
+        class="wheel-burst-rays"
+        viewBox="0 0 200 200"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <!-- hide everything inside the wheel circle; worms only visible outside -->
+          <mask id="worm-mask">
+            <rect width="200" height="200" fill="white"/>
+            <circle cx="100" cy="100" r="36" fill="black"/>
+          </mask>
+          <filter id="ray-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <g mask="url(#worm-mask)" filter="url(#ray-glow)">
+          <!-- S-curve worms from center to each screen edge direction -->
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 116,72  84,38  100,0"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 138,80  162,42 200,0"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 128,116 172,84 200,100"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 138,122 162,158 200,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 116,128 84,162 100,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 62,122  38,158 0,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 72,116  28,84  0,100"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 C 62,80   38,42  0,0"/>
+        </g>
+      </svg>
+
       <div class="wheel-center" :style="wheelCenterStyle">
         <div class="wheel-center__ring">
           <img
@@ -148,6 +181,9 @@ export default {
     },
     showMainPrizeCopy() {
       return this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
+    },
+    showMainPrizeBurst() {
+      return this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
     },
     wheelCenterStyle() {
       return {
@@ -607,10 +643,40 @@ export default {
   max-width: 100%;
 }
 
+/* Worm rays escaping from wheel circle to screen edges */
+.wheel-burst-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 290%;
+  height: 290%;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.burst-ray {
+  fill: none;
+  stroke: #d8bb71;
+  stroke-width: 2;
+  stroke-linecap: round;
+  /* worm body = 16% of path, rest gap — slides from inside (masked) to outside (visible) */
+  stroke-dasharray: 16 1000;
+  stroke-dashoffset: 100;
+  animation: worm-escape 1.5s linear infinite;
+}
+
+@keyframes worm-escape {
+  0%   { stroke-dashoffset:  100; }
+  100% { stroke-dashoffset: -20; }
+}
+
 .wheel-center {
   position: absolute;
   inset: 50% auto auto 50%;
   transform-origin: center;
+  z-index: 2;
 }
 
 .wheel-center__ring {

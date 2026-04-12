@@ -19,15 +19,20 @@ export default {
       confettiSettings: {
         target: "confetti-container",
         respawn: true,
-        max: 80,
-        size: 1.5,
-        clock: 25,
+        max: 280,
+        size: 2,
+        clock: 16,
+        rotate: true,
         props: ["circle"],
         colors: [
+          [216, 187, 113],
+          [245, 215, 138],
+          [246, 237, 209],
           [255, 80, 20],
-          [255, 237, 163],
-          [201, 236, 255],
-          [43, 53, 58]
+          [255, 255, 255],
+          [46, 94, 57],
+          [203, 48, 39],
+          [154, 115, 37]
         ]
       }
     };
