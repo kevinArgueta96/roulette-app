@@ -67,7 +67,7 @@
             <button class="ghost-btn" type="button" :disabled="isRefreshing" @click="onRefresh" title="Reload data from active source">
               {{ isRefreshing ? "Refreshing..." : "Refresh" }}
             </button>
-            <button class="primary-btn" type="button" :disabled="isSaving || isRefreshing" @click="onSave">
+            <button class="primary-btn" type="button" :disabled="isSaving" @click="onSave">
               {{ isSaving ? "Saving..." : dataSource === "local" ? "Save local" : "Save online" }}
             </button>
           </div>
@@ -212,7 +212,7 @@
           <button class="unsaved-bar__discard" type="button" :disabled="isSaving" @click="discardChanges">
             Discard
           </button>
-          <button class="unsaved-bar__save" type="button" :disabled="isSaving || isRefreshing" @click="onSave">
+          <button class="unsaved-bar__save" type="button" :disabled="isSaving" @click="onSave">
             {{ isSaving ? "Saving…" : "Save" }}
           </button>
         </div>

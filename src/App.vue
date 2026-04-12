@@ -317,6 +317,7 @@ export default {
   object-fit: fill;
   object-position: bottom center;
   z-index: 3; /* above router-outlet (z-index:2) so burst rays render behind the footer */
+  pointer-events: none;
 }
 
 .fade-up-enter-active {
