@@ -642,20 +642,20 @@ export default {
 
 .main-prize-copy {
   position: absolute;
-  top: 1rem;
+  top: 0.35rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 6;
   margin: 0;
   color: #295f41;
-  font-family: "agenda-one-compressed", sans-serif;
-  font-size: clamp(1.55rem, 3.6vw, 2.55rem);
-  font-weight: 700;
-  line-height: 0.94;
-  letter-spacing: -0.018em;
-  text-transform: uppercase;
+  font-family: "Lumios Marker", cursive;
+  font-size: clamp(4rem, 9vw, 6.6rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: 0;
   text-align: center;
-  white-space: nowrap;
+  width: min(86%, 620px);
+  white-space: normal;
 }
 
 .spin-button:disabled {
@@ -703,8 +703,8 @@ export default {
   }
 
   .main-prize-copy {
-    top: 0.3rem;
-    font-size: clamp(1.3rem, 3.2vw, 2rem);
+    top: 0.2rem;
+    font-size: clamp(3rem, 7.2vw, 5.1rem);
   }
 }
 
@@ -749,8 +749,8 @@ export default {
   }
 
   .main-prize-copy {
-    top: 0.15rem;
-    font-size: clamp(1.15rem, 4.5vw, 1.7rem);
+    top: 0.1rem;
+    font-size: clamp(2.45rem, 7.4vw, 4rem);
   }
 }
 </style>

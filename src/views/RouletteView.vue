@@ -158,15 +158,15 @@ export default {
 }
 
 .result-label--main {
-  top: 0.2rem;
+  top: 7.35rem;
   width: min(92%, 720px);
 }
 
 .result-label__main-title {
   margin: 0;
   font-family: "Lumios Marker", cursive;
-  font-size: clamp(2.4rem, 6.2vw, 4.9rem);
-  line-height: 0.92;
+  font-size: clamp(2.9rem, 7.2vw, 5.5rem);
+  line-height: 0.88;
   color: #2e6a49;
   text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
 }
@@ -194,7 +194,7 @@ export default {
   position: absolute;
   bottom: 12%;
   z-index: 4;
-  width: clamp(110px, 18%, 200px);
+  width: clamp(135px, 22%, 235px);
   height: auto;
   object-fit: contain;
   pointer-events: none;
@@ -207,7 +207,7 @@ export default {
 
 .prize-product--right {
   right: 0;
-  width: clamp(170px, 28%, 320px);
+  width: clamp(190px, 31%, 360px);
 }
 
 /* slide-left transition */
@@ -253,7 +253,7 @@ export default {
   }
 
   .result-label--main {
-    top: -0.4rem;
+    top: 4.7rem;
   }
 }
 
@@ -279,15 +279,15 @@ export default {
   }
 
   .result-label--main {
-    top: 0.5rem;
+    top: 6.15rem;
   }
 
   .prize-product {
-    width: clamp(90px, 16%, 160px);
+    width: clamp(112px, 20%, 190px);
   }
 
   .prize-product--right {
-    width: clamp(130px, 24%, 240px);
+    width: clamp(155px, 28%, 285px);
   }
 }
 </style>

@@ -161,7 +161,7 @@ export default {
   z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 4.8rem;
   margin-top: 0.6rem;
   flex-shrink: 0;
@@ -171,11 +171,17 @@ export default {
   display: flex;
   align-items: center;
   text-decoration: none;
-  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  z-index: 9;
+  transform-origin: top left;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), left 0.7s cubic-bezier(0.22, 1, 0.36, 1), top 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .brand-link--lifted {
-  transform: translateY(-0.95rem);
+  position: fixed;
+  left: 50%;
+  top: 1.05rem;
+  transform: translateX(-50%) scale(0.62);
 }
 
 .brand-logo {
@@ -210,7 +216,11 @@ export default {
 }
 
 .menu-shell {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 10;
 }
 
 .menu-dropdown {
@@ -331,6 +341,11 @@ export default {
     margin-top: 0.35rem;
   }
 
+  .brand-link--lifted {
+    top: 1.15rem;
+    transform: translateX(-50%) scale(0.56);
+  }
+
   .brand-logo {
     width: clamp(210px, 58vw, 320px);
     max-height: 3.8rem;
@@ -347,6 +362,11 @@ export default {
     margin-top: 0.4rem;
   }
 
+  .brand-link--lifted {
+    top: 0.75rem;
+    transform: translateX(-50%) scale(0.54);
+  }
+
   .bottom-wave {
     height: 10%;
   }
@@ -360,6 +380,11 @@ export default {
   .screen-header {
     margin-top: 0.2rem;
     min-height: 3.3rem;
+  }
+
+  .brand-link--lifted {
+    top: 0.6rem;
+    transform: translateX(-50%) scale(0.5);
   }
 
   .status-banner {
