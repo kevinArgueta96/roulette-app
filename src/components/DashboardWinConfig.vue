@@ -16,48 +16,8 @@
         {{ errors.totalSectors || errors.sectorCounts }}
       </p>
 
-      <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal !== 100 }">
-        <div>
-          <p class="probability-summary__eyebrow">Repeat + No win split (must equal 100%)</p>
-          <h5>Category C + Category D</h5>
-        </div>
-        <strong :class="{ 'probability-summary__total--ok': fallbackSplitTotal === 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
-      </div>
-
-      <p class="probability-summary__copy">
-        These are <strong>relative ratios</strong>, not absolute spin probabilities. When a win slot is active at e.g. 30%, the remaining 70% is split between Repeat and No win using this ratio. They must always total exactly 100%.
-        <template v-if="maxWinProbability > 0">
-          At peak win probability ({{ formatPercentInput(maxWinProbability) }}), Repeat + No win share the remaining <strong>{{ formatPercentInput(fallbackRemainingAtPeak) }}</strong>.
-        </template>
-      </p>
-
-      <div class="probability-timeline">
-        <div class="timeline-header">
-          <span>Time range</span>
-          <span>Main win</span>
-          <span>Small win</span>
-          <span>Repeat</span>
-          <span>No win</span>
-        </div>
-        <div
-          v-for="(row, i) in probabilityTimeline"
-          :key="i"
-          class="timeline-row"
-          :class="{ 'timeline-row--active': row.isActive }"
-        >
-          <span class="timeline-label">
-            {{ row.label }}
-            <span v-if="row.isActive" class="timeline-now-badge">NOW</span>
-          </span>
-          <span :class="Number(row.mainWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.mainWin }}%</span>
-          <span :class="Number(row.smallWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.smallWin }}%</span>
-          <span>{{ row.repeat }}%</span>
-          <span>{{ row.noWin }}%</span>
-        </div>
-      </div>
-
       <div class="outcome-grid">
-        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card">
+        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :style="{ borderLeftColor: outcome.color }">
           <div class="outcome-card__header">
             <div class="outcome-card__title">
               <span class="outcome-dot" :style="{ background: outcome.color }" aria-hidden="true"></span>
@@ -78,7 +38,7 @@
             </div>
 
             <div v-if="!outcome.hasSlots" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-weight`">Fallback split (%)</label>
+              <label class="field-label" :for="`${outcome.key}-weight`">Non-win share (%)</label>
               <input
                 :id="`${outcome.key}-weight`"
                 class="number-input"
@@ -103,7 +63,7 @@
 
             <div v-else class="field-group field-group--readonly">
               <span class="field-label">Probability source</span>
-              <strong class="field-readonly">Final hourly probability</strong>
+              <strong class="field-readonly">Set by time slots ↓</strong>
             </div>
 
             <div v-if="outcome.hasDailyLimit" class="field-group">
@@ -119,9 +79,18 @@
               />
             </div>
 
-            <div v-if="outcome.hasDailyLimit" class="field-group field-group--readonly">
+            <div v-if="outcome.hasDailyLimit" class="field-group field-group--given">
               <span class="field-label">Given today</span>
-              <strong class="field-readonly">{{ localConfig[outcome.key].givenToday }}</strong>
+              <div class="given-today">
+                <span class="given-today__count">{{ localConfig[outcome.key].givenToday }} <span class="given-today__limit">/ {{ localConfig[outcome.key].dailyLimit }}</span></span>
+                <div class="given-bar">
+                  <div
+                    class="given-bar__fill"
+                    :style="{ width: getGivenPercent(outcome.key) + '%' }"
+                    :class="{ 'given-bar__fill--full': getGivenPercent(outcome.key) >= 100 }"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -221,7 +190,7 @@
             </div>
 
             <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
-              No time ranges configured yet.
+              No active time windows — this outcome has 0% probability. Add a time range to enable it.
             </div>
 
             <button class="add-slot-btn" type="button" @click="addSlot(outcome.key)">
@@ -229,6 +198,54 @@
             </button>
           </div>
         </article>
+      </div>
+
+      <div class="timeline-section">
+        <div class="timeline-section__header">
+          <div>
+            <p class="block-eyebrow">Live preview</p>
+            <h4 class="block-title">Probability by time of day</h4>
+          </div>
+          <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal !== 100 }">
+            <div>
+              <p class="probability-summary__eyebrow">Non-win balance (must equal 100%)</p>
+              <p class="probability-summary__sub">Repeat + No win share</p>
+            </div>
+            <strong :class="{ 'probability-summary__total--ok': fallbackSplitTotal === 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+          </div>
+        </div>
+
+        <p class="probability-summary__copy">
+          Columns show each outcome's actual probability per spin for each time window. Repeat and No win use <strong>relative ratios</strong> — their percentages below split the non-win remainder, and must total exactly 100%.
+          <template v-if="maxWinProbability > 0">
+            At peak win probability ({{ formatPercentInput(maxWinProbability) }}), Repeat + No win share the remaining <strong>{{ formatPercentInput(fallbackRemainingAtPeak) }}</strong>.
+          </template>
+        </p>
+
+        <div class="probability-timeline">
+          <div class="timeline-header">
+            <span>Time window</span>
+            <span>Main win</span>
+            <span>Small win</span>
+            <span>Repeat</span>
+            <span>No win</span>
+          </div>
+          <div
+            v-for="(row, i) in probabilityTimeline"
+            :key="i"
+            class="timeline-row"
+            :class="{ 'timeline-row--active': row.isActive }"
+          >
+            <span class="timeline-label">
+              {{ row.label }}
+              <span v-if="row.isActive" class="timeline-now-badge">NOW</span>
+            </span>
+            <span :class="Number(row.mainWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.mainWin }}%</span>
+            <span :class="Number(row.smallWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.smallWin }}%</span>
+            <span>{{ row.repeat }}%</span>
+            <span>{{ row.noWin }}%</span>
+          </div>
+        </div>
       </div>
     </section>
   </div>
@@ -795,6 +812,11 @@ export default {
       this.onSlotChange(outcomeKey, slotIndex, field, raw ?? "", true);
       this.applyConfigChange();
     },
+    getGivenPercent(outcomeKey) {
+      const given = Number(this.localConfig[outcomeKey]?.givenToday) || 0;
+      const limit = Number(this.localConfig[outcomeKey]?.dailyLimit) || 1;
+      return Math.min(100, (given / limit) * 100);
+    },
     percentDisplayValue(fieldKey, rawValue) {
       if (Object.prototype.hasOwnProperty.call(this.editingValues, fieldKey)) {
         return this.editingValues[fieldKey];
@@ -953,10 +975,11 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.95rem;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 1.1rem;
   border-radius: 1rem;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(247, 250, 245, 0.94) 100%);
   border: 1px solid rgba(122, 151, 131, 0.14);
+  border-left-width: 3px;
   min-width: 0;
 }
 
@@ -1018,6 +1041,72 @@ export default {
   color: #1f5a3f;
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
+}
+
+.field-group--given {
+  justify-content: flex-end;
+}
+
+.given-today {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 251, 243, 0.92);
+}
+
+.given-today__count {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f5a3f;
+  font-variant-numeric: tabular-nums;
+}
+
+.given-today__limit {
+  font-size: 0.8em;
+  font-weight: 400;
+  color: rgba(29, 43, 34, 0.45);
+}
+
+.given-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(31, 90, 63, 0.12);
+  overflow: hidden;
+}
+
+.given-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1f5a3f;
+  transition: width 0.35s ease;
+}
+
+.given-bar__fill--full {
+  background: #b92d22;
+}
+
+.timeline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(122, 151, 131, 0.12);
+}
+
+.timeline-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.probability-summary__sub {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(29, 43, 34, 0.55);
 }
 
 /* Probability timeline table */

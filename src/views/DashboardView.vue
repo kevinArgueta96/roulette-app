@@ -36,35 +36,41 @@
         </div>
 
         <div class="toolbar-buttons">
-          <button class="ghost-btn" type="button" @click="triggerImport">
-            Import JSON
-          </button>
-          <button
-            class="ghost-btn"
-            type="button"
-            :disabled="isRefreshing || isSaving"
-            @click="onRestoreDefaults"
-          >
-            Restore defaults
-          </button>
-          <button class="ghost-btn" type="button" :disabled="!hasLocalSnapshot" @click="exportLocalJson">
-            Export JSON
-          </button>
-          <button
-            class="ghost-btn ghost-btn--danger"
-            type="button"
-            :class="{ 'ghost-btn--disabled': !canResetLocalJson }"
-            :aria-disabled="!canResetLocalJson ? 'true' : 'false'"
-            @click="handleResetLocalClick"
-          >
-            Reset local JSON
-          </button>
-          <button class="ghost-btn" type="button" :disabled="isRefreshing" @click="onRefresh">
-            {{ isRefreshing ? "Refreshing..." : "Refresh" }}
-          </button>
-          <button class="primary-btn" type="button" :disabled="isSaving || isRefreshing" @click="onSave">
-            {{ isSaving ? "Saving..." : dataSource === "local" ? "Save local" : "Save online" }}
-          </button>
+          <div class="btn-group" role="group" aria-label="Data management">
+            <button class="ghost-btn" type="button" @click="triggerImport" title="Import a JSON rules file">
+              Import JSON
+            </button>
+            <button class="ghost-btn" type="button" :disabled="!hasLocalSnapshot" @click="exportLocalJson" title="Download current rules as JSON">
+              Export JSON
+            </button>
+            <button
+              class="ghost-btn"
+              type="button"
+              :disabled="isRefreshing || isSaving"
+              @click="onRestoreDefaults"
+              title="Reset all rules to factory defaults"
+            >
+              Restore defaults
+            </button>
+            <button
+              class="ghost-btn ghost-btn--danger"
+              type="button"
+              :class="{ 'ghost-btn--disabled': !canResetLocalJson }"
+              :aria-disabled="!canResetLocalJson ? 'true' : 'false'"
+              @click="handleResetLocalClick"
+              title="Reset local counters to 0 (keeps rules)"
+            >
+              Reset counters
+            </button>
+          </div>
+          <div class="btn-group btn-group--primary" role="group" aria-label="Save actions">
+            <button class="ghost-btn" type="button" :disabled="isRefreshing" @click="onRefresh" title="Reload data from active source">
+              {{ isRefreshing ? "Refreshing..." : "Refresh" }}
+            </button>
+            <button class="primary-btn" type="button" :disabled="isSaving || isRefreshing" @click="onSave">
+              {{ isSaving ? "Saving..." : dataSource === "local" ? "Save local" : "Save online" }}
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -83,13 +89,19 @@
           </div>
 
           <div class="stats-grid">
-            <article class="stat-card">
+            <article class="stat-card stat-card--track">
               <p class="stat-card__label">Main wins today</p>
               <strong>{{ mainWinsToday }} <span class="stat-limit">/ {{ mainWinsLimit }}</span></strong>
+              <div class="stat-bar" role="progressbar" :aria-valuenow="mainWinsToday" :aria-valuemax="mainWinsLimit">
+                <div class="stat-bar__fill" :style="{ width: mainWinsProgress + '%' }" :class="mainWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
+              </div>
             </article>
-            <article class="stat-card stat-card--highlight">
+            <article class="stat-card stat-card--highlight stat-card--track">
               <p class="stat-card__label">Small wins today</p>
               <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
+              <div class="stat-bar" role="progressbar" :aria-valuenow="smallWinsToday" :aria-valuemax="smallWinsLimit">
+                <div class="stat-bar__fill" :style="{ width: smallWinsProgress + '%' }" :class="smallWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
+              </div>
             </article>
             <article class="stat-card stat-card--highlight">
               <p class="stat-card__label">Total sectors</p>
@@ -150,18 +162,32 @@
           <div class="panel-heading">
             <div>
               <p class="panel-eyebrow">How it works</p>
-              <h3>Dynamic outcome engine</h3>
+              <h3>Outcome engine</h3>
             </div>
           </div>
 
-          <p class="mode-help">
-            Main win and small win can change both their sector count and their active weight by time range. Repeat and no win stay available through their base weights.
-          </p>
-          <ul class="mode-list">
-            <li>Main win: sector count, base weight, daily limit, and slot rules.</li>
-            <li>Small win: sector count, base weight, daily limit, and slot rules.</li>
-            <li>Repeat and no win: sector count plus base weight only.</li>
-            <li>The wheel repaints from the saved rules configuration.</li>
+          <ul class="mode-list mode-list--cards">
+            <li class="mode-item">
+              <span class="mode-item__dot mode-item__dot--main"></span>
+              <div>
+                <strong>Main win &amp; Small win</strong>
+                <p>Probability controlled per time window (slots). Each slot sets an absolute % chance and a delivery cap.</p>
+              </div>
+            </li>
+            <li class="mode-item">
+              <span class="mode-item__dot mode-item__dot--repeat"></span>
+              <div>
+                <strong>Repeat &amp; No win</strong>
+                <p>Always available. Their non-win share (%) splits the remaining probability after wins are active.</p>
+              </div>
+            </li>
+            <li class="mode-item">
+              <span class="mode-item__dot mode-item__dot--save"></span>
+              <div>
+                <strong>Save to apply</strong>
+                <p>Changes take effect on the wheel only after saving. Refresh re-syncs from the active source.</p>
+              </div>
+            </li>
           </ul>
         </section>
       </div>
@@ -294,6 +320,14 @@ export default {
     },
     noWinSectors() {
       return this.winDistribution?.noWin?.sectorCount ?? 0;
+    },
+    mainWinsProgress() {
+      if (!this.mainWinsLimit) return 0;
+      return Math.min(100, (this.mainWinsToday / this.mainWinsLimit) * 100);
+    },
+    smallWinsProgress() {
+      if (!this.smallWinsLimit) return 0;
+      return Math.min(100, (this.smallWinsToday / this.smallWinsLimit) * 100);
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -644,8 +678,7 @@ export default {
 }
 
 .toolbar-copy p:last-child,
-.panel-copy,
-.mode-help {
+.panel-copy {
   margin: 0.35rem 0 0;
   color: rgba(31, 43, 34, 0.68);
   line-height: 1.45;
@@ -694,6 +727,24 @@ export default {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 0.85rem;
+  background: rgba(31, 43, 34, 0.04);
+  border: 1px solid rgba(31, 43, 34, 0.07);
+}
+
+.btn-group--primary {
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
   gap: 0.65rem;
 }
 
@@ -816,6 +867,30 @@ export default {
   font-weight: 400;
 }
 
+.stat-card--track {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-bar {
+  margin-top: 0.55rem;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(31, 90, 63, 0.1);
+  overflow: hidden;
+}
+
+.stat-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #1f5a3f;
+  transition: width 0.4s ease;
+}
+
+.stat-bar__fill--full {
+  background: #b92d22;
+}
+
 .totals-panel {
   padding: 1rem 1.1rem;
 }
@@ -880,6 +955,47 @@ export default {
   padding-left: 1.05rem;
   color: rgba(31, 43, 34, 0.76);
   line-height: 1.5;
+}
+
+.mode-list--cards {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.mode-item {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+
+.mode-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.mode-item__dot--main  { background: #d9bf74; }
+.mode-item__dot--repeat { background: #a3bfa8; }
+.mode-item__dot--save  { background: #cf3b2d; }
+
+.mode-item strong {
+  display: block;
+  font-size: 0.84rem;
+  color: #1d2b22;
+  margin-bottom: 0.2rem;
+}
+
+.mode-item p {
+  margin: 0;
+  font-size: 0.79rem;
+  color: rgba(31, 43, 34, 0.65);
+  line-height: 1.45;
 }
 
 .feedback-toast {
