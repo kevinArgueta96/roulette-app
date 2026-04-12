@@ -176,13 +176,13 @@ export default {
   text-decoration: none;
   position: relative;
   z-index: 9;
-  transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1), top 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: left 1.15s cubic-bezier(0.16, 1, 0.3, 1), top 1.15s cubic-bezier(0.16, 1, 0.3, 1), transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .brand-link--lifted {
   position: fixed;
   left: 50%;
-  top: 1.05rem;
+  top: 6.7rem;
   transform: translateX(-50%);
 }
 
@@ -343,7 +343,7 @@ export default {
   }
 
   .brand-link--lifted {
-    top: 1.15rem;
+    top: 5.9rem;
     transform: translateX(-50%);
   }
 
@@ -364,7 +364,7 @@ export default {
   }
 
   .brand-link--lifted {
-    top: 0.75rem;
+    top: 4.35rem;
     transform: translateX(-50%);
   }
 
@@ -384,7 +384,7 @@ export default {
   }
 
   .brand-link--lifted {
-    top: 0.6rem;
+    top: 4rem;
     transform: translateX(-50%);
   }
 
