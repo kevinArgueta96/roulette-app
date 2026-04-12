@@ -311,9 +311,8 @@ export default {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: -4rem;
   width: 100%;
-  height: 22%;
   display: block;
   object-fit: fill;
   object-position: bottom center;
@@ -382,9 +381,7 @@ export default {
     animation: prize-logo-diagonal-landscape 1.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .bottom-wave {
-    height: 10%;
-  }
+
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
@@ -409,9 +406,7 @@ export default {
     bottom: 0.75rem;
   }
 
-  .bottom-wave {
-    height: 8%;
-  }
+
 }
 
 @media (max-width: 900px) {

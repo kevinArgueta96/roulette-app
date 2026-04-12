@@ -718,7 +718,7 @@ export default {
 .wheel-action-slot {
   position: relative;
   z-index: 6;
-  min-height: 4.4rem;
+  min-height: 2.8rem;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -793,7 +793,7 @@ export default {
   }
 
   .wheel-action-slot {
-    min-height: 3.2rem;
+    min-height: 2rem;
   }
 
   .main-prize-copy {
@@ -839,7 +839,7 @@ export default {
   }
 
   .wheel-action-slot {
-    min-height: 2.3rem;
+    min-height: 1.6rem;
   }
 
   .main-prize-copy {
