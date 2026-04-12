@@ -5,6 +5,9 @@
 <script>
 import ConfettiGenerator from "confetti-js";
 
+const isMobile = () => window.matchMedia("(max-width: 768px)").matches
+  || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
 export default {
   name: "ConfettiComponent",
   props: {
@@ -14,15 +17,16 @@ export default {
     }
   },
   data() {
+    const mobile = isMobile();
     return {
       confetti: null,
       confettiSettings: {
         target: "confetti-container",
         respawn: true,
-        max: 280,
-        size: 2,
-        clock: 16,
-        rotate: true,
+        max: mobile ? 60 : 220,
+        size: mobile ? 1.2 : 1.8,
+        clock: mobile ? 22 : 16,
+        rotate: !mobile,
         props: ["circle"],
         colors: [
           [216, 187, 113],
