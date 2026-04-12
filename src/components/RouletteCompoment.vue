@@ -554,9 +554,9 @@ export default {
 .wheel-stage {
   position: relative;
   flex: 0 1 auto;
-  width: min(100%, 640px);
-  max-width: min(100%, calc(100vh - 12rem));
-  max-height: min(100%, calc(var(--app-height, 100vh) - 12rem));
+  width: min(100%, 700px);
+  max-width: min(100%, calc(100vh - 10.5rem));
+  max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -583,10 +583,10 @@ export default {
 }
 
 .wheel-center__ring {
-  width: clamp(88px, 9.88vw, 107px);
-  height: clamp(88px, 9.88vw, 107px);
+  width: clamp(118px, 13.6vw, 148px);
+  height: clamp(118px, 13.6vw, 148px);
   border-radius: 999px;
-  background: #4a7446;
+  background: #2E5E39;
   border: 4px solid #d8bb71;
   display: flex;
   align-items: center;
@@ -595,7 +595,7 @@ export default {
 
 .wheel-center__logo {
   display: block;
-  width: 143%;
+  width: 140%;
   height: auto;
   object-fit: contain;
 }
@@ -625,9 +625,9 @@ export default {
 
 @media (max-width: 900px) {
   .wheel-stage {
-    width: min(100%, 500px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 8rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 8rem));
+    width: min(100%, 560px);
+    max-width: min(100%, calc(var(--app-height, 100vh) - 7rem));
+    max-height: min(100%, calc(var(--app-height, 100vh) - 7rem));
   }
 }
 
@@ -683,8 +683,8 @@ export default {
   }
 
   .wheel-center__ring {
-    width: clamp(70px, 10.16vh, 84px);
-    height: clamp(70px, 10.16vh, 84px);
+    width: clamp(92px, 12.6vh, 112px);
+    height: clamp(92px, 12.6vh, 112px);
     border-width: 3px;
   }
 

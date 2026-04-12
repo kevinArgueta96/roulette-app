@@ -180,6 +180,7 @@ export default {
 
 .prize-product--right {
   right: 0;
+  width: clamp(170px, 28%, 320px);
 }
 
 /* slide-left transition */
@@ -235,6 +236,10 @@ export default {
     width: clamp(80px, 14%, 140px);
     bottom: 8%;
   }
+
+  .prize-product--right {
+    width: clamp(130px, 22%, 220px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -244,6 +249,10 @@ export default {
 
   .prize-product {
     width: clamp(90px, 16%, 160px);
+  }
+
+  .prize-product--right {
+    width: clamp(130px, 24%, 240px);
   }
 }
 </style>

@@ -159,7 +159,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 3rem;
+  min-height: 4.8rem;
   margin-top: 0.6rem;
   flex-shrink: 0;
 }
@@ -172,8 +172,8 @@ export default {
 
 .brand-logo {
   display: block;
-  width: clamp(110px, 14vw, 168px);
-  max-height: 2.15rem;
+  width: clamp(240px, 32vw, 380px);
+  max-height: 4.7rem;
   height: auto;
   object-fit: contain;
 }
@@ -319,13 +319,13 @@ export default {
   }
 
   .screen-header {
-    min-height: 2.6rem;
+    min-height: 4rem;
     margin-top: 0.35rem;
   }
 
   .brand-logo {
-    width: clamp(100px, 30vw, 138px);
-    max-height: 1.9rem;
+    width: clamp(210px, 58vw, 320px);
+    max-height: 3.8rem;
   }
 }
 
@@ -335,7 +335,7 @@ export default {
   }
 
   .screen-header {
-    min-height: 2.4rem;
+    min-height: 3.7rem;
     margin-top: 0.4rem;
   }
 
@@ -351,7 +351,7 @@ export default {
 
   .screen-header {
     margin-top: 0.2rem;
-    min-height: 2.25rem;
+    min-height: 3.3rem;
   }
 
   .status-banner {

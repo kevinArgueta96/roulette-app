@@ -31,3 +31,5 @@ pnpm-debug.log*
 # Playwright MCP artifacts
 .playwright-mcp/
 *.png
+
+/changes/*
