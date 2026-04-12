@@ -28,10 +28,10 @@
           <!-- hide everything inside the wheel circle; worms only visible outside -->
           <mask id="worm-mask">
             <rect width="200" height="200" fill="white"/>
-            <circle cx="100" cy="100" r="36" fill="black"/>
+            <circle cx="100" cy="100" r="38" fill="black"/>
           </mask>
-          <filter id="ray-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+          <filter id="ray-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blur"/>
             <feMerge>
               <feMergeNode in="blur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -39,15 +39,15 @@
           </filter>
         </defs>
         <g mask="url(#worm-mask)" filter="url(#ray-glow)">
-          <!-- S-curve worms from center to each screen edge direction -->
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 116,72  84,38  100,0"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 138,80  162,42 200,0"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 128,116 172,84 200,100"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 138,122 162,158 200,200"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 116,128 84,162 100,200"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 62,122  38,158 0,200"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 72,116  28,84  0,100"/>
-          <path class="burst-ray" pathLength="100" d="M 100,100 C 62,80   38,42  0,0"/>
+          <!-- straight rays from center to each screen edge/corner -->
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="100" y2="0"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="0"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="100"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="200"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="100" y2="200"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="200"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="100"/>
+          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="0"/>
         </g>
       </svg>
 
@@ -658,18 +658,22 @@ export default {
 
 .burst-ray {
   fill: none;
-  stroke: #d8bb71;
-  stroke-width: 2;
+  stroke: #d9bf74;
+  stroke-width: 4;
   stroke-linecap: round;
-  /* worm body = 16% of path, rest gap — slides from inside (masked) to outside (visible) */
-  stroke-dasharray: 16 1000;
+  /* worm body = 22 units; starts invisible, exits mask ~68% in, reaches screen edge at 100% */
+  stroke-dasharray: 22 1000;
   stroke-dashoffset: 100;
-  animation: worm-escape 1.5s linear infinite;
+  animation: worm-escape 3.5s linear infinite;
 }
 
+
 @keyframes worm-escape {
+  /* offset=100  → dash at -100…-78  → before path start → invisible (clean loop reset) */
+  /* offset=-38  → dash at  38…60   → exits mask (r≈38) → VISIBLE from here on           */
+  /* offset=-100 → dash at 100…122  → at/past screen edge → invisible again               */
   0%   { stroke-dashoffset:  100; }
-  100% { stroke-dashoffset: -20; }
+  100% { stroke-dashoffset: -100; }
 }
 
 .wheel-center {
