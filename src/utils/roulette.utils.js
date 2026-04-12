@@ -392,7 +392,7 @@ export const buildNextTotals = (currentTotals, outcomeKey) => {
   return totals;
 };
 
-const buildOutcomeWeights = (distribution, currentTime) => {
+export const buildOutcomeWeights = (distribution, currentTime) => {
   const normalized = normalizeWinDistribution(distribution);
   const slotWeights = {
     mainWin: 0,

@@ -16,17 +16,45 @@
         {{ errors.totalSectors || errors.sectorCounts }}
       </p>
 
-      <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal > 100 }">
+      <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal !== 100 }">
         <div>
-          <p class="probability-summary__eyebrow">Fallback probability budget</p>
+          <p class="probability-summary__eyebrow">Repeat + No win split (must equal 100%)</p>
           <h5>Category C + Category D</h5>
         </div>
-        <strong>{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+        <strong :class="{ 'probability-summary__total--ok': fallbackSplitTotal === 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
       </div>
 
       <p class="probability-summary__copy">
-        Repeat and No win share the fallback pool. Their combined total must stay at or below 100.00%.
+        These are <strong>relative ratios</strong>, not absolute spin probabilities. When a win slot is active at e.g. 30%, the remaining 70% is split between Repeat and No win using this ratio. They must always total exactly 100%.
+        <template v-if="maxWinProbability > 0">
+          At peak win probability ({{ formatPercentInput(maxWinProbability) }}), Repeat + No win share the remaining <strong>{{ formatPercentInput(fallbackRemainingAtPeak) }}</strong>.
+        </template>
       </p>
+
+      <div class="probability-timeline">
+        <div class="timeline-header">
+          <span>Time range</span>
+          <span>Main win</span>
+          <span>Small win</span>
+          <span>Repeat</span>
+          <span>No win</span>
+        </div>
+        <div
+          v-for="(row, i) in probabilityTimeline"
+          :key="i"
+          class="timeline-row"
+          :class="{ 'timeline-row--active': row.isActive }"
+        >
+          <span class="timeline-label">
+            {{ row.label }}
+            <span v-if="row.isActive" class="timeline-now-badge">NOW</span>
+          </span>
+          <span :class="Number(row.mainWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.mainWin }}%</span>
+          <span :class="Number(row.smallWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.smallWin }}%</span>
+          <span>{{ row.repeat }}%</span>
+          <span>{{ row.noWin }}%</span>
+        </div>
+      </div>
 
       <div class="outcome-grid">
         <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card">
@@ -56,10 +84,21 @@
                 class="number-input"
                 type="text"
                 inputmode="decimal"
-                :value="formatPercentInput(localConfig[outcome.key].baseWeight)"
-                @input="onOutcomeChange(outcome.key, 'baseWeight', $event.target.value, true)"
-                @blur="applyConfigChange"
+                :value="percentDisplayValue(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                @focus="startEditing(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                @input="updateEditing(`${outcome.key}-baseWeight`, $event.target.value)"
+                @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
               />
+              <p class="effective-range">
+                <template v-if="outcome.key === 'repeat'">
+                  <span v-if="effectiveRepeatRange.min === effectiveRepeatRange.max">Effective: {{ effectiveRepeatRange.max }}%</span>
+                  <span v-else>Effective: {{ effectiveRepeatRange.min }}% – {{ effectiveRepeatRange.max }}%</span>
+                </template>
+                <template v-else-if="outcome.key === 'noWin'">
+                  <span v-if="effectiveNoWinRange.min === effectiveNoWinRange.max">Effective: {{ effectiveNoWinRange.max }}%</span>
+                  <span v-else>Effective: {{ effectiveNoWinRange.min }}% – {{ effectiveNoWinRange.max }}%</span>
+                </template>
+              </p>
             </div>
 
             <div v-else class="field-group field-group--readonly">
@@ -90,11 +129,14 @@
 
           <div v-if="outcome.hasSlots" class="slots-block">
             <div class="slots-budget" :class="{ 'slots-budget--error': errors.timelineBudget }">
-              <span>Fallback split total</span>
-              <strong>{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+              <span>Repeat + No win split</span>
+              <strong :class="{ 'slots-budget__total--ok': fallbackSplitTotal === 100, 'slots-budget__total--error': fallbackSplitTotal !== 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
             </div>
             <p class="slots-help">
-              Repeat + No win must total 100.00%. Main win and Small win use hourly percentages, and the remaining percentage is distributed between Repeat and No win using this split.
+              Slot probability is an <strong>absolute</strong> chance per spin (e.g. 30% = 3 in 10 spins land here). Only <strong>one range is active at a time</strong> — outside all ranges this outcome has 0% probability.
+              <template v-if="fallbackRemainingAtPeak === 0">
+                <br/><span class="slots-help--warn">Warning: win slots currently consume 100% of probability. Repeat and No win will never trigger during active windows.</span>
+              </template>
             </p>
             <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
 
@@ -111,6 +153,7 @@
               v-for="(slot, slotIndex) in localConfig[outcome.key].slots"
               :key="slot._editorId"
               class="slot-row"
+              :class="{ 'slot-row--active': slotIndex === activeSlotMap[outcome.key] }"
             >
               <div class="slot-field">
                 <label class="slot-label" :for="`${outcome.key}-start-${slotIndex}`">Start</label>
@@ -141,9 +184,10 @@
                   class="slot-input"
                   type="text"
                   inputmode="decimal"
-                  :value="formatPercentInput(slot.weight)"
-                  @input="onSlotChange(outcome.key, slotIndex, 'weight', $event.target.value, true)"
-                  @blur="applyConfigChange"
+                  :value="percentDisplayValue(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
+                  @focus="startEditing(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
+                  @input="updateEditing(`${outcome.key}-slot-${slotIndex}-weight`, $event.target.value)"
+                  @blur="commitSlotEditing(`${outcome.key}-slot-${slotIndex}-weight`, outcome.key, slotIndex, 'weight')"
                 />
               </div>
               <div class="slot-field">
@@ -163,6 +207,7 @@
                 <strong>{{ slot.given }} / {{ slot.limit }}</strong>
               </div>
               <div class="slot-actions">
+                <span v-if="slotIndex === activeSlotMap[outcome.key]" class="slot-active-badge">ACTIVE</span>
                 <button
                   class="slot-reset"
                   type="button"
@@ -191,7 +236,7 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, normalizeWinDistribution } from "@/utils";
+import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
 
 const OUTCOMES = [
   {
@@ -247,13 +292,122 @@ export default {
         timelineBudget: "",
         repeat: "",
         noWin: ""
-      }
+      },
+      editingValues: {},
+      currentTime: formatTime24h(new Date())
     };
+  },
+  mounted() {
+    this.clockInterval = setInterval(() => {
+      this.currentTime = formatTime24h(new Date());
+    }, 60000);
+  },
+  beforeDestroy() {
+    clearInterval(this.clockInterval);
   },
   computed: {
     ...mapGetters(["winDistribution"]),
     fallbackSplitTotal() {
       return this.clampPercent(this.localConfig.repeat?.baseWeight) + this.clampPercent(this.localConfig.noWin?.baseWeight);
+    },
+    maxWinProbability() {
+      const allSlots = [
+        ...(this.localConfig.mainWin?.slots || []),
+        ...(this.localConfig.smallWin?.slots || [])
+      ];
+      if (!allSlots.length) return 0;
+      const maxMain = Math.max(0, ...(this.localConfig.mainWin?.slots || []).map((s) => Number(s.weight) || 0));
+      const maxSmall = Math.max(0, ...(this.localConfig.smallWin?.slots || []).map((s) => Number(s.weight) || 0));
+      return Math.min(100, maxMain + maxSmall);
+    },
+    fallbackRemainingAtPeak() {
+      return Math.max(0, 100 - this.maxWinProbability);
+    },
+    persistedConfigSnapshot() {
+      return this.toPersistedConfig(this.localConfig);
+    },
+    activeSlotMap() {
+      const cfg = this.persistedConfigSnapshot;
+      return {
+        mainWin: findActiveSlotIndex(cfg.mainWin.slots, this.currentTime),
+        smallWin: findActiveSlotIndex(cfg.smallWin.slots, this.currentTime)
+      };
+    },
+    probabilityTimeline() {
+      const cfg = this.persistedConfigSnapshot;
+      const toMin = (t) => {
+        if (!t || !t.includes(":")) return 0;
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+      };
+      const toLabel = (min) => {
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      };
+
+      const slotRanges = [
+        ...(cfg.mainWin.slots || []),
+        ...(cfg.smallWin.slots || [])
+      ]
+        .filter((s) => s.startTime && s.endTime && toMin(s.startTime) < toMin(s.endTime))
+        .map((s) => ({ start: toMin(s.startTime), end: toMin(s.endTime) }));
+
+      if (!slotRanges.length) {
+        const w = buildOutcomeWeights(cfg, this.currentTime);
+        return [{
+          label: "All day",
+          mainWin: (w.mainWin * 100).toFixed(1),
+          smallWin: (w.smallWin * 100).toFixed(1),
+          repeat: (w.repeat * 100).toFixed(1),
+          noWin: (w.noWin * 100).toFixed(1),
+          isActive: true
+        }];
+      }
+
+      const boundaries = [...new Set(slotRanges.flatMap((r) => [r.start, r.end]))].sort((a, b) => a - b);
+      const intervals = [];
+
+      if (boundaries[0] > 0) {
+        intervals.push({ start: 0, end: boundaries[0] });
+      }
+
+      for (let i = 0; i < boundaries.length - 1; i++) {
+        intervals.push({ start: boundaries[i], end: boundaries[i + 1] });
+      }
+
+      if (boundaries[boundaries.length - 1] < 23 * 60 + 59) {
+        intervals.push({ start: boundaries[boundaries.length - 1], end: 23 * 60 + 59 });
+      }
+
+      const currentMin = toMin(this.currentTime);
+
+      return intervals.map(({ start, end }) => {
+        const mid = Math.floor((start + end) / 2);
+        const sampleTime = toLabel(mid);
+        const w = buildOutcomeWeights(cfg, sampleTime);
+        const isActive = currentMin >= start && currentMin < end;
+        return {
+          label: `${toLabel(start)} – ${toLabel(end)}`,
+          mainWin: (w.mainWin * 100).toFixed(1),
+          smallWin: (w.smallWin * 100).toFixed(1),
+          repeat: (w.repeat * 100).toFixed(1),
+          noWin: (w.noWin * 100).toFixed(1),
+          isActive
+        };
+      });
+    },
+    effectiveRepeatRange() {
+      const ratio = this.clampPercent(this.localConfig.repeat?.baseWeight);
+      const max = ratio;
+      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
+      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+    },
+    effectiveNoWinRange() {
+      const ratio = this.clampPercent(this.localConfig.noWin?.baseWeight);
+      const max = ratio;
+      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
+      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
     }
   },
   watch: {
@@ -579,12 +733,15 @@ export default {
         }))
       ];
 
-      if (this.fallbackSplitTotal !== 100) {
-        return `Repeat + No win must total 100.00%. Current total: ${this.fallbackSplitTotal.toFixed(2)}%.`;
+      if (!ranges.length) {
+        if (this.fallbackSplitTotal !== 100) {
+          return `Repeat + No win split must total exactly 100.00% (current: ${this.fallbackSplitTotal.toFixed(2)}%). Adjust Category C or Category D.`;
+        }
+        return "";
       }
 
-      if (!ranges.length) {
-        return "";
+      if (this.fallbackSplitTotal !== 100) {
+        return `Repeat + No win split must total exactly 100.00% (current: ${this.fallbackSplitTotal.toFixed(2)}%). These are relative ratios — they do not affect how much probability wins consume, only how the remainder is divided.`;
       }
 
       const boundaries = [...new Set(ranges.flatMap((range) => [range.start, range.end]))].sort((a, b) => a - b);
@@ -618,6 +775,31 @@ export default {
     },
     getConfig() {
       return this.toPersistedConfig(this.localConfig);
+    },
+    startEditing(fieldKey, currentValue) {
+      const raw = this.clampPercent(currentValue);
+      this.$set(this.editingValues, fieldKey, raw % 1 === 0 ? String(raw) : String(raw));
+    },
+    updateEditing(fieldKey, rawValue) {
+      this.$set(this.editingValues, fieldKey, rawValue);
+    },
+    commitOutcomeEditing(fieldKey, outcomeKey, field) {
+      const raw = this.editingValues[fieldKey];
+      this.$delete(this.editingValues, fieldKey);
+      this.onOutcomeChange(outcomeKey, field, raw ?? "", true);
+      this.applyConfigChange();
+    },
+    commitSlotEditing(fieldKey, outcomeKey, slotIndex, field) {
+      const raw = this.editingValues[fieldKey];
+      this.$delete(this.editingValues, fieldKey);
+      this.onSlotChange(outcomeKey, slotIndex, field, raw ?? "", true);
+      this.applyConfigChange();
+    },
+    percentDisplayValue(fieldKey, rawValue) {
+      if (Object.prototype.hasOwnProperty.call(this.editingValues, fieldKey)) {
+        return this.editingValues[fieldKey];
+      }
+      return this.formatPercentInput(rawValue);
     }
   }
 };
@@ -746,8 +928,12 @@ export default {
 
 .probability-summary strong {
   font-size: 1.1rem;
-  color: #1f5a3f;
+  color: #b92d22;
   font-variant-numeric: tabular-nums;
+}
+
+.probability-summary__total--ok {
+  color: #1f5a3f;
 }
 
 .probability-summary__copy {
@@ -834,10 +1020,125 @@ export default {
   font-variant-numeric: tabular-nums;
 }
 
+/* Probability timeline table */
+.probability-timeline {
+  display: flex;
+  flex-direction: column;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(122, 151, 131, 0.16);
+}
+
+.timeline-header,
+.timeline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  align-items: center;
+}
+
+.timeline-header {
+  background: rgba(31, 90, 63, 0.07);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  font-size: 0.58rem;
+  color: rgba(49, 88, 70, 0.65);
+}
+
+.timeline-row {
+  background: rgba(255, 255, 255, 0.72);
+  border-top: 1px solid rgba(122, 151, 131, 0.1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1d2b22;
+}
+
+.timeline-row--active {
+  background: rgba(31, 90, 63, 0.06);
+  border-left: 3px solid #1f5a3f;
+}
+
+.timeline-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.timeline-now-badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #1f5a3f;
+  color: #fff;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  vertical-align: middle;
+}
+
+.timeline-val--win {
+  color: #1f5a3f;
+  font-weight: 700;
+}
+
+.timeline-val--zero {
+  color: rgba(29, 43, 34, 0.35);
+}
+
+/* Slot active badge and row highlight */
+.slot-row--active {
+  border-color: rgba(31, 90, 63, 0.35);
+  background: rgba(31, 90, 63, 0.04);
+}
+
+.slot-active-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(31, 90, 63, 0.12);
+  color: #1f5a3f;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Effective probability range */
+.effective-range {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: rgba(29, 43, 34, 0.58);
+  font-variant-numeric: tabular-nums;
+}
+
 .slots-block {
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+}
+
+.slots-help {
+  margin: -0.2rem 0 0;
+  color: rgba(29, 43, 34, 0.62);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.slots-help--warn {
+  color: #b92d22;
+  font-weight: 600;
+}
+
+.slots-budget__total--ok {
+  color: #1f5a3f;
+}
+
+.slots-budget__total--error {
+  color: #b92d22;
 }
 
 .slots-header,
