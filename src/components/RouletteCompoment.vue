@@ -30,24 +30,16 @@
             <rect width="200" height="200" fill="white"/>
             <circle cx="100" cy="100" r="38" fill="black"/>
           </mask>
-          <filter id="ray-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blur"/>
-            <feMerge>
-              <feMergeNode in="blur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
         </defs>
-        <g mask="url(#worm-mask)" filter="url(#ray-glow)">
-          <!-- straight rays from center to each screen edge/corner -->
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="100" y2="0"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="0"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="100"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="200" y2="200"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="100" y2="200"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="200"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="100"/>
-          <line class="burst-ray" pathLength="100" x1="100" y1="100" x2="0"   y2="0"/>
+        <g mask="url(#worm-mask)">
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 100,0"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 200,0"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 200,100"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 200,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 100,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 0,200"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 0,100"/>
+          <path class="burst-ray" pathLength="100" d="M 100,100 L 0,0"/>
         </g>
       </svg>
 
@@ -637,13 +629,7 @@ export default {
   outline: none;
 }
 
-.wheel-canvas {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* Worm rays escaping from wheel circle to screen edges */
+/* Burst rays — SVG centered on wheel, extends to screen edges */
 .wheel-burst-rays {
   position: absolute;
   top: 50%;
@@ -654,26 +640,42 @@ export default {
   z-index: 1;
   pointer-events: none;
   overflow: visible;
+  animation: burst-svg-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes burst-svg-enter {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
 }
 
 .burst-ray {
   fill: none;
   stroke: #d9bf74;
-  stroke-width: 4;
+  stroke-width: 4.5;
   stroke-linecap: round;
-  /* worm body = 22 units; starts invisible, exits mask ~68% in, reaches screen edge at 100% */
   stroke-dasharray: 22 1000;
   stroke-dashoffset: 100;
-  animation: worm-escape 3.5s linear infinite;
+  /* negative delay = start animation already 68% through → worm visible immediately on first frame */
+  animation: worm-escape 3.5s linear -2.4s infinite;
+  /* opacity is GPU-composited; stroke-dashoffset triggers paint but only within the SVG layer */
+  will-change: opacity;
 }
 
-
 @keyframes worm-escape {
-  /* offset=100  → dash at -100…-78  → before path start → invisible (clean loop reset) */
-  /* offset=-38  → dash at  38…60   → exits mask (r≈38) → VISIBLE from here on           */
-  /* offset=-100 → dash at 100…122  → at/past screen edge → invisible again               */
-  0%   { stroke-dashoffset:  100; }
-  100% { stroke-dashoffset: -100; }
+  /* worm invisible at start → exits mask at ~68% → reaches screen edge → fades out */
+  0%   { stroke-dashoffset:  100; opacity: 0; }
+  8%   { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+
+/* GPU layer for the canvas wheel itself */
+.wheel-canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  will-change: transform;
 }
 
 .wheel-center {
@@ -717,6 +719,39 @@ export default {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(110, 20, 16, 0.28);
   margin-top: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+}
+
+.spin-button:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.025);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(180deg, #dc4234 0%, #c7312a 100%);
+}
+
+.spin-button:not(:disabled):active {
+  transform: translateY(1px) scale(0.975);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  transition-duration: 0.07s;
+}
+
+/* Pulse ring via pseudo-element — uses only transform+opacity (GPU composited, zero paint cost) */
+.spin-button:not(:disabled)::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid rgba(207, 59, 45, 0.55);
+  opacity: 0;
+  transform: scale(1);
+  animation: btn-pulse-ring 2.4s ease-out infinite;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+@keyframes btn-pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.45); opacity: 0;   }
 }
 
 .wheel-action-slot {
@@ -750,6 +785,20 @@ export default {
 .spin-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  animation: none;
+}
+
+/* fade-up — used by main-prize-copy transition */
+.fade-up-enter-active {
+  transition: opacity 0.38s ease, transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fade-up-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.fade-up-enter,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(14px);
 }
 
 .spin-button--hero-repeat {

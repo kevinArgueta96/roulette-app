@@ -184,6 +184,13 @@ export default {
   letter-spacing: 0;
   color: #2e6a49;
   text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
+  animation: title-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes title-pop {
+  from { opacity: 0; transform: scale(0.65) translateY(18px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
 .result-label__eyebrow {
@@ -218,50 +225,71 @@ export default {
 
 .prize-product--left {
   left: 0;
-  transform: rotate(-8deg);
   transform-origin: center center;
+  animation: float-left 3s ease-in-out 0.6s infinite;
+  will-change: transform;
 }
 
 .prize-product--right {
   right: 0;
   width: clamp(190px, 31%, 360px);
-  transform: rotate(8deg);
   transform-origin: center center;
+  animation: float-right 3s ease-in-out 0.9s infinite;
+  will-change: transform;
 }
 
-/* slide-left transition */
-.slide-left-enter-active,
+@keyframes float-left {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50%       { transform: rotate(-8deg) translateY(-10px); }
+}
+
+@keyframes float-right {
+  0%, 100% { transform: rotate(8deg) translateY(0); }
+  50%       { transform: rotate(8deg) translateY(-10px); }
+}
+
+/* slide-left — spring overshoot on enter, quick fade on leave */
+.slide-left-enter-active {
+  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 .slide-left-leave-active {
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
-.slide-left-enter,
+.slide-left-enter {
+  opacity: 0;
+  transform: translateX(-72px) rotate(-13deg);
+}
 .slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-60px);
+  transform: translateX(-55px) rotate(-13deg);
 }
 
-/* slide-right transition */
-.slide-right-enter-active,
+/* slide-right — spring overshoot on enter, quick fade on leave */
+.slide-right-enter-active {
+  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 .slide-right-leave-active {
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
-.slide-right-enter,
+.slide-right-enter {
+  opacity: 0;
+  transform: translateX(72px) rotate(13deg);
+}
 .slide-right-leave-to {
   opacity: 0;
-  transform: translateX(60px);
+  transform: translateX(55px) rotate(13deg);
 }
 
-.fade-up-enter-active,
+.fade-up-enter-active {
+  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 .fade-up-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-
 .fade-up-enter,
 .fade-up-leave-to {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(12px);
 }
 
 @media (orientation: landscape) {
