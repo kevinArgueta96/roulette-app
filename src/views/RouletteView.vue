@@ -4,7 +4,7 @@
 
     <transition name="slide-left">
       <img
-        v-if="winType === 'mainPrize' || winType === 'surpriseWin'"
+        v-if="isPrizeHeroResult"
         class="prize-product prize-product--left"
         :src="winType === 'mainPrize' ? '/parrano-assets/main-l.png' : '/parrano-assets/wedge.png'"
         alt="Parrano Robusto Wedge"
@@ -15,7 +15,7 @@
 
     <transition name="slide-right">
       <img
-        v-if="winType === 'mainPrize' || winType === 'surpriseWin'"
+        v-if="isPrizeHeroResult"
         class="prize-product prize-product--right"
         :src="winType === 'mainPrize' ? '/parrano-assets/main-r.png' : '/parrano-assets/powder.png'"
         alt="Parrano Robusto Powder"
@@ -23,9 +23,9 @@
     </transition>
 
     <transition name="fade-up">
-      <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isMainPrizeResult }">
-        <template v-if="isMainPrizeResult">
-          <p class="result-label__main-title">Olet voittanut!</p>
+      <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
+        <template v-if="isPrizeHeroResult">
+          <p class="result-label__main-title">{{ prizeHeroTitle }}</p>
         </template>
         <template v-else>
         <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
@@ -90,6 +90,14 @@ export default {
     isMainPrizeResult() {
       return this.winType === "mainPrize";
     },
+    isPrizeHeroResult() {
+      return this.winType === "mainPrize" || this.winType === "surpriseWin" || this.winType === "noWin";
+    },
+    prizeHeroTitle() {
+      if (this.winType === "surpriseWin") return "Onnittelut!";
+      if (this.winType === "noWin") return "Kiitos osallistumisesta!";
+      return "Olet voittanut!";
+    },
     resultCopy() {
       return RESULT_CONFIG[this.winType] || {};
     }
@@ -113,7 +121,7 @@ export default {
       this.winType = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
-      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" });
+      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" || type === "surpriseWin" || type === "noWin" });
 
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
@@ -194,7 +202,7 @@ export default {
 
 .prize-product {
   position: absolute;
-  bottom: 12%;
+  bottom: 22%;
   z-index: 4;
   width: clamp(135px, 22%, 235px);
   height: auto;
@@ -205,14 +213,14 @@ export default {
 
 .prize-product--left {
   left: 0;
-  transform: rotate(-100deg);
+  transform: rotate(-8deg);
   transform-origin: center center;
 }
 
 .prize-product--right {
   right: 0;
   width: clamp(190px, 31%, 360px);
-  transform: rotate(80deg);
+  transform: rotate(8deg);
   transform-origin: center center;
 }
 
@@ -290,6 +298,7 @@ export default {
 
   .prize-product {
     width: clamp(112px, 20%, 190px);
+    bottom: 18%;
   }
 
   .prize-product--right {
