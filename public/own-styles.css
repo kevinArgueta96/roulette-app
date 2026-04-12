@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Lumios Marker";
+  src: url("/fonts/lumios-marker.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
 html,
 body,
 #app {
@@ -13,17 +20,18 @@ body,
 
 body {
   font-family: "Jost", sans-serif;
-  color: #2b353a;
-  background:
-    radial-gradient(circle at top left, rgba(255, 237, 163, 0.65), transparent 32%),
-    radial-gradient(circle at top right, rgba(201, 236, 255, 0.75), transparent 28%),
-    linear-gradient(180deg, #fff9f6 0%, #fdf1f0 100%);
+  color: #fffbe5;
+  background: #265135;
   overflow-x: hidden;
 }
 
 img {
   max-width: 100%;
   display: block;
+}
+
+a {
+  color: inherit;
 }
 
 button,

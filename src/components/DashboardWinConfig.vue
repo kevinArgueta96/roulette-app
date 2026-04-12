@@ -103,7 +103,7 @@
               <span>End</span>
               <span>Probability</span>
               <span>Limit</span>
-              <span>Given</span>
+              <span>Progress</span>
               <span>Actions</span>
             </div>
 
@@ -159,10 +159,20 @@
                 />
               </div>
               <div class="slot-given">
-                <span class="slot-label slot-label--mobile">Given</span>
-                <strong>{{ slot.given }}</strong>
+                <span class="slot-label slot-label--mobile">Progress</span>
+                <strong>{{ slot.given }} / {{ slot.limit }}</strong>
               </div>
-              <button class="slot-remove" type="button" @click="removeSlot(outcome.key, slotIndex)">×</button>
+              <div class="slot-actions">
+                <button
+                  class="slot-reset"
+                  type="button"
+                  :disabled="!slot.given"
+                  @click="resetSlotGiven(outcome.key, slotIndex)"
+                >
+                  Reset
+                </button>
+                <button class="slot-remove" type="button" @click="removeSlot(outcome.key, slotIndex)">×</button>
+              </div>
             </div>
 
             <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
@@ -448,6 +458,28 @@ export default {
       this.replaceOutcomeConfig(outcomeKey, {
         slots
       });
+      this.$nextTick(() => {
+        this.applyConfigChange();
+      });
+    },
+    resetSlotGiven(outcomeKey, slotIndex) {
+      const currentOutcome = this.localConfig[outcomeKey];
+      const slotToReset = currentOutcome.slots[slotIndex];
+      const givenToReset = Math.max(0, Number(slotToReset?.given) || 0);
+
+      if (!givenToReset) {
+        return;
+      }
+
+      const slots = currentOutcome.slots.map((slot, index) =>
+        index === slotIndex ? { ...slot, given: 0 } : slot
+      );
+
+      this.replaceOutcomeConfig(outcomeKey, {
+        givenToday: Math.max(0, (Number(currentOutcome.givenToday) || 0) - givenToReset),
+        slots
+      });
+
       this.$nextTick(() => {
         this.applyConfigChange();
       });
@@ -811,7 +843,7 @@ export default {
 .slots-header,
 .slot-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(7.5rem, 0.85fr) minmax(6.5rem, 0.75fr) 4.5rem 2.4rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(7.5rem, 0.85fr) minmax(6.5rem, 0.75fr) minmax(5.5rem, 0.85fr) minmax(7.25rem, 0.9fr);
   gap: 0.7rem;
   align-items: end;
 }
@@ -849,12 +881,40 @@ export default {
   font-variant-numeric: tabular-nums;
 }
 
+.slot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.slot-reset,
+.slot-remove {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.slot-reset {
+  min-height: 2rem;
+  padding: 0.45rem 0.8rem;
+  background: rgba(31, 90, 63, 0.08);
+  color: #1f5a3f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.slot-reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .slot-remove {
   align-self: center;
   width: 2rem;
   height: 2rem;
-  border: 0;
-  border-radius: 999px;
   background: rgba(185, 45, 34, 0.08);
   color: #b92d22;
   font-size: 1.15rem;
@@ -914,7 +974,7 @@ export default {
   }
 
   .slot-given,
-  .slot-remove {
+  .slot-actions {
     align-self: start;
     justify-self: start;
   }

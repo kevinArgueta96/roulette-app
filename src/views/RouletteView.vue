@@ -2,14 +2,31 @@
   <div class="roulette-view">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
+    <transition name="slide-left">
+      <img
+        v-if="winType === 'mainPrize' || winType === 'surpriseWin'"
+        class="prize-product prize-product--left"
+        :src="winType === 'mainPrize' ? '/parrano-assets/main-l.png' : '/parrano-assets/wedge.png'"
+        alt="Parrano Robusto Wedge"
+      />
+    </transition>
+
     <RouletteCompoment @showImg="onShowImg" />
 
+    <transition name="slide-right">
+      <img
+        v-if="winType === 'mainPrize' || winType === 'surpriseWin'"
+        class="prize-product prize-product--right"
+        :src="winType === 'mainPrize' ? '/parrano-assets/main-r.png' : '/parrano-assets/powder.png'"
+        alt="Parrano Robusto Powder"
+      />
+    </transition>
+
     <transition name="fade-up">
-      <section v-if="hasResult" class="result-toast" :class="`result-toast--${winType}`">
-        <p class="result-toast__eyebrow">{{ resultCopy.kicker }}</p>
-        <h2>{{ resultCopy.title }}</h2>
-        <p>{{ resultCopy.description }}</p>
-      </section>
+      <div v-if="hasResult" class="result-label">
+        <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
+        <p class="result-label__title">{{ resultCopy.title }}</p>
+      </div>
     </transition>
   </div>
 </template>
@@ -117,43 +134,76 @@ export default {
   padding-top: 5.8rem;
 }
 
-.result-toast {
+.result-label {
   position: absolute;
-  top: 6.2rem;
-  right: 2rem;
-  z-index: 5;
-  width: min(280px, 28vw);
-  border-radius: 1rem;
-  padding: 0.95rem 1rem;
-  background: rgba(255, 251, 243, 0.97);
-  border: 2px solid rgba(205, 174, 104, 0.62);
-  box-shadow: 0 16px 28px rgba(45, 53, 40, 0.1);
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  text-align: center;
+  pointer-events: none;
 }
 
-.result-toast--mainPrize { background: #fff2bf; }
-.result-toast--surpriseWin { background: #fff0e4; }
-.result-toast--repeat { background: #eceae3; }
-.result-toast--noWin { background: #edf6eb; }
-
-.result-toast__eyebrow {
-  margin: 0 0 0.35rem;
+.result-label__eyebrow {
+  margin: 0;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
   color: #1f5a3f;
   font-weight: 800;
 }
 
-.result-toast h2 {
-  margin: 0;
+.result-label__title {
+  margin: 0.15rem 0 0;
   color: #1d2b22;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 800;
   line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.7);
 }
 
-.result-toast p:last-child {
-  margin: 0.55rem 0 0;
-  color: rgba(29, 43, 34, 0.82);
+.prize-product {
+  position: absolute;
+  bottom: 12%;
+  z-index: 4;
+  width: clamp(110px, 18%, 200px);
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.22));
+}
+
+.prize-product--left {
+  left: 0;
+}
+
+.prize-product--right {
+  right: 0;
+}
+
+/* slide-left transition */
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.slide-left-enter,
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-60px);
+}
+
+/* slide-right transition */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.slide-right-enter,
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(60px);
 }
 
 .fade-up-enter-active,
@@ -181,10 +231,9 @@ export default {
     padding-bottom: 2.4rem;
   }
 
-  .result-toast {
-    top: 3.2rem;
-    right: 0.75rem;
-    width: min(240px, calc(100% - 1.5rem));
+  .prize-product {
+    width: clamp(80px, 14%, 140px);
+    bottom: 8%;
   }
 }
 
@@ -193,10 +242,8 @@ export default {
     padding-top: 4.6rem;
   }
 
-  .result-toast {
-    right: 1rem;
-    top: 4.4rem;
-    width: min(260px, calc(100% - 2rem));
+  .prize-product {
+    width: clamp(90px, 16%, 160px);
   }
 }
 </style>

@@ -53,15 +53,13 @@
           <p>Cargando configuracion…</p>
         </div>
 
-        <svg
+        <img
           v-if="$route.name !== 'dashboard'"
           class="bottom-wave"
-          viewBox="0 0 1000 260"
-          preserveAspectRatio="none"
+          src="@/assets/brand/infe_sin_blanco.svg"
+          alt=""
           aria-hidden="true"
-        >
-          <path d="M0 112 C120 150 320 170 500 170 C680 170 880 150 1000 112 L1000 260 L0 260 Z" fill="#2f6039" />
-        </svg>
+        />
       </section>
     </main>
   </div>
@@ -294,8 +292,10 @@ export default {
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 28%;
+  height: 22%;
   display: block;
+  object-fit: fill;
+  object-position: bottom center;
 }
 
 .fade-up-enter-active,
@@ -340,7 +340,7 @@ export default {
   }
 
   .bottom-wave {
-    height: 12%;
+    height: 10%;
   }
 }
 
@@ -361,7 +361,7 @@ export default {
   }
 
   .bottom-wave {
-    height: 10%;
+    height: 8%;
   }
 }
 </style>
