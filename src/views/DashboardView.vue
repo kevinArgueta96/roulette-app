@@ -178,6 +178,21 @@
       </section>
     </section>
 
+    <transition name="save-bar">
+      <div v-if="hasUnsavedChanges" class="unsaved-bar" role="status" aria-live="polite">
+        <span class="unsaved-bar__dot" aria-hidden="true"></span>
+        <p class="unsaved-bar__label">Unsaved changes</p>
+        <div class="unsaved-bar__actions">
+          <button class="unsaved-bar__discard" type="button" :disabled="isSaving" @click="discardChanges">
+            Discard
+          </button>
+          <button class="unsaved-bar__save" type="button" :disabled="isSaving || isRefreshing" @click="onSave">
+            {{ isSaving ? "Saving…" : "Save" }}
+          </button>
+        </div>
+      </div>
+    </transition>
+
     <transition name="toast-in">
       <div v-if="toast.visible" class="feedback-toast" :class="`feedback-toast--${toast.type}`">
         <span class="feedback-toast__icon" aria-hidden="true">{{ toast.type === "success" ? "◆" : "◇" }}</span>
@@ -238,6 +253,7 @@ export default {
       isRefreshing: false,
       dataSource: "remote",
       showResetLocalModal: false,
+      hasUnsavedChanges: false,
       toast: { visible: false, type: "success", message: "" }
     };
   },
@@ -377,6 +393,7 @@ export default {
         ]);
 
         if (distOk) {
+          this.hasUnsavedChanges = false;
           this.showToast("success", this.dataSource === "local" ? "Changes saved to local JSON." : "Win distribution saved successfully.");
         } else {
           this.showToast("error", "Some data could not be saved. Try again.");
@@ -497,8 +514,13 @@ export default {
       window.URL.revokeObjectURL(url);
         this.showToast("success", "Win rules JSON exported.");
     },
+    async discardChanges() {
+      this.hasUnsavedChanges = false;
+      await this.refreshFromCurrentSource();
+    },
     onWinConfigChange(nextConfig) {
       this.$store.commit("setWinDistribution", nextConfig);
+      this.hasUnsavedChanges = true;
     }
   },
   beforeDestroy() {
@@ -981,5 +1003,111 @@ export default {
     min-width: 0;
     max-width: none;
   }
+
+  .unsaved-bar {
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    transform: none;
+    flex-wrap: wrap;
+  }
+}
+
+/* ── Floating unsaved-changes bar ── */
+.unsaved-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 251, 244, 0.97);
+  border: 1px solid rgba(205, 174, 104, 0.38);
+  box-shadow: 0 8px 28px rgba(37, 46, 34, 0.16), 0 2px 6px rgba(37, 46, 34, 0.08);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.unsaved-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cf3b2d;
+  flex-shrink: 0;
+  animation: dot-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.unsaved-bar__label {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1d2b22;
+  flex: 1;
+}
+
+.unsaved-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.unsaved-bar__discard,
+.unsaved-bar__save {
+  border-radius: 0.65rem;
+  padding: 0.52rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.unsaved-bar__discard {
+  background: transparent;
+  color: rgba(31, 43, 34, 0.7);
+  border-color: rgba(31, 43, 34, 0.14);
+}
+
+.unsaved-bar__discard:hover:not(:disabled) {
+  background: rgba(31, 43, 34, 0.06);
+}
+
+.unsaved-bar__save {
+  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
+  color: #fff8ec;
+  box-shadow: 0 6px 14px rgba(185, 45, 34, 0.24);
+}
+
+.unsaved-bar__save:hover:not(:disabled) {
+  box-shadow: 0 8px 18px rgba(185, 45, 34, 0.32);
+}
+
+.unsaved-bar__discard:disabled,
+.unsaved-bar__save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.save-bar-enter-active {
+  transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.save-bar-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.save-bar-enter {
+  opacity: 0;
+  transform: translateX(-50%) translateY(16px);
+}
+.save-bar-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
 }
 </style>

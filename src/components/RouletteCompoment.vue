@@ -43,6 +43,17 @@
         </g>
       </svg>
 
+      <!-- small prize: single worm sweep from right → left along wheel border, plays once -->
+      <svg
+        v-if="showSmallPrizeSweep"
+        class="wheel-sweep-worm"
+        viewBox="0 0 200 200"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <!-- semi-circle arc: from 3 o'clock (right) clockwise to 9 o'clock (left) under the bottom, offset from wheel -->
+        <path class="sweep-worm" pathLength="339" d="M 208,100 A 108,108 0 0 1 -8,100"/>
+      </svg>
+
       <div class="wheel-center" :style="wheelCenterStyle">
         <div class="wheel-center__ring">
           <img
@@ -176,6 +187,9 @@ export default {
     },
     showMainPrizeBurst() {
       return this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
+    },
+    showSmallPrizeSweep() {
+      return this.isMainPrizeActive && this.activeHeroResultType === "surpriseWin";
     },
     wheelCenterStyle() {
       return {
@@ -655,19 +669,48 @@ export default {
   stroke-width: 4.5;
   stroke-linecap: round;
   stroke-dasharray: 22 1000;
-  stroke-dashoffset: 100;
-  /* negative delay = start animation already 68% through → worm visible immediately on first frame */
-  animation: worm-escape 3.5s linear -2.4s infinite;
-  /* opacity is GPU-composited; stroke-dashoffset triggers paint but only within the SVG layer */
+  stroke-dashoffset: -16;
+  animation: worm-escape 3.5s linear infinite;
   will-change: opacity;
 }
 
 @keyframes worm-escape {
-  /* worm invisible at start → exits mask at ~68% → reaches screen edge → fades out */
-  0%   { stroke-dashoffset:  100; opacity: 0; }
-  8%   { opacity: 1; }
-  78%  { opacity: 1; }
+  /* 0–8%:  emerge from mask with fade-in   (fast launch, ~0.28s) */
+  0%   { stroke-dashoffset: -16;  opacity: 0; }
+  8%   { stroke-dashoffset: -38;  opacity: 1; }
+  /* 8–85%: comfortable travel to screen edge (~2.7s visible) */
+  85%  { stroke-dashoffset: -95;  opacity: 1; }
+  /* 85–100%: fade out past edge; loop resets to inside mask invisibly */
   100% { stroke-dashoffset: -100; opacity: 0; }
+}
+
+/* Small prize — single worm sweep along wheel border, right → left, plays once */
+.wheel-sweep-worm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.sweep-worm {
+  fill: none;
+  stroke: #d9bf74;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 50 500;
+  animation: sweep-right-to-left 2.4s ease-in-out forwards;
+  will-change: opacity;
+}
+
+@keyframes sweep-right-to-left {
+  /* worm emerges from right side, goes clockwise under the wheel to left, then fades */
+  0%   { stroke-dashoffset:  52;  opacity: 0; }
+  7%   { stroke-dashoffset:  35;  opacity: 1; }
+  90%  { stroke-dashoffset: -289; opacity: 1; }
+  100% { stroke-dashoffset: -310; opacity: 0; }
 }
 
 /* GPU layer for the canvas wheel itself */
