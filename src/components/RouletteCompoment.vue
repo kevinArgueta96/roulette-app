@@ -31,11 +31,19 @@
 
     <div class="wheel-action-slot">
       <transition name="fade-up">
-        <p v-if="isMainPrizeActive" class="main-prize-copy">Arki ansaitsee<br>parempaa!</p>
+        <p v-if="showMainPrizeCopy" class="main-prize-copy">Arki ansaitsee<br>parempaa!</p>
       </transition>
 
-      <button v-if="!isMainPrizeActive" class="spin-button" type="button" :disabled="!canSpin" @click="spin">
-        {{ isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
+      <button
+        v-if="showHeroRepeatButton || !isMainPrizeActive"
+        class="spin-button"
+        :class="{ 'spin-button--hero-repeat': showHeroRepeatButton }"
+        type="button"
+        :disabled="showHeroRepeatButton ? false : !canSpin"
+        :aria-disabled="showHeroRepeatButton ? 'true' : (!canSpin ? 'true' : 'false')"
+        @click="handlePrimaryButtonClick"
+      >
+        {{ showHeroRepeatButton ? "YRITÄ UUDELLEEN" : isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
       </button>
     </div>
   </div>
@@ -102,7 +110,8 @@ export default {
       "totalSpin",
       "initialAngle",
       "spinRoullete",
-      "isMainPrizeActive"
+      "isMainPrizeActive",
+      "activeHeroResultType"
     ]),
     sectors() {
       return buildSectorsFromDistribution(this.winDistribution);
@@ -133,6 +142,12 @@ export default {
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
+    },
+    showHeroRepeatButton() {
+      return this.isMainPrizeActive && this.activeHeroResultType === "repeat";
+    },
+    showMainPrizeCopy() {
+      return this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
     },
     wheelCenterStyle() {
       return {
@@ -275,6 +290,10 @@ export default {
       this.spin();
     },
     handleWheelInteraction() {
+      this.spin();
+    },
+    handlePrimaryButtonClick() {
+      if (this.showHeroRepeatButton) return;
       this.spin();
     },
     handleTouchStart(event) {
@@ -661,6 +680,15 @@ export default {
 .spin-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.spin-button--hero-repeat {
+  margin-top: 0.6rem;
+  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
+  color: #fff6e7;
+  opacity: 1;
+  pointer-events: none;
+  cursor: default;
 }
 
 @media (max-width: 900px) {

@@ -91,11 +91,12 @@ export default {
       return this.winType === "mainPrize";
     },
     isPrizeHeroResult() {
-      return this.winType === "mainPrize" || this.winType === "surpriseWin" || this.winType === "noWin";
+      return this.winType === "mainPrize" || this.winType === "surpriseWin" || this.winType === "noWin" || this.winType === "repeat";
     },
     prizeHeroTitle() {
       if (this.winType === "surpriseWin") return "Onnittelut!";
       if (this.winType === "noWin") return "Kiitos osallistumisesta!";
+      if (this.winType === "repeat") return "Arki ansaitsee parempaa!";
       return "Olet voittanut!";
     },
     resultCopy() {
@@ -105,6 +106,7 @@ export default {
   beforeDestroy() {
     this.clearTimers();
     this.updateState({ mutationType: "setMainPrizeActive", payload: false });
+    this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
   },
   methods: {
     ...mapActions(["updateState"]),
@@ -113,6 +115,7 @@ export default {
 
       if (!result) {
         this.updateState({ mutationType: "setMainPrizeActive", payload: false });
+        this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
         this.updateState({ mutationType: "setSpinRoullete", payload: true });
         return;
       }
@@ -121,7 +124,8 @@ export default {
       this.winType = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
-      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" || type === "surpriseWin" || type === "noWin" });
+      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" || type === "surpriseWin" || type === "noWin" || type === "repeat" });
+      this.updateState({ mutationType: "setActiveHeroResultType", payload: type });
 
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
@@ -132,6 +136,7 @@ export default {
       this.winType = "";
       this.isVisibleConfetti = false;
       this.updateState({ mutationType: "setMainPrizeActive", payload: false });
+      this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
       this.updateState({ mutationType: "setSpinRoullete", payload: true });
     },
     clearTimers() {

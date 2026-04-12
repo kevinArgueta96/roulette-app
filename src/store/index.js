@@ -17,7 +17,8 @@ const createState = () => ({
   winDistribution: DEFAULT_WIN_DISTRIBUTION(),
   initialAngle: RANDOM_START_ANGLES[0],
   spinRoullete: true,
-  isMainPrizeActive: false
+  isMainPrizeActive: false,
+  activeHeroResultType: ""
 });
 
 const totalKeys = [
@@ -138,6 +139,9 @@ export default new Vuex.Store({
     },
     setMainPrizeActive(state, payload) {
       state.isMainPrizeActive = Boolean(payload);
+    },
+    setActiveHeroResultType(state, payload) {
+      state.activeHeroResultType = typeof payload === "string" ? payload : "";
     }
   },
   actions: {
