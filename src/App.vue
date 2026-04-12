@@ -176,7 +176,6 @@ export default {
   text-decoration: none;
   position: relative;
   z-index: 9;
-  transition: left 1.15s cubic-bezier(0.16, 1, 0.3, 1), top 1.15s cubic-bezier(0.16, 1, 0.3, 1), transform 1.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .brand-link--lifted {
@@ -184,6 +183,7 @@ export default {
   left: 50%;
   top: 6.7rem;
   transform: translateX(-50%);
+  animation: prize-logo-diagonal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .brand-logo {
@@ -328,6 +328,16 @@ export default {
   transform: translateY(10px);
 }
 
+@keyframes prize-logo-diagonal {
+  from {
+    transform: translate(calc(-50% - 34vw), -5.9rem);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -345,6 +355,7 @@ export default {
   .brand-link--lifted {
     top: 5.9rem;
     transform: translateX(-50%);
+    animation: prize-logo-diagonal-mobile 1.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .brand-logo {
@@ -366,6 +377,7 @@ export default {
   .brand-link--lifted {
     top: 4.35rem;
     transform: translateX(-50%);
+    animation: prize-logo-diagonal-landscape 1.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .bottom-wave {
@@ -386,6 +398,7 @@ export default {
   .brand-link--lifted {
     top: 4rem;
     transform: translateX(-50%);
+    animation: prize-logo-diagonal-compact 1.05s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .status-banner {
@@ -396,6 +409,42 @@ export default {
 
   .bottom-wave {
     height: 8%;
+  }
+}
+
+@media (max-width: 900px) {
+  @keyframes prize-logo-diagonal-mobile {
+    from {
+      transform: translate(calc(-50% - 31vw), -4.7rem);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+@media (orientation: landscape) {
+  @keyframes prize-logo-diagonal-landscape {
+    from {
+      transform: translate(calc(-50% - 36vw), -3.7rem);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  @keyframes prize-logo-diagonal-compact {
+    from {
+      transform: translate(calc(-50% - 34vw), -3.3rem);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
 </style>
