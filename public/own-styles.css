@@ -19,10 +19,17 @@ body,
 }
 
 body {
-  font-family: "Jost", sans-serif;
+  font-family: "agenda-one-compressed", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  font-size: 1.22rem;
+  line-height: 0.96;
+  letter-spacing: -0.025em;
   color: #fffbe5;
   background: #265135;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 img {

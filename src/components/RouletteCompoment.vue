@@ -119,10 +119,10 @@ export default {
       return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      return Math.max(12, this.canvasSize * 0.026);
+      return Math.max(33, this.canvasSize * 0.038);
     },
     teslaFontSize() {
-      return Math.max(15, this.canvasSize * 0.034);
+      return Math.max(44, this.canvasSize * 0.044);
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
@@ -341,8 +341,7 @@ export default {
     },
     getSectorLines(sector) {
       if (typeof sector === "string") {
-        const compact = sector.replace("KOKEILE UUDESTAAN", "KOKEILE\nUUDESTAAN");
-        return compact.split("\n");
+        return [sector];
       }
       return Object.values(sector);
     },
@@ -608,11 +607,11 @@ export default {
   border-radius: 0.22rem;
   background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
   color: #fff6e7;
-  padding: 0.58rem 1.5rem;
-  min-width: 110px;
-  font-size: 0.82rem;
+  padding: 0.74rem 1.9rem;
+  min-width: 150px;
+  font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(110, 20, 16, 0.28);
   margin-top: 1.1rem;
@@ -690,9 +689,9 @@ export default {
 
   .spin-button {
     margin-top: 0;
-    padding: 0.5rem 1.2rem;
-    min-width: 96px;
-    font-size: 0.76rem;
+    padding: 0.58rem 1.35rem;
+    min-width: 118px;
+    font-size: 0.88rem;
   }
 }
 </style>
