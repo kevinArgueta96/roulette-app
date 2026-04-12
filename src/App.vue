@@ -3,7 +3,7 @@
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
-          <router-link to="/" class="brand-link">
+          <router-link to="/" class="brand-link" :class="{ 'brand-link--lifted': isMainPrizeActive }">
             <img class="brand-logo" src="@/assets/brand/new-logo.png" alt="Parrano" />
           </router-link>
 
@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import service from "@/services/totals.service";
 
 export default {
@@ -90,6 +90,9 @@ export default {
     window.removeEventListener("resize", this.syncViewportHeight);
     window.removeEventListener("orientationchange", this.handleOrientationChange);
     document.removeEventListener("click", this.handleOutsideClick);
+  },
+  computed: {
+    ...mapGetters(["isMainPrizeActive"])
   },
   methods: {
     ...mapActions(["initializeRandomAngle", "hydrateBootstrapData"]),
@@ -168,6 +171,11 @@ export default {
   display: flex;
   align-items: center;
   text-decoration: none;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.brand-link--lifted {
+  transform: translateY(-0.95rem);
 }
 
 .brand-logo {

@@ -1,6 +1,6 @@
 <template>
   <div class="roulette-shell">
-    <div class="pointer-wrap">
+    <div class="pointer-wrap" :class="{ 'pointer-wrap--hidden': isMainPrizeActive }">
       <div class="wheel-pointer"></div>
     </div>
 
@@ -29,9 +29,15 @@
       </div>
     </div>
 
-    <button class="spin-button" type="button" :disabled="!canSpin" @click="spin">
-      {{ isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
-    </button>
+    <div class="wheel-action-slot">
+      <transition name="fade-up">
+        <p v-if="isMainPrizeActive" class="main-prize-copy">Arki ansaitsee parempaa!</p>
+      </transition>
+
+      <button v-if="!isMainPrizeActive" class="spin-button" type="button" :disabled="!canSpin" @click="spin">
+        {{ isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -95,7 +101,8 @@ export default {
       "totalGiftCard",
       "totalSpin",
       "initialAngle",
-      "spinRoullete"
+      "spinRoullete",
+      "isMainPrizeActive"
     ]),
     sectors() {
       return buildSectorsFromDistribution(this.winDistribution);
@@ -538,7 +545,12 @@ export default {
   justify-content: center;
   margin-bottom: -2.7rem;
   position: relative;
-  z-index: 4;
+  z-index: 8;
+}
+
+.pointer-wrap--hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .wheel-pointer {
@@ -552,6 +564,7 @@ export default {
 
 .wheel-stage {
   position: relative;
+  z-index: 5;
   flex: 0 1 auto;
   width: min(100%, 700px);
   max-width: min(100%, calc(100vh - 10.5rem));
@@ -617,6 +630,34 @@ export default {
   margin-top: 1.1rem;
 }
 
+.wheel-action-slot {
+  position: relative;
+  z-index: 6;
+  min-height: 4.4rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+.main-prize-copy {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  margin: 0;
+  color: #295f41;
+  font-family: "agenda-one-compressed", sans-serif;
+  font-size: clamp(1.55rem, 3.6vw, 2.55rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.018em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .spin-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -656,6 +697,15 @@ export default {
   .spin-button {
     margin-top: 0.1rem;
   }
+
+  .wheel-action-slot {
+    min-height: 3.2rem;
+  }
+
+  .main-prize-copy {
+    top: 0.3rem;
+    font-size: clamp(1.3rem, 3.2vw, 2rem);
+  }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
@@ -692,6 +742,15 @@ export default {
     padding: 0.58rem 1.35rem;
     min-width: 118px;
     font-size: 0.88rem;
+  }
+
+  .wheel-action-slot {
+    min-height: 2.3rem;
+  }
+
+  .main-prize-copy {
+    top: 0.15rem;
+    font-size: clamp(1.15rem, 4.5vw, 1.7rem);
   }
 }
 </style>

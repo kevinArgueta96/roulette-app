@@ -16,7 +16,8 @@ const createState = () => ({
   totalSpin: 0,
   winDistribution: DEFAULT_WIN_DISTRIBUTION(),
   initialAngle: RANDOM_START_ANGLES[0],
-  spinRoullete: true
+  spinRoullete: true,
+  isMainPrizeActive: false
 });
 
 const totalKeys = [
@@ -134,6 +135,9 @@ export default new Vuex.Store({
     },
     setTimeToShowOptions(state, payload) {
       state.timeToShowOptions = Number(payload) || 7000;
+    },
+    setMainPrizeActive(state, payload) {
+      state.isMainPrizeActive = Boolean(payload);
     }
   },
   actions: {

@@ -529,6 +529,9 @@ export default {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.2rem 0.65rem 1.6rem;
+  font-family: "Jost", sans-serif;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .modal-overlay {

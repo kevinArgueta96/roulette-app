@@ -23,16 +23,21 @@
     </transition>
 
     <transition name="fade-up">
-      <div v-if="hasResult" class="result-label">
+      <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isMainPrizeResult }">
+        <template v-if="isMainPrizeResult">
+          <p class="result-label__main-title">Olet voittanut!</p>
+        </template>
+        <template v-else>
         <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
         <p class="result-label__title">{{ resultCopy.title }}</p>
+        </template>
       </div>
     </transition>
   </div>
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import RouletteCompoment from "@/components/RouletteCompoment.vue";
 import ConfettiComponent from "@/components/ConfettiComponent.vue";
 
@@ -78,8 +83,12 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(["isMainPrizeActive"]),
     hasResult() {
       return Boolean(this.winType);
+    },
+    isMainPrizeResult() {
+      return this.winType === "mainPrize";
     },
     resultCopy() {
       return RESULT_CONFIG[this.winType] || {};
@@ -87,6 +96,7 @@ export default {
   },
   beforeDestroy() {
     this.clearTimers();
+    this.updateState({ mutationType: "setMainPrizeActive", payload: false });
   },
   methods: {
     ...mapActions(["updateState"]),
@@ -94,6 +104,7 @@ export default {
       const result = RESULT_CONFIG[type];
 
       if (!result) {
+        this.updateState({ mutationType: "setMainPrizeActive", payload: false });
         this.updateState({ mutationType: "setSpinRoullete", payload: true });
         return;
       }
@@ -102,6 +113,7 @@ export default {
       this.winType = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
+      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" });
 
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
@@ -111,6 +123,7 @@ export default {
       this.clearTimers();
       this.winType = "";
       this.isVisibleConfetti = false;
+      this.updateState({ mutationType: "setMainPrizeActive", payload: false });
       this.updateState({ mutationType: "setSpinRoullete", payload: true });
     },
     clearTimers() {
@@ -142,6 +155,20 @@ export default {
   z-index: 6;
   text-align: center;
   pointer-events: none;
+}
+
+.result-label--main {
+  top: 0.2rem;
+  width: min(92%, 720px);
+}
+
+.result-label__main-title {
+  margin: 0;
+  font-family: "Lumios Marker", cursive;
+  font-size: clamp(2.4rem, 6.2vw, 4.9rem);
+  line-height: 0.92;
+  color: #2e6a49;
+  text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
 }
 
 .result-label__eyebrow {
@@ -224,6 +251,10 @@ export default {
     padding-top: 0.2rem;
     padding-bottom: 2.8rem;
   }
+
+  .result-label--main {
+    top: -0.4rem;
+  }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
@@ -245,6 +276,10 @@ export default {
 @media (max-width: 900px) {
   .roulette-view {
     padding-top: 4.6rem;
+  }
+
+  .result-label--main {
+    top: 0.5rem;
   }
 
   .prize-product {
