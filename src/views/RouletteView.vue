@@ -47,28 +47,28 @@ import ConfettiComponent from "@/components/ConfettiComponent.vue";
 
 const RESULT_CONFIG = {
   repeat: {
-    duration: 2500,
+    duration: 4000,
     confetti: false,
     kicker: "Repeat",
     title: "Kokeile uudestaan",
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    duration: 7000,
+    duration: 10000,
     confetti: true,
     kicker: "Main prize",
     title: "LAHJAKASSI",
     description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
-    duration: 6000,
+    duration: 9000,
     confetti: true,
     kicker: "Surprise win",
     title: "Yllätyspalkinto",
     description: "Voitit yllätyspalkinnon."
   },
   noWin: {
-    duration: 3200,
+    duration: 5000,
     confetti: false,
     kicker: "No win",
     title: "Ei voittoa",

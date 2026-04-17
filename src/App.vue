@@ -199,14 +199,13 @@ export default {
   max-height: 5rem;
   height: auto;
   object-fit: contain;
-  margin-top: 0.18rem;
 }
 
 .menu-button {
   background: transparent;
   border: 0;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 3.4rem;
+  height: 3.4rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -215,8 +214,8 @@ export default {
 }
 
 .menu-icon {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 3.4rem;
+  height: 3.4rem;
   display: block;
   transition: opacity 0.2s;
 }
@@ -228,6 +227,7 @@ export default {
 .menu-shell {
   grid-column: 3;
   justify-self: end;
+  align-self: center;
   position: relative;
   z-index: 10;
   transform: translateX(-2rem);

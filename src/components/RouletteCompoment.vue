@@ -81,7 +81,7 @@
         :aria-disabled="showHeroRepeatButton ? 'true' : (!canSpin ? 'true' : 'false')"
         @click="handlePrimaryButtonClick"
       >
-        {{ showHeroRepeatButton ? "YRITÄ UUDELLEEN" : isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
+        {{ showHeroRepeatButton ? "YRITÄ UUDELLEEN" : isSpinning ? "PYÖRII..." : "PYÖRÄYTÄ" }}
       </button>
     </div>
   </div>
