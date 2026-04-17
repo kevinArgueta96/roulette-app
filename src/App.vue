@@ -15,7 +15,12 @@
               :aria-expanded="isMenuOpen ? 'true' : 'false'"
               @click="toggleMenu"
             >
-              <span></span><span></span><span></span>
+              <svg class="menu-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="18" cy="18" r="17" fill="#1f5a3f"/>
+                <circle cx="18" cy="12" r="2.2" fill="#fffbe5"/>
+                <circle cx="18" cy="18" r="2.2" fill="#fffbe5"/>
+                <circle cx="18" cy="24" r="2.2" fill="#fffbe5"/>
+              </svg>
             </button>
             <transition name="fade-up">
               <div v-if="isMenuOpen" class="menu-dropdown" role="menu">
@@ -190,8 +195,8 @@ export default {
 
 .brand-logo {
   display: block;
-  width: clamp(216px, 28.8vw, 342px);
-  max-height: 4.23rem;
+  width: clamp(240px, 38vw, 400px);
+  max-height: 5rem;
   height: auto;
   object-fit: contain;
   margin-top: 0.18rem;
@@ -200,24 +205,24 @@ export default {
 .menu-button {
   background: transparent;
   border: 0;
-  width: 2.15rem;
-  height: 2.15rem;
+  width: 2.4rem;
+  height: 2.4rem;
   padding: 0;
   display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.menu-button span {
-  width: 18px;
-  height: 2px;
-  background: #1f5a3f;
+.menu-icon {
+  width: 2.4rem;
+  height: 2.4rem;
   display: block;
-  border-radius: 999px;
   transition: opacity 0.2s;
+}
+
+.menu-button:hover .menu-icon {
+  opacity: 0.8;
 }
 
 .menu-shell {

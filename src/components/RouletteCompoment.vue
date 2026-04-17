@@ -863,6 +863,20 @@ export default {
   }
 }
 
+@media (orientation: portrait) and (min-height: 900px) {
+  .roulette-shell {
+    padding-top: 0;
+    justify-content: center;
+    gap: 1.2rem;
+  }
+
+  .wheel-stage {
+    width: min(92vw, 650px);
+    max-width: min(92vw, 650px);
+    max-height: min(92vw, 650px);
+  }
+}
+
 @media (orientation: landscape) {
   .roulette-shell {
     justify-content: center;
