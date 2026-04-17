@@ -318,7 +318,7 @@ export default {
   display: block;
   object-fit: fill;
   object-position: bottom center;
-  z-index: 3; /* above router-outlet (z-index:2) so burst rays render behind the footer */
+  z-index: 1;
   pointer-events: none;
 }
 
