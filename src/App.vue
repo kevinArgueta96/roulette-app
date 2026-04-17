@@ -4,7 +4,7 @@
       <section class="tablet-canvas">
         <header class="screen-header">
           <router-link to="/" class="brand-link" :class="{ 'brand-link--lifted': isMainPrizeActive }">
-            <img class="brand-logo" src="@/assets/brand/new-logo.png" alt="Parrano" />
+            <img class="brand-logo" src="/parrano-assets/new-logo.webp" alt="Parrano" fetchpriority="high" decoding="async" />
           </router-link>
 
           <nav class="menu-shell">
@@ -59,6 +59,8 @@
           src="@/assets/brand/infe_sin_blanco.svg"
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
         />
       </section>
     </main>

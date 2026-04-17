@@ -6,8 +6,10 @@
       <img
         v-if="isPrizeHeroResult"
         class="prize-product prize-product--left"
-        :src="winType === 'mainPrize' ? '/parrano-assets/main-l.png' : '/parrano-assets/wedge.png'"
+        src="/parrano-assets/main-l.webp"
         alt="Parrano Robusto Wedge"
+        loading="lazy"
+        decoding="async"
       />
     </transition>
 
@@ -17,8 +19,10 @@
       <img
         v-if="isPrizeHeroResult"
         class="prize-product prize-product--right"
-        :src="winType === 'mainPrize' ? '/parrano-assets/main-r.png' : '/parrano-assets/powder.png'"
+        src="/parrano-assets/main-r.webp"
         alt="Parrano Robusto Powder"
+        loading="lazy"
+        decoding="async"
       />
     </transition>
 
@@ -171,7 +175,7 @@ export default {
 }
 
 .result-label--main {
-  top: 7.35rem;
+  top: 4.5rem;
   width: min(92%, 720px);
 }
 
@@ -300,7 +304,7 @@ export default {
   }
 
   .result-label--main {
-    top: 4.7rem;
+    top: 2.2rem;
   }
 }
 
@@ -326,7 +330,11 @@ export default {
   }
 
   .result-label--main {
-    top: 6.15rem;
+    top: 3.4rem;
+  }
+
+  .result-label__main-title {
+    font-size: clamp(2.8rem, 7.5vw, 5rem);
   }
 
   .prize-product {

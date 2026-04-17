@@ -58,8 +58,10 @@
         <div class="wheel-center__ring">
           <img
             class="wheel-center__logo"
-            src="@/assets/brand/image_center.png"
+            src="@/assets/brand/image_center.webp"
             alt="Parrano"
+            fetchpriority="high"
+            decoding="async"
           />
         </div>
       </div>
