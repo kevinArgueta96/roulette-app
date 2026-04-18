@@ -1,7 +1,7 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import RouletteView from "@/views/RouletteView.vue";
-import DashboardView from "@/views/DashboardView.vue";
+const DashboardView = () => import("@/views/DashboardView.vue");
 
 Vue.use(VueRouter);
 

@@ -17,7 +17,7 @@
       </p>
 
       <div class="outcome-grid">
-        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :style="{ borderLeftColor: outcome.color }">
+        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :class="{ 'outcome-card--full': outcome.hasSlots }" :style="{ borderLeftColor: outcome.color }">
           <div class="outcome-card__header">
             <div class="outcome-card__title">
               <span class="outcome-dot" :style="{ background: outcome.color }" aria-hidden="true"></span>
@@ -97,17 +97,12 @@
           <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
 
           <div v-if="outcome.hasSlots" class="slots-block">
-            <div class="slots-budget" :class="{ 'slots-budget--error': errors.timelineBudget }">
-              <span>Repeat + No win split</span>
-              <strong :class="{ 'slots-budget__total--ok': fallbackSplitTotal === 100, 'slots-budget__total--error': fallbackSplitTotal !== 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
-            </div>
             <p class="slots-help">
-              Slot probability is an <strong>absolute</strong> chance per spin (e.g. 30% = 3 in 10 spins land here). Only <strong>one range is active at a time</strong> — outside all ranges this outcome has 0% probability.
+              Probability per spin during this time window (100% = always appears).
               <template v-if="fallbackRemainingAtPeak === 0">
-                <br/><span class="slots-help--warn">Warning: win slots currently consume 100% of probability. Repeat and No win will never trigger during active windows.</span>
+                <br/><span class="slots-help--warn">Warning: active windows consume 100% — Repeat and No win will never trigger during these hours.</span>
               </template>
             </p>
-            <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
 
             <div class="slots-header" v-if="localConfig[outcome.key].slots.length">
               <span>Start</span>
@@ -190,7 +185,7 @@
             </div>
 
             <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
-              No active time windows — this outcome has 0% probability. Add a time range to enable it.
+              No time windows configured — this outcome never appears. Add a time range to enable it.
             </div>
 
             <button class="add-slot-btn" type="button" @click="addSlot(outcome.key)">
@@ -200,26 +195,33 @@
         </article>
       </div>
 
+      <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
+        <div class="fallback-split__header">
+          <div>
+            <p class="block-eyebrow">Non-win split</p>
+            <h4 class="block-title">Repeat &amp; No win</h4>
+          </div>
+          <div class="fallback-split__total">
+            <span class="fallback-split__total-label">Total</span>
+            <strong :class="{ 'fallback-split__total-value--ok': fallbackSplitTotal === 100, 'fallback-split__total-value--error': fallbackSplitTotal !== 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
+          </div>
+        </div>
+        <p class="fallback-split__copy">
+          When Main win and Small win don't use 100%, the remainder is split between Repeat and No win using the ratios below. These two must total 100%.
+        </p>
+        <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
+      </div>
+
       <div class="timeline-section">
         <div class="timeline-section__header">
           <div>
             <p class="block-eyebrow">Live preview</p>
             <h4 class="block-title">Probability by time of day</h4>
           </div>
-          <div class="probability-summary" :class="{ 'probability-summary--error': fallbackSplitTotal !== 100 }">
-            <div>
-              <p class="probability-summary__eyebrow">Non-win balance (must equal 100%)</p>
-              <p class="probability-summary__sub">Repeat + No win share</p>
-            </div>
-            <strong :class="{ 'probability-summary__total--ok': fallbackSplitTotal === 100 }">{{ formatPercentInput(fallbackSplitTotal) }}</strong>
-          </div>
         </div>
 
         <p class="probability-summary__copy">
-          Columns show each outcome's actual probability per spin for each time window. Repeat and No win use <strong>relative ratios</strong> — their percentages below split the non-win remainder, and must total exactly 100%.
-          <template v-if="maxWinProbability > 0">
-            At peak win probability ({{ formatPercentInput(maxWinProbability) }}), Repeat + No win share the remaining <strong>{{ formatPercentInput(fallbackRemainingAtPeak) }}</strong>.
-          </template>
+          Hour-by-hour preview of the actual per-spin probability for each outcome.
         </p>
 
         <div class="probability-timeline">
@@ -750,15 +752,12 @@ export default {
         }))
       ];
 
-      if (!ranges.length) {
-        if (this.fallbackSplitTotal !== 100) {
-          return `Repeat + No win split must total exactly 100.00% (current: ${this.fallbackSplitTotal.toFixed(2)}%). Adjust Category C or Category D.`;
-        }
-        return "";
+      if (this.fallbackSplitTotal !== 100) {
+        return `Repeat and No win must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
       }
 
-      if (this.fallbackSplitTotal !== 100) {
-        return `Repeat + No win split must total exactly 100.00% (current: ${this.fallbackSplitTotal.toFixed(2)}%). These are relative ratios — they do not affect how much probability wins consume, only how the remainder is divided.`;
+      if (!ranges.length) {
+        return "";
       }
 
       const boundaries = [...new Set(ranges.flatMap((range) => [range.start, range.end]))].sort((a, b) => a - b);
@@ -770,7 +769,7 @@ export default {
         const total = mainWeight + smallWeight;
 
         if (total > 100.001) {
-          return `Main win + Small win cannot exceed 100.00% in the same time range. Current total: ${total.toFixed(2)}%.`;
+          return `Main win + Small win exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
         }
       }
 
@@ -983,6 +982,10 @@ export default {
   min-width: 0;
 }
 
+.outcome-card--full {
+  grid-column: 1 / -1;
+}
+
 .outcome-card__header {
   display: flex;
   justify-content: space-between;
@@ -1085,6 +1088,63 @@ export default {
 
 .given-bar__fill--full {
   background: #b92d22;
+}
+
+.fallback-split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: rgba(255, 251, 243, 0.92);
+  border: 1px solid rgba(205, 174, 104, 0.24);
+}
+
+.fallback-split--error {
+  border-color: rgba(185, 45, 34, 0.32);
+  background: rgba(255, 243, 241, 0.96);
+}
+
+.fallback-split__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.fallback-split__total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+}
+
+.fallback-split__total-label {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  font-size: 0.58rem;
+  color: rgba(49, 88, 70, 0.6);
+}
+
+.fallback-split__total-value--ok {
+  color: #1f5a3f;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fallback-split__total-value--error {
+  color: #b92d22;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fallback-split__copy {
+  margin: 0;
+  color: rgba(29, 43, 34, 0.7);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .timeline-section {
@@ -1220,14 +1280,6 @@ export default {
 .slots-help--warn {
   color: #b92d22;
   font-weight: 600;
-}
-
-.slots-budget__total--ok {
-  color: #1f5a3f;
-}
-
-.slots-budget__total--error {
-  color: #b92d22;
 }
 
 .slots-header,

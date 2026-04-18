@@ -3,8 +3,15 @@
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
-          <router-link to="/" class="brand-link" :class="{ 'brand-link--lifted': isMainPrizeActive }">
-            <img class="brand-logo" src="@/assets/brand/new-logo.png" alt="Parrano" />
+          <router-link
+            to="/"
+            class="brand-link"
+            :class="{
+              'brand-link--hero': isMainPrizeActive && $route.name !== 'dashboard',
+              'brand-link--dashboard': $route.name === 'dashboard'
+            }"
+          >
+            <img class="brand-logo" src="/parrano-assets/new-logo.webp" alt="Parrano" fetchpriority="high" decoding="async" />
           </router-link>
 
           <nav class="menu-shell">
@@ -15,7 +22,11 @@
               :aria-expanded="isMenuOpen ? 'true' : 'false'"
               @click="toggleMenu"
             >
-              <span></span><span></span><span></span>
+              <svg class="menu-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle class="menu-icon__dot" cx="18" cy="12" r="2.2"/>
+                <circle class="menu-icon__dot" cx="18" cy="18" r="2.2"/>
+                <circle class="menu-icon__dot" cx="18" cy="24" r="2.2"/>
+              </svg>
             </button>
             <transition name="fade-up">
               <div v-if="isMenuOpen" class="menu-dropdown" role="menu">
@@ -59,6 +70,8 @@
           src="@/assets/brand/infe_sin_blanco.svg"
           alt=""
           aria-hidden="true"
+          loading="lazy"
+          decoding="async"
         />
       </section>
     </main>
@@ -158,7 +171,7 @@ export default {
 
 .screen-header {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -170,57 +183,96 @@ export default {
 
 .brand-link {
   display: inline-flex;
-  grid-column: 1;
-  justify-self: start;
   align-items: center;
   text-decoration: none;
-  position: relative;
   z-index: 9;
 }
 
-.brand-link--lifted {
+.brand-link:not(.brand-link--dashboard) {
+  --brand-hero-shift: 20px;
+  --brand-hero-scale: 1.12;
+  grid-column: 1 / -1;
+  justify-self: center;
   position: fixed;
   left: 50%;
   top: 6.7rem;
   transform: translateX(-50%);
-  animation: prize-logo-diagonal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center top;
+  transition: transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-link--hero {
+  transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
+  animation: brand-link-settle 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .brand-logo {
   display: block;
-  width: clamp(216px, 28.8vw, 342px);
-  max-height: 4.23rem;
+  width: clamp(240px, 38vw, 400px);
+  max-height: 5rem;
   height: auto;
   object-fit: contain;
-  margin-top: 0.18rem;
+}
+
+.brand-link--dashboard {
+  grid-column: 1;
+  justify-self: start;
+  position: relative;
+}
+
+.brand-link--dashboard .brand-logo {
+  width: clamp(176px, 20vw, 244px);
+  max-height: 3.4rem;
 }
 
 .menu-button {
   background: transparent;
   border: 0;
-  width: 2.15rem;
-  height: 2.15rem;
+  width: 3rem;
+  height: 3rem;
   padding: 0;
   display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  border-radius: 999px;
+  opacity: 0.52;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-.menu-button span {
-  width: 18px;
-  height: 2px;
-  background: #1f5a3f;
+.menu-icon {
+  width: 2.2rem;
+  height: 2.2rem;
   display: block;
-  border-radius: 999px;
-  transition: opacity 0.2s;
+  transition: transform 0.18s ease;
+}
+
+.menu-icon__dot {
+  fill: rgba(31, 90, 63, 0.52);
+}
+
+.menu-button:hover {
+  opacity: 0.66;
+}
+
+.menu-button:focus-visible {
+  opacity: 0.82;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(31, 90, 63, 0.12);
+}
+
+.menu-button[aria-expanded="true"] {
+  opacity: 0.78;
+}
+
+.menu-button[aria-expanded="true"] .menu-icon {
+  transform: scale(1.02);
 }
 
 .menu-shell {
   grid-column: 3;
   justify-self: end;
+  align-self: center;
   position: relative;
   z-index: 10;
   transform: translateX(-2rem);
@@ -278,7 +330,7 @@ export default {
   left: 2rem;
   right: 2rem;
   bottom: 1.2rem;
-  z-index: 5;
+  z-index: 7;
   border-radius: 1rem;
   padding: 0.8rem 1rem;
   background: rgba(255, 80, 28, 0.08);
@@ -290,7 +342,7 @@ export default {
 .loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 8;
   display: grid;
   place-items: center;
   gap: 0.6rem;
@@ -316,7 +368,7 @@ export default {
   display: block;
   object-fit: fill;
   object-position: bottom center;
-  z-index: 3; /* above router-outlet (z-index:2) so burst rays render behind the footer */
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -333,18 +385,18 @@ export default {
   transform: translateY(10px);
 }
 
-@keyframes prize-logo-diagonal {
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes brand-link-settle {
   from {
-    transform: translate(calc(-50% - 34vw), -5.9rem);
+    transform: translateX(-50%) translateY(0) scale(1);
   }
 
   to {
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 900px) {
@@ -357,10 +409,14 @@ export default {
     margin-top: 0.35rem;
   }
 
-  .brand-link--lifted {
+  .brand-link:not(.brand-link--dashboard) {
     top: 5.9rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-mobile 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    --brand-hero-shift: 18px;
+    --brand-hero-scale: 1.1;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
   .brand-logo {
@@ -379,10 +435,14 @@ export default {
     margin-top: 0.4rem;
   }
 
-  .brand-link--lifted {
+  .brand-link:not(.brand-link--dashboard) {
     top: 4.35rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-landscape 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    --brand-hero-shift: 16px;
+    --brand-hero-scale: 1.08;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
 
@@ -398,10 +458,14 @@ export default {
     min-height: 3.3rem;
   }
 
-  .brand-link--lifted {
+  .brand-link:not(.brand-link--dashboard) {
     top: 4rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-compact 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    --brand-hero-shift: 14px;
+    --brand-hero-scale: 1.06;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
   .status-banner {
@@ -411,41 +475,5 @@ export default {
   }
 
 
-}
-
-@media (max-width: 900px) {
-  @keyframes prize-logo-diagonal-mobile {
-    from {
-      transform: translate(calc(-50% - 31vw), -4.7rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-}
-
-@media (orientation: landscape) {
-  @keyframes prize-logo-diagonal-landscape {
-    from {
-      transform: translate(calc(-50% - 36vw), -3.7rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-}
-
-@media (max-height: 560px) and (orientation: landscape) {
-  @keyframes prize-logo-diagonal-compact {
-    from {
-      transform: translate(calc(-50% - 34vw), -3.3rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
 }
 </style>

@@ -6,8 +6,10 @@
       <img
         v-if="isPrizeHeroResult"
         class="prize-product prize-product--left"
-        :src="winType === 'mainPrize' ? '/parrano-assets/main-l.png' : '/parrano-assets/wedge.png'"
+        src="/parrano-assets/main-l.webp"
         alt="Parrano Robusto Wedge"
+        loading="lazy"
+        decoding="async"
       />
     </transition>
 
@@ -17,12 +19,14 @@
       <img
         v-if="isPrizeHeroResult"
         class="prize-product prize-product--right"
-        :src="winType === 'mainPrize' ? '/parrano-assets/main-r.png' : '/parrano-assets/powder.png'"
+        src="/parrano-assets/main-r.webp"
         alt="Parrano Robusto Powder"
+        loading="lazy"
+        decoding="async"
       />
     </transition>
 
-    <transition name="fade-up">
+    <transition name="write-reveal">
       <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
         <template v-if="isPrizeHeroResult">
           <p class="result-label__main-title">{{ prizeHeroTitle }}</p>
@@ -43,28 +47,28 @@ import ConfettiComponent from "@/components/ConfettiComponent.vue";
 
 const RESULT_CONFIG = {
   repeat: {
-    duration: 2500,
+    duration: 4000,
     confetti: false,
     kicker: "Repeat",
     title: "Kokeile uudestaan",
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    duration: 7000,
+    duration: 10000,
     confetti: true,
     kicker: "Main prize",
     title: "LAHJAKASSI",
     description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
-    duration: 6000,
+    duration: 9000,
     confetti: true,
     kicker: "Surprise win",
     title: "Yllätyspalkinto",
     description: "Voitit yllätyspalkinnon."
   },
   noWin: {
-    duration: 3200,
+    duration: 5000,
     confetti: false,
     kicker: "No win",
     title: "Ei voittoa",
@@ -158,6 +162,10 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 5.8rem;
+  --prize-left-offset: clamp(1.1rem, 3.9vw, 1.65rem);
+  --prize-right-offset: clamp(-0.95rem, -2.8vw, -0.25rem);
+  --prize-bottom: 8.1%;
+  --prize-left-lift: clamp(0.2rem, 0.46vw, 0.32rem);
 }
 
 .result-label {
@@ -171,12 +179,13 @@ export default {
 }
 
 .result-label--main {
-  top: 7.35rem;
+  top: 4.5rem;
   width: min(92%, 720px);
 }
 
 .result-label__main-title {
   margin: 0;
+  display: inline-block;
   font-family: "Lumios Marker", cursive;
   font-size: clamp(4rem, 9vw, 6.6rem);
   font-weight: 400;
@@ -184,13 +193,26 @@ export default {
   letter-spacing: 0;
   color: #2e6a49;
   text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
-  animation: title-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  will-change: transform, opacity;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: handwriting-reveal 0.92s cubic-bezier(0.2, 0.84, 0.22, 1) 0.84s forwards;
+  will-change: clip-path, opacity;
 }
 
-@keyframes title-pop {
-  from { opacity: 0; transform: scale(0.65) translateY(18px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+@keyframes handwriting-reveal {
+  0% {
+    opacity: 0.38;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .result-label__eyebrow {
@@ -214,9 +236,9 @@ export default {
 
 .prize-product {
   position: absolute;
-  bottom: 22%;
-  z-index: 4;
-  width: clamp(135px, 22%, 235px);
+  bottom: var(--prize-bottom);
+  z-index: 2;
+  width: clamp(146px, 23.8%, 254px);
   height: auto;
   object-fit: contain;
   pointer-events: none;
@@ -224,15 +246,16 @@ export default {
 }
 
 .prize-product--left {
-  left: 0;
+  left: var(--prize-left-offset);
+  bottom: calc(var(--prize-bottom) + var(--prize-left-lift));
   transform-origin: center center;
   animation: float-left 3s ease-in-out 0.6s infinite;
   will-change: transform;
 }
 
 .prize-product--right {
-  right: 0;
-  width: clamp(190px, 31%, 360px);
+  right: var(--prize-right-offset);
+  width: clamp(205px, 33.5%, 389px);
   transform-origin: center center;
   animation: float-right 3s ease-in-out 0.9s infinite;
   will-change: transform;
@@ -280,16 +303,19 @@ export default {
   transform: translateX(55px) rotate(13deg);
 }
 
-.fade-up-enter-active {
-  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.write-reveal-enter-active {
+  transition: opacity 0.24s ease 0.76s;
 }
-.fade-up-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+
+.write-reveal-leave-active {
+  transition: opacity 0.18s ease;
+  animation: none !important;
+  clip-path: inset(0 0 0 0);
 }
-.fade-up-enter,
-.fade-up-leave-to {
+
+.write-reveal-enter,
+.write-reveal-leave-to {
   opacity: 0;
-  transform: translateY(12px);
 }
 
 @media (orientation: landscape) {
@@ -300,7 +326,7 @@ export default {
   }
 
   .result-label--main {
-    top: 4.7rem;
+    top: 2.2rem;
   }
 }
 
@@ -308,34 +334,53 @@ export default {
   .roulette-view {
     padding-top: 0;
     padding-bottom: 2.4rem;
+    --prize-bottom: 2%;
   }
 
   .prize-product {
-    width: clamp(80px, 14%, 140px);
-    bottom: 8%;
+    width: clamp(86px, 15.1%, 151px);
+  }
+
+  .prize-product--left {
+    bottom: calc(var(--prize-bottom) + clamp(0.1rem, 0.33vw, 0.2rem));
   }
 
   .prize-product--right {
-    width: clamp(130px, 22%, 220px);
+    width: clamp(140px, 23.8%, 238px);
   }
 }
 
 @media (max-width: 900px) {
   .roulette-view {
     padding-top: 4.6rem;
+    --prize-bottom: 6.1%;
+    --prize-left-lift: clamp(0.15rem, 0.58vw, 0.28rem);
   }
 
   .result-label--main {
-    top: 6.15rem;
+    top: 3.4rem;
+  }
+
+  .result-label__main-title {
+    font-size: clamp(2.8rem, 7.5vw, 5rem);
   }
 
   .prize-product {
-    width: clamp(112px, 20%, 190px);
-    bottom: 18%;
+    width: clamp(121px, 21.6%, 205px);
   }
 
   .prize-product--right {
-    width: clamp(155px, 28%, 285px);
+    width: clamp(167px, 30.2%, 308px);
+  }
+}
+
+@media (orientation: portrait) and (min-height: 900px) {
+  .roulette-view {
+    padding-top: 1.5rem;
+  }
+
+  .result-label--main {
+    top: clamp(8rem, 12%, 14rem);
   }
 }
 </style>

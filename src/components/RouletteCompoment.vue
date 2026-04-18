@@ -1,5 +1,5 @@
 <template>
-  <div class="roulette-shell">
+  <div class="roulette-shell" :class="{ 'roulette-shell--hero': isMainPrizeActive }">
     <div class="pointer-wrap" :class="{ 'pointer-wrap--hidden': isMainPrizeActive }">
       <div class="wheel-pointer"></div>
     </div>
@@ -7,6 +7,7 @@
     <div
       ref="containerCircule"
       class="wheel-stage"
+      :class="{ 'wheel-stage--hero': isMainPrizeActive }"
       role="button"
       tabindex="0"
       aria-label="Spin roulette"
@@ -58,15 +59,17 @@
         <div class="wheel-center__ring">
           <img
             class="wheel-center__logo"
-            src="@/assets/brand/image_center.png"
+            src="@/assets/brand/image_center.webp"
             alt="Parrano"
+            fetchpriority="high"
+            decoding="async"
           />
         </div>
       </div>
     </div>
 
     <div class="wheel-action-slot">
-      <transition name="fade-up">
+      <transition name="write-reveal">
         <p v-if="showMainPrizeCopy" class="main-prize-copy">Arki ansaitsee<br>parempaa!</p>
       </transition>
 
@@ -79,7 +82,7 @@
         :aria-disabled="showHeroRepeatButton ? 'true' : (!canSpin ? 'true' : 'false')"
         @click="handlePrimaryButtonClick"
       >
-        {{ showHeroRepeatButton ? "YRITÄ UUDELLEEN" : isSpinning ? "PYÖRII..." : "PYÖRÄHDYS" }}
+        {{ showHeroRepeatButton ? "YRITÄ UUDELLEEN" : isSpinning ? "PYÖRII..." : "PYÖRÄYTÄ" }}
       </button>
     </div>
   </div>
@@ -588,7 +591,8 @@ export default {
 <style scoped>
 .roulette-shell {
   position: relative;
-  z-index: 2;
+  z-index: 4;
+  --wheel-scale: 1;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -598,6 +602,10 @@ export default {
   justify-content: flex-start;
   gap: 0.55rem;
   padding-top: 4rem;
+}
+
+.roulette-shell--hero {
+  --wheel-scale: 0.82;
 }
 
 .pointer-wrap {
@@ -627,9 +635,9 @@ export default {
   position: relative;
   z-index: 5;
   flex: 0 1 auto;
-  width: min(100%, 700px);
-  max-width: min(100%, calc(100vh - 10.5rem));
-  max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
+  width: min(100%, calc(700px * var(--wheel-scale)));
+  max-width: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
+  max-height: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -637,10 +645,15 @@ export default {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wheel-stage:focus-visible {
   outline: none;
+}
+
+.wheel-stage--hero {
+  transition-duration: 0.8s;
 }
 
 /* Burst rays — SVG centered on wheel, extends to screen edges */
@@ -754,9 +767,9 @@ export default {
   border-radius: 0.22rem;
   background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
   color: #fff6e7;
-  padding: 0.74rem 1.9rem;
-  min-width: 150px;
-  font-size: 1.5rem;
+  padding: 0.81rem 2.09rem;
+  min-width: 165px;
+  font-size: 1.65rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
@@ -814,6 +827,7 @@ export default {
   transform: translateX(-50%);
   z-index: 6;
   margin: 0;
+  display: inline-block;
   color: #295f41;
   font-family: "Lumios Marker", cursive;
   font-size: clamp(4rem, 9vw, 6.6rem);
@@ -823,6 +837,10 @@ export default {
   text-align: center;
   width: min(86%, 620px);
   white-space: normal;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: handwriting-reveal 1.04s cubic-bezier(0.2, 0.84, 0.22, 1) 1s forwards;
+  will-change: clip-path, opacity;
 }
 
 .spin-button:disabled {
@@ -831,17 +849,35 @@ export default {
   animation: none;
 }
 
-/* fade-up — used by main-prize-copy transition */
-.fade-up-enter-active {
-  transition: opacity 0.38s ease, transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+.write-reveal-enter-active {
+  transition: opacity 0.24s ease 0.92s;
 }
-.fade-up-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+
+.write-reveal-leave-active {
+  transition: opacity 0.18s ease;
+  animation: none !important;
+  clip-path: inset(0 0 0 0);
 }
-.fade-up-enter,
-.fade-up-leave-to {
+
+.write-reveal-enter,
+.write-reveal-leave-to {
   opacity: 0;
-  transform: translateY(14px);
+}
+
+@keyframes handwriting-reveal {
+  0% {
+    opacity: 0.38;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .spin-button--hero-repeat {
@@ -855,9 +891,23 @@ export default {
 
 @media (max-width: 900px) {
   .wheel-stage {
-    width: min(100%, 560px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 7rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 7rem));
+    width: min(100%, calc(560px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 7rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 7rem) * var(--wheel-scale)));
+  }
+}
+
+@media (orientation: portrait) and (min-height: 900px) {
+  .roulette-shell {
+    padding-top: 0;
+    justify-content: center;
+    gap: 0.85rem;
+  }
+
+  .wheel-stage {
+    width: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
+    max-width: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
+    max-height: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
   }
 }
 
@@ -879,9 +929,9 @@ export default {
   }
 
   .wheel-stage {
-    width: min(100%, 470px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
+    width: min(100%, calc(470px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
   }
 
   .spin-button {
@@ -916,9 +966,9 @@ export default {
   }
 
   .wheel-stage {
-    width: min(100%, 420px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
+    width: min(100%, calc(420px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 9.5rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 9.5rem) * var(--wheel-scale)));
   }
 
   .wheel-center__ring {
@@ -929,9 +979,9 @@ export default {
 
   .spin-button {
     margin-top: 0;
-    padding: 0.58rem 1.35rem;
-    min-width: 118px;
-    font-size: 0.88rem;
+    padding: 0.64rem 1.49rem;
+    min-width: 130px;
+    font-size: 0.97rem;
   }
 
   .wheel-action-slot {
