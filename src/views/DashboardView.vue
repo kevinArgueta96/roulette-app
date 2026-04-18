@@ -171,14 +171,14 @@
               <span class="mode-item__dot mode-item__dot--main"></span>
               <div>
                 <strong>Main win &amp; Small win</strong>
-                <p>Probability controlled per time window (slots). Each slot sets an absolute % chance and a delivery cap.</p>
+                <p>Cada franja horaria define su propia probabilidad por tirada (100% = siempre, menos = menos frecuente).</p>
               </div>
             </li>
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--repeat"></span>
               <div>
                 <strong>Repeat &amp; No win</strong>
-                <p>Always available. Their non-win share (%) splits the remaining probability after wins are active.</p>
+                <p>Rellenan automáticamente lo que Main win y Small win no consumen. Su split entre los dos debe sumar 100%.</p>
               </div>
             </li>
             <li class="mode-item">
