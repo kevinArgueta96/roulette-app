@@ -1,5 +1,5 @@
 <template>
-  <div class="roulette-shell">
+  <div class="roulette-shell" :class="{ 'roulette-shell--hero': isMainPrizeActive }">
     <div class="pointer-wrap" :class="{ 'pointer-wrap--hidden': isMainPrizeActive }">
       <div class="wheel-pointer"></div>
     </div>
@@ -7,6 +7,7 @@
     <div
       ref="containerCircule"
       class="wheel-stage"
+      :class="{ 'wheel-stage--hero': isMainPrizeActive }"
       role="button"
       tabindex="0"
       aria-label="Spin roulette"
@@ -591,6 +592,7 @@ export default {
 .roulette-shell {
   position: relative;
   z-index: 2;
+  --wheel-scale: 1;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -600,6 +602,10 @@ export default {
   justify-content: flex-start;
   gap: 0.55rem;
   padding-top: 4rem;
+}
+
+.roulette-shell--hero {
+  --wheel-scale: 0.82;
 }
 
 .pointer-wrap {
@@ -629,9 +635,9 @@ export default {
   position: relative;
   z-index: 5;
   flex: 0 1 auto;
-  width: min(100%, 700px);
-  max-width: min(100%, calc(100vh - 10.5rem));
-  max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
+  width: min(100%, calc(700px * var(--wheel-scale)));
+  max-width: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
+  max-height: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -639,10 +645,15 @@ export default {
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  transition: width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.72s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wheel-stage:focus-visible {
   outline: none;
+}
+
+.wheel-stage--hero {
+  transition-duration: 0.8s;
 }
 
 /* Burst rays — SVG centered on wheel, extends to screen edges */
@@ -857,9 +868,9 @@ export default {
 
 @media (max-width: 900px) {
   .wheel-stage {
-    width: min(100%, 560px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 7rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 7rem));
+    width: min(100%, calc(560px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 7rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 7rem) * var(--wheel-scale)));
   }
 }
 
@@ -871,9 +882,9 @@ export default {
   }
 
   .wheel-stage {
-    width: min(92vw, 650px);
-    max-width: min(92vw, 650px);
-    max-height: min(92vw, 650px);
+    width: min(92vw, calc(650px * var(--wheel-scale)));
+    max-width: min(92vw, calc(650px * var(--wheel-scale)));
+    max-height: min(92vw, calc(650px * var(--wheel-scale)));
   }
 }
 
@@ -895,9 +906,9 @@ export default {
   }
 
   .wheel-stage {
-    width: min(100%, 470px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 10.5rem));
+    width: min(100%, calc(470px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 10.5rem) * var(--wheel-scale)));
   }
 
   .spin-button {
@@ -932,9 +943,9 @@ export default {
   }
 
   .wheel-stage {
-    width: min(100%, 420px);
-    max-width: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
-    max-height: min(100%, calc(var(--app-height, 100vh) - 9.5rem));
+    width: min(100%, calc(420px * var(--wheel-scale)));
+    max-width: min(100%, calc((var(--app-height, 100vh) - 9.5rem) * var(--wheel-scale)));
+    max-height: min(100%, calc((var(--app-height, 100vh) - 9.5rem) * var(--wheel-scale)));
   }
 
   .wheel-center__ring {

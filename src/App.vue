@@ -3,7 +3,7 @@
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
-          <router-link to="/" class="brand-link" :class="{ 'brand-link--lifted': isMainPrizeActive }">
+          <router-link to="/" class="brand-link" :class="{ 'brand-link--hero': isMainPrizeActive }">
             <img class="brand-logo" src="/parrano-assets/new-logo.webp" alt="Parrano" fetchpriority="high" decoding="async" />
           </router-link>
 
@@ -176,20 +176,21 @@ export default {
 
 .brand-link {
   display: inline-flex;
-  grid-column: 1;
-  justify-self: start;
+  grid-column: 1 / -1;
+  justify-self: center;
   align-items: center;
   text-decoration: none;
-  position: relative;
-  z-index: 9;
-}
-
-.brand-link--lifted {
   position: fixed;
   left: 50%;
   top: 6.7rem;
   transform: translateX(-50%);
-  animation: prize-logo-diagonal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 9;
+  transform-origin: center top;
+  transition: transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-link--hero {
+  transform: translateX(-50%) translateY(20px) scale(1.12);
 }
 
 .brand-logo {
@@ -360,16 +361,6 @@ export default {
   transform: translateY(10px);
 }
 
-@keyframes prize-logo-diagonal {
-  from {
-    transform: translate(calc(-50% - 34vw), -5.9rem);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -384,10 +375,12 @@ export default {
     margin-top: 0.35rem;
   }
 
-  .brand-link--lifted {
+  .brand-link {
     top: 5.9rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-mobile 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    transform: translateX(-50%) translateY(18px) scale(1.1);
   }
 
   .brand-logo {
@@ -406,10 +399,12 @@ export default {
     margin-top: 0.4rem;
   }
 
-  .brand-link--lifted {
+  .brand-link {
     top: 4.35rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-landscape 1.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    transform: translateX(-50%) translateY(16px) scale(1.08);
   }
 
 
@@ -425,10 +420,12 @@ export default {
     min-height: 3.3rem;
   }
 
-  .brand-link--lifted {
+  .brand-link {
     top: 4rem;
-    transform: translateX(-50%);
-    animation: prize-logo-diagonal-compact 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .brand-link--hero {
+    transform: translateX(-50%) translateY(14px) scale(1.06);
   }
 
   .status-banner {
@@ -438,41 +435,5 @@ export default {
   }
 
 
-}
-
-@media (max-width: 900px) {
-  @keyframes prize-logo-diagonal-mobile {
-    from {
-      transform: translate(calc(-50% - 31vw), -4.7rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-}
-
-@media (orientation: landscape) {
-  @keyframes prize-logo-diagonal-landscape {
-    from {
-      transform: translate(calc(-50% - 36vw), -3.7rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-}
-
-@media (max-height: 560px) and (orientation: landscape) {
-  @keyframes prize-logo-diagonal-compact {
-    from {
-      transform: translate(calc(-50% - 34vw), -3.3rem);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
 }
 </style>
