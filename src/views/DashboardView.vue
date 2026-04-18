@@ -171,14 +171,14 @@
               <span class="mode-item__dot mode-item__dot--main"></span>
               <div>
                 <strong>Main win &amp; Small win</strong>
-                <p>Cada franja horaria define su propia probabilidad por tirada (100% = siempre, menos = menos frecuente).</p>
+                <p>Each time window sets its own per-spin probability (100% = always, lower = less frequent).</p>
               </div>
             </li>
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--repeat"></span>
               <div>
                 <strong>Repeat &amp; No win</strong>
-                <p>Rellenan automáticamente lo que Main win y Small win no consumen. Su split entre los dos debe sumar 100%.</p>
+                <p>Always available. Their split automatically fills whatever probability wins don't use — and must total 100% between the two.</p>
               </div>
             </li>
             <li class="mode-item">

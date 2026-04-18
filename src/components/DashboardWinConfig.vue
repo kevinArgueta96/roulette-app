@@ -17,7 +17,7 @@
       </p>
 
       <div class="outcome-grid">
-        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :style="{ borderLeftColor: outcome.color }">
+        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :class="{ 'outcome-card--full': outcome.hasSlots }" :style="{ borderLeftColor: outcome.color }">
           <div class="outcome-card__header">
             <div class="outcome-card__title">
               <span class="outcome-dot" :style="{ background: outcome.color }" aria-hidden="true"></span>
@@ -98,9 +98,9 @@
 
           <div v-if="outcome.hasSlots" class="slots-block">
             <p class="slots-help">
-              Probabilidad por tirada durante esa franja horaria (100% = siempre aparece).
+              Probability per spin during this time window (100% = always appears).
               <template v-if="fallbackRemainingAtPeak === 0">
-                <br/><span class="slots-help--warn">Aviso: las franjas activas consumen el 100% — Repeat y No win no se activarán en esos horarios.</span>
+                <br/><span class="slots-help--warn">Warning: active windows consume 100% — Repeat and No win will never trigger during these hours.</span>
               </template>
             </p>
 
@@ -185,11 +185,11 @@
             </div>
 
             <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
-              Sin franjas horarias, este premio nunca aparece. Agrega un horario para activarlo.
+              No time windows configured — this outcome never appears. Add a time range to enable it.
             </div>
 
             <button class="add-slot-btn" type="button" @click="addSlot(outcome.key)">
-              + Agregar franja horaria
+              + Add time range
             </button>
           </div>
         </article>
@@ -198,8 +198,8 @@
       <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
         <div class="fallback-split__header">
           <div>
-            <p class="block-eyebrow">Reparto de no-premio</p>
-            <h4 class="block-title">Repeat y No win</h4>
+            <p class="block-eyebrow">Non-win split</p>
+            <h4 class="block-title">Repeat &amp; No win</h4>
           </div>
           <div class="fallback-split__total">
             <span class="fallback-split__total-label">Total</span>
@@ -207,7 +207,7 @@
           </div>
         </div>
         <p class="fallback-split__copy">
-          Cuando Main win y Small win no consumen el 100%, el resto se reparte entre Repeat y No win con las proporciones de abajo. Estos dos deben sumar 100%.
+          When Main win and Small win don't use 100%, the remainder is split between Repeat and No win using the ratios below. These two must total 100%.
         </p>
         <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
       </div>
@@ -216,12 +216,12 @@
         <div class="timeline-section__header">
           <div>
             <p class="block-eyebrow">Live preview</p>
-            <h4 class="block-title">Probabilidad por hora del día</h4>
+            <h4 class="block-title">Probability by time of day</h4>
           </div>
         </div>
 
         <p class="probability-summary__copy">
-          Vista previa hora por hora. Mostrando probabilidad real por tirada de cada premio.
+          Hour-by-hour preview of the actual per-spin probability for each outcome.
         </p>
 
         <div class="probability-timeline">
@@ -753,7 +753,7 @@ export default {
       ];
 
       if (this.fallbackSplitTotal !== 100) {
-        return `Repeat y No win deben sumar 100% entre los dos. Actualmente: ${this.fallbackSplitTotal.toFixed(2)}%.`;
+        return `Repeat and No win must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
       }
 
       if (!ranges.length) {
@@ -769,7 +769,7 @@ export default {
         const total = mainWeight + smallWeight;
 
         if (total > 100.001) {
-          return `En este horario, Main win + Small win superan el 100% combinado (${total.toFixed(2)}%). Reduce la probabilidad de alguno.`;
+          return `Main win + Small win exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
         }
       }
 
@@ -980,6 +980,10 @@ export default {
   border: 1px solid rgba(122, 151, 131, 0.14);
   border-left-width: 3px;
   min-width: 0;
+}
+
+.outcome-card--full {
+  grid-column: 1 / -1;
 }
 
 .outcome-card__header {
