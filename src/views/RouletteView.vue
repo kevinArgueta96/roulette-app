@@ -237,7 +237,7 @@ export default {
 .prize-product {
   position: absolute;
   bottom: var(--prize-bottom);
-  z-index: 4;
+  z-index: 2;
   width: clamp(146px, 23.8%, 254px);
   height: auto;
   object-fit: contain;

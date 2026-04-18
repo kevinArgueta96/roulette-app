@@ -171,7 +171,7 @@ export default {
 
 .screen-header {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -321,7 +321,6 @@ export default {
   flex: 1;
   min-height: 0;
   position: relative;
-  z-index: 2;
   overflow: auto;
 }
 
@@ -330,7 +329,7 @@ export default {
   left: 2rem;
   right: 2rem;
   bottom: 1.2rem;
-  z-index: 5;
+  z-index: 7;
   border-radius: 1rem;
   padding: 0.8rem 1rem;
   background: rgba(255, 80, 28, 0.08);
@@ -342,7 +341,7 @@ export default {
 .loading-overlay {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 8;
   display: grid;
   place-items: center;
   gap: 0.6rem;
@@ -368,7 +367,7 @@ export default {
   display: block;
   object-fit: fill;
   object-position: bottom center;
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
 }
 

@@ -591,7 +591,7 @@ export default {
 <style scoped>
 .roulette-shell {
   position: relative;
-  z-index: 2;
+  z-index: 4;
   --wheel-scale: 1;
   width: 100%;
   height: 100%;
@@ -767,9 +767,9 @@ export default {
   border-radius: 0.22rem;
   background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
   color: #fff6e7;
-  padding: 0.74rem 1.9rem;
-  min-width: 150px;
-  font-size: 1.5rem;
+  padding: 0.81rem 2.09rem;
+  min-width: 165px;
+  font-size: 1.65rem;
   font-weight: 800;
   letter-spacing: 0.01em;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
@@ -979,9 +979,9 @@ export default {
 
   .spin-button {
     margin-top: 0;
-    padding: 0.58rem 1.35rem;
-    min-width: 118px;
-    font-size: 0.88rem;
+    padding: 0.64rem 1.49rem;
+    min-width: 130px;
+    font-size: 0.97rem;
   }
 
   .wheel-action-slot {
