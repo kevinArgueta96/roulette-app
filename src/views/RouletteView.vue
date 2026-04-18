@@ -162,6 +162,10 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 5.8rem;
+  --prize-left-offset: clamp(1.1rem, 3.9vw, 1.65rem);
+  --prize-right-offset: clamp(-0.95rem, -2.8vw, -0.25rem);
+  --prize-bottom: 8.1%;
+  --prize-left-lift: clamp(0.2rem, 0.46vw, 0.32rem);
 }
 
 .result-label {
@@ -218,9 +222,9 @@ export default {
 
 .prize-product {
   position: absolute;
-  bottom: 22%;
+  bottom: var(--prize-bottom);
   z-index: 4;
-  width: clamp(135px, 22%, 235px);
+  width: clamp(146px, 23.8%, 254px);
   height: auto;
   object-fit: contain;
   pointer-events: none;
@@ -228,15 +232,16 @@ export default {
 }
 
 .prize-product--left {
-  left: 0;
+  left: var(--prize-left-offset);
+  bottom: calc(var(--prize-bottom) + var(--prize-left-lift));
   transform-origin: center center;
   animation: float-left 3s ease-in-out 0.6s infinite;
   will-change: transform;
 }
 
 .prize-product--right {
-  right: 0;
-  width: clamp(190px, 31%, 360px);
+  right: var(--prize-right-offset);
+  width: clamp(205px, 33.5%, 389px);
   transform-origin: center center;
   animation: float-right 3s ease-in-out 0.9s infinite;
   will-change: transform;
@@ -312,21 +317,27 @@ export default {
   .roulette-view {
     padding-top: 0;
     padding-bottom: 2.4rem;
+    --prize-bottom: 2%;
   }
 
   .prize-product {
-    width: clamp(80px, 14%, 140px);
-    bottom: 8%;
+    width: clamp(86px, 15.1%, 151px);
+  }
+
+  .prize-product--left {
+    bottom: calc(var(--prize-bottom) + clamp(0.1rem, 0.33vw, 0.2rem));
   }
 
   .prize-product--right {
-    width: clamp(130px, 22%, 220px);
+    width: clamp(140px, 23.8%, 238px);
   }
 }
 
 @media (max-width: 900px) {
   .roulette-view {
     padding-top: 4.6rem;
+    --prize-bottom: 6.1%;
+    --prize-left-lift: clamp(0.15rem, 0.58vw, 0.28rem);
   }
 
   .result-label--main {
@@ -338,12 +349,11 @@ export default {
   }
 
   .prize-product {
-    width: clamp(112px, 20%, 190px);
-    bottom: 18%;
+    width: clamp(121px, 21.6%, 205px);
   }
 
   .prize-product--right {
-    width: clamp(155px, 28%, 285px);
+    width: clamp(167px, 30.2%, 308px);
   }
 }
 

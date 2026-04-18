@@ -1,0 +1,10 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - link "Parrano" [ref=e6] [cursor=pointer]:
+        - /url: "#/"
+      - navigation [ref=e8]
+    - generic [ref=e16]:
+      - button "Spin roulette" [ref=e19] [cursor=pointer]
+      - button "PYÖRÄYTÄ" [ref=e25] [cursor=pointer]
+    - img
