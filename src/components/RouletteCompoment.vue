@@ -855,6 +855,8 @@ export default {
 
 .write-reveal-leave-active {
   transition: opacity 0.18s ease;
+  animation: none !important;
+  clip-path: inset(0 0 0 0);
 }
 
 .write-reveal-enter,
