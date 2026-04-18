@@ -189,6 +189,8 @@ export default {
 }
 
 .brand-link:not(.brand-link--dashboard) {
+  --brand-hero-shift: 20px;
+  --brand-hero-scale: 1.12;
   grid-column: 1 / -1;
   justify-self: center;
   position: fixed;
@@ -200,7 +202,8 @@ export default {
 }
 
 .brand-link--hero {
-  transform: translateX(-50%) translateY(20px) scale(1.12);
+  transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
+  animation: brand-link-settle 0.72s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .brand-logo {
@@ -386,6 +389,16 @@ export default {
   to { transform: rotate(360deg); }
 }
 
+@keyframes brand-link-settle {
+  from {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  to {
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
+  }
+}
+
 @media (max-width: 900px) {
   .tablet-canvas {
     padding: 1rem 0.8rem 0;
@@ -401,7 +414,9 @@ export default {
   }
 
   .brand-link--hero {
-    transform: translateX(-50%) translateY(18px) scale(1.1);
+    --brand-hero-shift: 18px;
+    --brand-hero-scale: 1.1;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
   .brand-logo {
@@ -425,7 +440,9 @@ export default {
   }
 
   .brand-link--hero {
-    transform: translateX(-50%) translateY(16px) scale(1.08);
+    --brand-hero-shift: 16px;
+    --brand-hero-scale: 1.08;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
 
@@ -446,7 +463,9 @@ export default {
   }
 
   .brand-link--hero {
-    transform: translateX(-50%) translateY(14px) scale(1.06);
+    --brand-hero-shift: 14px;
+    --brand-hero-scale: 1.06;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
 
   .status-banner {

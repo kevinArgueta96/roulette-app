@@ -26,7 +26,7 @@
       />
     </transition>
 
-    <transition name="fade-up">
+    <transition name="write-reveal">
       <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
         <template v-if="isPrizeHeroResult">
           <p class="result-label__main-title">{{ prizeHeroTitle }}</p>
@@ -185,6 +185,7 @@ export default {
 
 .result-label__main-title {
   margin: 0;
+  display: inline-block;
   font-family: "Lumios Marker", cursive;
   font-size: clamp(4rem, 9vw, 6.6rem);
   font-weight: 400;
@@ -192,13 +193,26 @@ export default {
   letter-spacing: 0;
   color: #2e6a49;
   text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
-  animation: title-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  will-change: transform, opacity;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: handwriting-reveal 0.92s cubic-bezier(0.2, 0.84, 0.22, 1) 0.84s forwards;
+  will-change: clip-path, opacity;
 }
 
-@keyframes title-pop {
-  from { opacity: 0; transform: scale(0.65) translateY(18px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+@keyframes handwriting-reveal {
+  0% {
+    opacity: 0.38;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .result-label__eyebrow {
@@ -289,16 +303,17 @@ export default {
   transform: translateX(55px) rotate(13deg);
 }
 
-.fade-up-enter-active {
-  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+.write-reveal-enter-active {
+  transition: opacity 0.24s ease 0.76s;
 }
-.fade-up-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+
+.write-reveal-leave-active {
+  transition: opacity 0.18s ease;
 }
-.fade-up-enter,
-.fade-up-leave-to {
+
+.write-reveal-enter,
+.write-reveal-leave-to {
   opacity: 0;
-  transform: translateY(12px);
 }
 
 @media (orientation: landscape) {

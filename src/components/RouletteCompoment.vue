@@ -69,7 +69,7 @@
     </div>
 
     <div class="wheel-action-slot">
-      <transition name="fade-up">
+      <transition name="write-reveal">
         <p v-if="showMainPrizeCopy" class="main-prize-copy">Arki ansaitsee<br>parempaa!</p>
       </transition>
 
@@ -827,6 +827,7 @@ export default {
   transform: translateX(-50%);
   z-index: 6;
   margin: 0;
+  display: inline-block;
   color: #295f41;
   font-family: "Lumios Marker", cursive;
   font-size: clamp(4rem, 9vw, 6.6rem);
@@ -836,6 +837,10 @@ export default {
   text-align: center;
   width: min(86%, 620px);
   white-space: normal;
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  animation: handwriting-reveal 1.04s cubic-bezier(0.2, 0.84, 0.22, 1) 1s forwards;
+  will-change: clip-path, opacity;
 }
 
 .spin-button:disabled {
@@ -844,17 +849,33 @@ export default {
   animation: none;
 }
 
-/* fade-up — used by main-prize-copy transition */
-.fade-up-enter-active {
-  transition: opacity 0.38s ease, transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+.write-reveal-enter-active {
+  transition: opacity 0.24s ease 0.92s;
 }
-.fade-up-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
+
+.write-reveal-leave-active {
+  transition: opacity 0.18s ease;
 }
-.fade-up-enter,
-.fade-up-leave-to {
+
+.write-reveal-enter,
+.write-reveal-leave-to {
   opacity: 0;
-  transform: translateY(14px);
+}
+
+@keyframes handwriting-reveal {
+  0% {
+    opacity: 0.38;
+    clip-path: inset(0 100% 0 0);
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
 }
 
 .spin-button--hero-repeat {
@@ -878,13 +899,13 @@ export default {
   .roulette-shell {
     padding-top: 0;
     justify-content: center;
-    gap: 1.2rem;
+    gap: 0.85rem;
   }
 
   .wheel-stage {
-    width: min(92vw, calc(650px * var(--wheel-scale)));
-    max-width: min(92vw, calc(650px * var(--wheel-scale)));
-    max-height: min(92vw, calc(650px * var(--wheel-scale)));
+    width: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
+    max-width: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
+    max-height: min(96vw, calc((var(--app-height, 100vh) - 6.8rem) * var(--wheel-scale)), calc(740px * var(--wheel-scale)));
   }
 }
 
