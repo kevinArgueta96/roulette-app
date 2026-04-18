@@ -16,10 +16,9 @@
               @click="toggleMenu"
             >
               <svg class="menu-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <circle cx="18" cy="18" r="17" fill="#1f5a3f"/>
-                <circle cx="18" cy="12" r="2.2" fill="#fffbe5"/>
-                <circle cx="18" cy="18" r="2.2" fill="#fffbe5"/>
-                <circle cx="18" cy="24" r="2.2" fill="#fffbe5"/>
+                <circle class="menu-icon__dot" cx="18" cy="12" r="2.2"/>
+                <circle class="menu-icon__dot" cx="18" cy="18" r="2.2"/>
+                <circle class="menu-icon__dot" cx="18" cy="24" r="2.2"/>
               </svg>
             </button>
             <transition name="fade-up">
@@ -204,24 +203,45 @@ export default {
 .menu-button {
   background: transparent;
   border: 0;
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 3rem;
+  height: 3rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  border-radius: 999px;
+  opacity: 0.52;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
 .menu-icon {
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 2.2rem;
+  height: 2.2rem;
   display: block;
-  transition: opacity 0.2s;
+  transition: transform 0.18s ease;
 }
 
-.menu-button:hover .menu-icon {
-  opacity: 0.8;
+.menu-icon__dot {
+  fill: rgba(31, 90, 63, 0.52);
+}
+
+.menu-button:hover {
+  opacity: 0.66;
+}
+
+.menu-button:focus-visible {
+  opacity: 0.82;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(31, 90, 63, 0.12);
+}
+
+.menu-button[aria-expanded="true"] {
+  opacity: 0.78;
+}
+
+.menu-button[aria-expanded="true"] .menu-icon {
+  transform: scale(1.02);
 }
 
 .menu-shell {
