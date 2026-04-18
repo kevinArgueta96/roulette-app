@@ -3,7 +3,14 @@
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
-          <router-link to="/" class="brand-link" :class="{ 'brand-link--hero': isMainPrizeActive }">
+          <router-link
+            to="/"
+            class="brand-link"
+            :class="{
+              'brand-link--hero': isMainPrizeActive && $route.name !== 'dashboard',
+              'brand-link--dashboard': $route.name === 'dashboard'
+            }"
+          >
             <img class="brand-logo" src="/parrano-assets/new-logo.webp" alt="Parrano" fetchpriority="high" decoding="async" />
           </router-link>
 
@@ -176,15 +183,18 @@ export default {
 
 .brand-link {
   display: inline-flex;
-  grid-column: 1 / -1;
-  justify-self: center;
   align-items: center;
   text-decoration: none;
+  z-index: 9;
+}
+
+.brand-link:not(.brand-link--dashboard) {
+  grid-column: 1 / -1;
+  justify-self: center;
   position: fixed;
   left: 50%;
   top: 6.7rem;
   transform: translateX(-50%);
-  z-index: 9;
   transform-origin: center top;
   transition: transform 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -199,6 +209,17 @@ export default {
   max-height: 5rem;
   height: auto;
   object-fit: contain;
+}
+
+.brand-link--dashboard {
+  grid-column: 1;
+  justify-self: start;
+  position: relative;
+}
+
+.brand-link--dashboard .brand-logo {
+  width: clamp(176px, 20vw, 244px);
+  max-height: 3.4rem;
 }
 
 .menu-button {
@@ -375,7 +396,7 @@ export default {
     margin-top: 0.35rem;
   }
 
-  .brand-link {
+  .brand-link:not(.brand-link--dashboard) {
     top: 5.9rem;
   }
 
@@ -399,7 +420,7 @@ export default {
     margin-top: 0.4rem;
   }
 
-  .brand-link {
+  .brand-link:not(.brand-link--dashboard) {
     top: 4.35rem;
   }
 
@@ -420,7 +441,7 @@ export default {
     min-height: 3.3rem;
   }
 
-  .brand-link {
+  .brand-link:not(.brand-link--dashboard) {
     top: 4rem;
   }
 
