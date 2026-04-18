@@ -592,7 +592,9 @@ export default {
 .roulette-shell {
   position: relative;
   z-index: 4;
-  --wheel-scale: 1;
+  --base-scale: 1;
+  --hero-factor: 1;
+  --wheel-scale: calc(var(--base-scale) * var(--hero-factor));
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -605,7 +607,7 @@ export default {
 }
 
 .roulette-shell--hero {
-  --wheel-scale: 0.82;
+  --hero-factor: 0.82;
 }
 
 .pointer-wrap {
@@ -614,7 +616,7 @@ export default {
   justify-content: center;
   margin-bottom: -2.7rem;
   position: relative;
-  z-index: 8;
+  z-index: 12;
 }
 
 .pointer-wrap--hidden {
@@ -812,7 +814,7 @@ export default {
 
 .wheel-action-slot {
   position: relative;
-  z-index: 6;
+  z-index: 10;
   min-height: 2.8rem;
   display: flex;
   align-items: flex-start;
@@ -825,7 +827,7 @@ export default {
   top: 0.35rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 10;
   margin: 0;
   display: inline-block;
   color: #295f41;
@@ -899,6 +901,7 @@ export default {
 
 @media (orientation: portrait) and (min-height: 900px) {
   .roulette-shell {
+    --base-scale: 0.8;
     padding-top: 0;
     justify-content: center;
     gap: 0.85rem;

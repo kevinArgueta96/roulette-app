@@ -55,6 +55,29 @@
 
         <router-view class="router-outlet" />
 
+        <template v-if="$route.name !== 'dashboard'">
+          <transition name="slide-left">
+            <img
+              v-if="isMainPrizeActive"
+              class="prize-product prize-product--left"
+              src="/parrano-assets/main-l.webp"
+              alt="Parrano Robusto Wedge"
+              loading="lazy"
+              decoding="async"
+            />
+          </transition>
+          <transition name="slide-right">
+            <img
+              v-if="isMainPrizeActive"
+              class="prize-product prize-product--right"
+              src="/parrano-assets/main-r.webp"
+              alt="Parrano Robusto Powder"
+              loading="lazy"
+              decoding="async"
+            />
+          </transition>
+        </template>
+
         <div v-if="loadWarning" class="status-banner">
           {{ loadWarning }}
         </div>
@@ -171,7 +194,7 @@ export default {
 
 .screen-header {
   position: relative;
-  z-index: 5;
+  z-index: 6;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -321,8 +344,76 @@ export default {
   flex: 1;
   min-height: 0;
   position: relative;
-  z-index: 2;
+  z-index: 5;
   overflow: auto;
+}
+
+.prize-product {
+  position: absolute;
+  bottom: var(--prize-bottom, 8.1%);
+  z-index: 2;
+  width: clamp(146px, 23.8%, 254px);
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.22));
+}
+
+.prize-product--left {
+  left: var(--prize-left-offset, clamp(1.1rem, 3.9vw, 1.65rem));
+  bottom: calc(var(--prize-bottom, 8.1%) + var(--prize-left-lift, clamp(0.2rem, 0.46vw, 0.32rem)));
+  z-index: 4;
+  transform-origin: center center;
+  animation: float-left 3s ease-in-out 0.6s infinite;
+  will-change: transform;
+}
+
+.prize-product--right {
+  right: var(--prize-right-offset, clamp(-0.95rem, -2.8vw, -0.25rem));
+  width: clamp(205px, 33.5%, 389px);
+  transform-origin: center center;
+  animation: float-right 3s ease-in-out 0.9s infinite;
+  will-change: transform;
+}
+
+.slide-left-enter-active {
+  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.slide-left-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.slide-left-enter {
+  opacity: 0;
+  transform: translateX(-72px) rotate(-13deg);
+}
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-55px) rotate(-13deg);
+}
+
+.slide-right-enter-active {
+  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.slide-right-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.slide-right-enter {
+  opacity: 0;
+  transform: translateX(72px) rotate(13deg);
+}
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(55px) rotate(13deg);
+}
+
+@keyframes float-left {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50%       { transform: rotate(-8deg) translateY(-10px); }
+}
+
+@keyframes float-right {
+  0%, 100% { transform: rotate(8deg) translateY(0); }
+  50%       { transform: rotate(8deg) translateY(-10px); }
 }
 
 .status-banner {
@@ -423,6 +514,16 @@ export default {
     width: clamp(189px, 52.2vw, 288px);
     max-height: 3.42rem;
   }
+
+  .prize-product {
+    --prize-bottom: 6.1%;
+    --prize-left-lift: clamp(0.15rem, 0.58vw, 0.28rem);
+    width: clamp(121px, 21.6%, 205px);
+  }
+
+  .prize-product--right {
+    width: clamp(167px, 30.2%, 308px);
+  }
 }
 
 @media (orientation: landscape) {
@@ -474,6 +575,17 @@ export default {
     bottom: 0.75rem;
   }
 
+  .prize-product {
+    --prize-bottom: 2%;
+    width: clamp(86px, 15.1%, 151px);
+  }
 
+  .prize-product--left {
+    bottom: calc(var(--prize-bottom, 2%) + clamp(0.1rem, 0.33vw, 0.2rem));
+  }
+
+  .prize-product--right {
+    width: clamp(140px, 23.8%, 238px);
+  }
 }
 </style>

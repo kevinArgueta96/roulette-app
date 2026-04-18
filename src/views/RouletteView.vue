@@ -2,29 +2,7 @@
   <div class="roulette-view">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
-    <transition name="slide-left">
-      <img
-        v-if="isPrizeHeroResult"
-        class="prize-product prize-product--left"
-        src="/parrano-assets/main-l.webp"
-        alt="Parrano Robusto Wedge"
-        loading="lazy"
-        decoding="async"
-      />
-    </transition>
-
     <RouletteCompoment @showImg="onShowImg" />
-
-    <transition name="slide-right">
-      <img
-        v-if="isPrizeHeroResult"
-        class="prize-product prize-product--right"
-        src="/parrano-assets/main-r.webp"
-        alt="Parrano Robusto Powder"
-        loading="lazy"
-        decoding="async"
-      />
-    </transition>
 
     <transition name="write-reveal">
       <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
@@ -162,10 +140,6 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 5.8rem;
-  --prize-left-offset: clamp(1.1rem, 3.9vw, 1.65rem);
-  --prize-right-offset: clamp(-0.95rem, -2.8vw, -0.25rem);
-  --prize-bottom: 8.1%;
-  --prize-left-lift: clamp(0.2rem, 0.46vw, 0.32rem);
 }
 
 .result-label {
@@ -173,7 +147,7 @@ export default {
   top: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 6;
+  z-index: 20;
   text-align: center;
   pointer-events: none;
 }
@@ -234,74 +208,6 @@ export default {
   text-shadow: 0 2px 8px rgba(255, 255, 255, 0.7);
 }
 
-.prize-product {
-  position: absolute;
-  bottom: var(--prize-bottom);
-  z-index: 2;
-  width: clamp(146px, 23.8%, 254px);
-  height: auto;
-  object-fit: contain;
-  pointer-events: none;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.22));
-}
-
-.prize-product--left {
-  left: var(--prize-left-offset);
-  bottom: calc(var(--prize-bottom) + var(--prize-left-lift));
-  transform-origin: center center;
-  animation: float-left 3s ease-in-out 0.6s infinite;
-  will-change: transform;
-}
-
-.prize-product--right {
-  right: var(--prize-right-offset);
-  width: clamp(205px, 33.5%, 389px);
-  transform-origin: center center;
-  animation: float-right 3s ease-in-out 0.9s infinite;
-  will-change: transform;
-}
-
-@keyframes float-left {
-  0%, 100% { transform: rotate(-8deg) translateY(0); }
-  50%       { transform: rotate(-8deg) translateY(-10px); }
-}
-
-@keyframes float-right {
-  0%, 100% { transform: rotate(8deg) translateY(0); }
-  50%       { transform: rotate(8deg) translateY(-10px); }
-}
-
-/* slide-left — spring overshoot on enter, quick fade on leave */
-.slide-left-enter-active {
-  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.slide-left-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.slide-left-enter {
-  opacity: 0;
-  transform: translateX(-72px) rotate(-13deg);
-}
-.slide-left-leave-to {
-  opacity: 0;
-  transform: translateX(-55px) rotate(-13deg);
-}
-
-/* slide-right — spring overshoot on enter, quick fade on leave */
-.slide-right-enter-active {
-  transition: opacity 0.48s ease, transform 0.52s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.slide-right-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.slide-right-enter {
-  opacity: 0;
-  transform: translateX(72px) rotate(13deg);
-}
-.slide-right-leave-to {
-  opacity: 0;
-  transform: translateX(55px) rotate(13deg);
-}
 
 .write-reveal-enter-active {
   transition: opacity 0.24s ease 0.76s;
@@ -334,27 +240,12 @@ export default {
   .roulette-view {
     padding-top: 0;
     padding-bottom: 2.4rem;
-    --prize-bottom: 2%;
-  }
-
-  .prize-product {
-    width: clamp(86px, 15.1%, 151px);
-  }
-
-  .prize-product--left {
-    bottom: calc(var(--prize-bottom) + clamp(0.1rem, 0.33vw, 0.2rem));
-  }
-
-  .prize-product--right {
-    width: clamp(140px, 23.8%, 238px);
   }
 }
 
 @media (max-width: 900px) {
   .roulette-view {
     padding-top: 4.6rem;
-    --prize-bottom: 6.1%;
-    --prize-left-lift: clamp(0.15rem, 0.58vw, 0.28rem);
   }
 
   .result-label--main {
@@ -363,14 +254,6 @@ export default {
 
   .result-label__main-title {
     font-size: clamp(2.8rem, 7.5vw, 5rem);
-  }
-
-  .prize-product {
-    width: clamp(121px, 21.6%, 205px);
-  }
-
-  .prize-product--right {
-    width: clamp(167px, 30.2%, 308px);
   }
 }
 
