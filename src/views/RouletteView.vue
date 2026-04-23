@@ -266,4 +266,16 @@ export default {
     top: clamp(8rem, 12%, 14rem);
   }
 }
+
+@media (min-width: 768px) and (orientation: portrait) and (min-height: 900px) {
+  .roulette-view {
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 2rem;
+  }
+
+  .result-label--main {
+    top: clamp(10rem, 15%, 16rem);
+  }
+}
 </style>

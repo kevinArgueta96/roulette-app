@@ -914,6 +914,35 @@ export default {
   }
 }
 
+@media (min-width: 768px) and (orientation: portrait) and (min-height: 900px) {
+  .roulette-shell {
+    --base-scale: 0.75;
+    padding-top: 0;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+
+  .wheel-stage {
+    width: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
+    max-width: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
+    max-height: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
+  }
+
+  .wheel-center__ring {
+    width: clamp(130px, 15vw, 163px);
+    height: clamp(130px, 15vw, 163px);
+  }
+
+  .spin-button {
+    font-size: 2.4rem;
+    padding: 1.1rem 3rem;
+  }
+
+  .main-prize-copy {
+    font-size: clamp(6rem, 12vw, 10rem);
+  }
+}
+
 @media (orientation: landscape) {
   .roulette-shell {
     justify-content: center;
