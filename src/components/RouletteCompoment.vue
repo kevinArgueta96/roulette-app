@@ -919,13 +919,17 @@ export default {
     --base-scale: 0.75;
     padding-top: 0;
     justify-content: center;
-    gap: 1.25rem;
+    gap: 0.2rem;
   }
 
   .wheel-stage {
     width: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
     max-width: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
     max-height: min(92vw, calc((var(--app-height, 100vh) - 9rem) * var(--wheel-scale)), calc(1000px * var(--wheel-scale)));
+  }
+
+  .roulette-shell--hero .wheel-stage {
+    transform: translateY(-3rem);
   }
 
   .wheel-center__ring {
@@ -940,6 +944,23 @@ export default {
 
   .main-prize-copy {
     font-size: clamp(6rem, 12vw, 10rem);
+  }
+}
+
+@media (min-width: 1000px) and (orientation: portrait) and (min-height: 1300px) {
+  .roulette-shell--hero .wheel-stage {
+    transform: translateY(-4.5rem);
+  }
+
+  .wheel-action-slot {
+    min-height: 3.4rem;
+  }
+
+  .main-prize-copy {
+    top: -0.45rem;
+    width: min(80%, 760px);
+    font-size: clamp(6.8rem, 10.4vw, 8rem);
+    line-height: 0.9;
   }
 }
 

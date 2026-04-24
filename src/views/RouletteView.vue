@@ -7,7 +7,7 @@
     <transition name="write-reveal">
       <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
         <template v-if="isPrizeHeroResult">
-          <p class="result-label__main-title">{{ prizeHeroTitle }}</p>
+          <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
         </template>
         <template v-else>
         <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
@@ -80,6 +80,12 @@ export default {
       if (this.winType === "noWin") return "Kiitos osallistumisesta!";
       if (this.winType === "repeat") return "Arki ansaitsee parempaa!";
       return "Olet voittanut!";
+    },
+    heroTitleSizeClass() {
+      const len = (this.prizeHeroTitle || "").length;
+      if (len <= 12) return "result-label__main-title--xl";
+      if (len <= 16) return "result-label__main-title--lg";
+      return "result-label__main-title--md";
     },
     resultCopy() {
       return RESULT_CONFIG[this.winType] || {};
@@ -274,8 +280,51 @@ export default {
     padding-bottom: 2rem;
   }
 
+  .result-label {
+    top: clamp(8rem, 16%, 14rem);
+  }
+
   .result-label--main {
-    top: clamp(10rem, 15%, 16rem);
+    top: 5rem;
+  }
+
+  .result-label__main-title--xl {
+    font-size: clamp(4.3rem, 8.55vw, 6.4rem);
+  }
+
+  .result-label__main-title--lg {
+    font-size: clamp(3.9rem, 7.65vw, 6rem);
+  }
+
+  .result-label__main-title--md {
+    font-size: clamp(3.25rem, 6.85vw, 5.15rem);
+  }
+
+  .result-label__eyebrow {
+    font-size: 0.9rem;
+  }
+
+  .result-label__title {
+    font-size: 2rem;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 1000px) and (orientation: portrait) and (min-height: 1300px) {
+  .result-label--main {
+    top: 7rem;
+  }
+
+  .result-label__main-title--xl {
+    font-size: clamp(5.2rem, 8.6vw, 7.35rem);
+  }
+
+  .result-label__main-title--lg {
+    font-size: clamp(4.85rem, 8.05vw, 6.85rem);
+  }
+
+  .result-label__main-title--md {
+    font-size: clamp(4.5rem, 7.7vw, 6.35rem);
   }
 }
 </style>

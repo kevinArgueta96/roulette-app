@@ -1083,49 +1083,182 @@ export default {
 
 @media (max-width: 640px) {
   .dashboard-view {
-    padding-inline: 0.25rem;
+    padding-inline: 0.4rem;
+    gap: 0.85rem;
   }
 
+  /* ── Toolbar ── */
   .dashboard-toolbar {
     flex-direction: column;
+    gap: 1rem;
+    padding: 1.1rem 1rem 1.2rem;
   }
 
-  .summary-panel__header,
-  .panel-heading {
-    flex-direction: column;
+  .toolbar-copy h2 {
+    font-size: 1.35rem;
   }
 
+  .toolbar-copy p:last-child {
+    font-size: 0.8rem;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  /* ── Source switch — large pill toggle ── */
   .source-switch {
     width: 100%;
+    padding: 0.25rem;
+    border-radius: 1rem;
+    background: rgba(31, 90, 63, 0.1);
   }
 
   .source-switch__item {
     flex: 1 1 0;
+    min-height: 52px;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease;
   }
 
+  .source-switch__item--active {
+    background: #1f5a3f;
+    color: #fff7e8;
+    box-shadow: 0 4px 12px rgba(31, 90, 63, 0.28);
+  }
+
+  /* ── Action buttons — 2-column grid ── */
   .toolbar-buttons {
     width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .ghost-btn,
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    padding: 0.6rem;
+    border-radius: 1rem;
+    background: rgba(31, 43, 34, 0.04);
+    border: 1px solid rgba(205, 174, 104, 0.2);
+  }
+
+  .ghost-btn {
+    min-height: 52px;
+    padding: 0.8rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .ghost-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .ghost-btn:disabled {
+    opacity: 0.42;
+  }
+
+  /* ── Primary action row: Refresh + Save ── */
+  .btn-group--primary {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  .btn-group--primary .ghost-btn {
+    flex: 1;
+    min-height: 56px;
+    background: rgba(255, 251, 243, 0.9);
+    border: 1px solid rgba(31, 90, 63, 0.2);
+    font-size: 0.9rem;
+  }
+
   .primary-btn {
-    width: 100%;
+    flex: 1.8;
+    min-height: 56px;
+    padding: 0.9rem 1.2rem;
+    font-size: 1rem;
+    font-weight: 800;
+    border-radius: 0.9rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.1s ease;
   }
 
+  .primary-btn:active:not(:disabled) {
+    transform: scale(0.97);
+    box-shadow: 0 4px 10px rgba(185, 45, 34, 0.18);
+  }
+
+  /* ── Summary panel ── */
+  .summary-panel__header,
+  .panel-heading {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .stats-grid,
+  .schedule-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  .stat-card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.6rem;
+  }
+
+  /* ── Toast & unsaved bar ── */
   .feedback-toast {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: 0.65rem;
     min-width: 0;
     max-width: none;
   }
 
   .unsaved-bar {
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: 0.65rem;
     transform: none;
     flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .unsaved-bar__actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .unsaved-bar__discard,
+  .unsaved-bar__save {
+    min-height: 44px;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.88rem;
   }
 }
 

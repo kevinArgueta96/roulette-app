@@ -526,6 +526,18 @@ export default {
   }
 }
 
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) and (min-height: 900px) {
+  .brand-link:not(.brand-link--dashboard) {
+    top: 5rem;
+  }
+
+  .brand-link--hero {
+    --brand-hero-shift: 8px;
+    --brand-hero-scale: 1.06;
+    transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
+  }
+}
+
 @media (orientation: landscape) {
   .tablet-canvas {
     padding: 0.6rem 0.9rem 0;
