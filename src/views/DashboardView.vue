@@ -47,7 +47,7 @@
               class="ghost-btn"
               type="button"
               :disabled="isRefreshing || isSaving"
-              @click="onRestoreDefaults"
+              @click="openRestoreDefaultsModal"
               title="Reset all rules to factory defaults"
             >
               Restore defaults
@@ -55,10 +55,10 @@
             <button
               class="ghost-btn ghost-btn--danger"
               type="button"
-              :class="{ 'ghost-btn--disabled': !canResetLocalJson }"
-              :aria-disabled="!canResetLocalJson ? 'true' : 'false'"
-              @click="handleResetLocalClick"
-              title="Reset local counters to 0 (keeps rules)"
+              :class="{ 'ghost-btn--disabled': isRefreshing || isSaving }"
+              :aria-disabled="(isRefreshing || isSaving) ? 'true' : 'false'"
+              @click="handleResetClick"
+              title="Reset counters to 0 (keeps slots and limits)"
             >
               Reset counters
             </button>
@@ -231,21 +231,46 @@
           class="modal-card"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="reset-local-title"
-          aria-describedby="reset-local-copy"
+          aria-labelledby="reset-counters-title"
+          aria-describedby="reset-counters-copy"
         >
           <p class="panel-eyebrow">Confirm action</p>
-          <h3 id="reset-local-title">Reset local JSON?</h3>
-          <p id="reset-local-copy" class="modal-copy">
-            This will reset local counters and all current slot delivery counts to 0, while keeping the active wheel rules.
+          <h3 id="reset-counters-title">Reset counters?</h3>
+          <p id="reset-counters-copy" class="modal-copy">
+            This will reset all daily and slot delivery counts to 0. The configured hourly slots and limits will be kept.
           </p>
 
           <div class="modal-actions">
             <button class="ghost-btn" type="button" @click="closeResetLocalModal">
               Cancel
             </button>
-            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetLocalJson">
-              {{ isRefreshing ? "Resetting..." : "Reset local JSON" }}
+            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetCounters">
+              {{ isRefreshing ? "Resetting..." : "Reset counters" }}
+            </button>
+          </div>
+        </section>
+      </div>
+
+    <div v-if="showRestoreDefaultsModal" class="modal-overlay" @click.self="closeRestoreDefaultsModal">
+        <section
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="restore-defaults-title"
+          aria-describedby="restore-defaults-copy"
+        >
+          <p class="panel-eyebrow">Confirm action</p>
+          <h3 id="restore-defaults-title">Restore factory defaults?</h3>
+          <p id="restore-defaults-copy" class="modal-copy">
+            This will permanently erase ALL hourly slots, daily limits, and counters. The configured schedule (12:00–12:15, 13:00–13:15…) will be lost.
+          </p>
+
+          <div class="modal-actions">
+            <button class="ghost-btn" type="button" @click="closeRestoreDefaultsModal">
+              Cancel
+            </button>
+            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmRestoreDefaults">
+              {{ isRefreshing ? "Restoring..." : "Yes, wipe everything" }}
             </button>
           </div>
         </section>
@@ -279,6 +304,7 @@ export default {
       isRefreshing: false,
       dataSource: "remote",
       showResetLocalModal: false,
+      showRestoreDefaultsModal: false,
       hasUnsavedChanges: false,
       toast: { visible: false, type: "success", message: "" }
     };
@@ -332,8 +358,8 @@ export default {
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
     },
-    canResetLocalJson() {
-      return this.dataSource === "local" && this.hasLocalSnapshot && !this.isRefreshing && !this.isSaving;
+    canResetCounters() {
+      return !this.isRefreshing && !this.isSaving;
     }
   },
   mounted() {
@@ -479,41 +505,60 @@ export default {
         this.isRefreshing = false;
       }
     },
-    handleResetLocalClick() {
-      if (!this.canResetLocalJson) {
-        this.showToast("error", "Switch to local mode and load a local JSON snapshot before resetting.");
-        return;
-      }
-
-      this.openResetLocalModal();
-    },
-    openResetLocalModal() {
+    handleResetClick() {
+      if (this.isRefreshing || this.isSaving) return;
       this.showResetLocalModal = true;
     },
     closeResetLocalModal() {
-      if (this.isRefreshing) {
-        return;
-      }
-
+      if (this.isRefreshing) return;
       this.showResetLocalModal = false;
     },
-    async confirmResetLocalJson() {
-      if (this.dataSource !== "local" || !service.hasLocalSnapshot()) {
-        return;
-      }
-
+    async confirmResetCounters() {
       this.isRefreshing = true;
 
       try {
-        const snapshot = service.resetLocalSnapshotCounters(this.buildBootstrapSnapshot());
-        this.hydrateBootstrapData({ ...snapshot, errors: [] });
+        if (this.dataSource === "local") {
+          const snapshot = service.resetLocalSnapshotCounters(this.buildBootstrapSnapshot());
+          this.hydrateBootstrapData({ ...snapshot, errors: [] });
+        } else {
+          const dist = this.winDistribution;
+          const zeroed = {
+            ...dist,
+            lastResetDate: "",
+            mainWin: {
+              ...dist.mainWin,
+              givenToday: 0,
+              slots: (dist.mainWin?.slots || []).map((s) => ({ ...s, given: 0 }))
+            },
+            smallWin: {
+              ...dist.smallWin,
+              givenToday: 0,
+              slots: (dist.smallWin?.slots || []).map((s) => ({ ...s, given: 0 }))
+            }
+          };
+          const ok = await service.saveWinDistribution(zeroed);
+          if (!ok) throw new Error("save-failed");
+          this.hydrateBootstrapData({ ...this.buildBootstrapSnapshot(), winDistribution: zeroed, errors: [] });
+        }
+
         this.showResetLocalModal = false;
-        this.showToast("success", "Local JSON counters reset to 0.");
+        this.showToast("success", this.dataSource === "local" ? "Counters reset to 0." : "Counters reset to 0 in Firebase.");
       } catch {
-        this.showToast("error", "Unable to reset the local JSON.");
+        this.showToast("error", "Unable to reset counters.");
       } finally {
         this.isRefreshing = false;
       }
+    },
+    openRestoreDefaultsModal() {
+      this.showRestoreDefaultsModal = true;
+    },
+    closeRestoreDefaultsModal() {
+      if (this.isRefreshing) return;
+      this.showRestoreDefaultsModal = false;
+    },
+    async confirmRestoreDefaults() {
+      this.showRestoreDefaultsModal = false;
+      await this.onRestoreDefaults();
     },
     triggerImport() {
       this.$refs.localFileInput?.click();
