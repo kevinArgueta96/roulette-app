@@ -755,7 +755,7 @@ export default {
 
 .roulette-shell--storytel.roulette-shell--hero {
   --hero-factor: 1;
-  transform: translateX(-24vw);
+  transform: translateY(clamp(0.4rem, 1.6vh, 0.85rem));
 }
 
 .roulette-shell--storytel .pointer-wrap {

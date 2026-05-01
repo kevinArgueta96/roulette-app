@@ -2,25 +2,34 @@
   <div class="roulette-view" :class="{ 'roulette-view--storytel': isStorytel }">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
-    <RouletteCompoment @showImg="onShowImg" />
-
-    <!-- Parrano: hero text reveal -->
-    <transition v-if="!isStorytel" name="write-reveal">
-      <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
-        <template v-if="isPrizeHeroResult">
-          <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
-        </template>
-        <template v-else>
-          <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
-          <p class="result-label__title">{{ resultCopy.title }}</p>
-        </template>
+    <!-- Storytel: structured two-column hero layout -->
+    <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': hasResult }">
+      <div class="storytel-stage__left">
+        <RouletteCompoment @showImg="onShowImg" />
       </div>
-    </transition>
+      <transition name="win-reveal">
+        <div v-if="hasResult" class="storytel-stage__right">
+          <WinRowComponent :win-type="winType" :visible="hasResult" />
+        </div>
+      </transition>
+    </div>
 
-    <!-- Storytel: side card reveal -->
-    <transition v-if="isStorytel" name="write-reveal">
-      <WinRowComponent v-if="hasResult" :win-type="winType" :visible="hasResult" />
-    </transition>
+    <!-- Parrano: original layout -->
+    <template v-if="!isStorytel">
+      <RouletteCompoment @showImg="onShowImg" />
+
+      <transition name="write-reveal">
+        <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
+          <template v-if="isPrizeHeroResult">
+            <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
+          </template>
+          <template v-else>
+            <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
+            <p class="result-label__title">{{ resultCopy.title }}</p>
+          </template>
+        </div>
+      </transition>
+    </template>
   </div>
 </template>
 
@@ -174,6 +183,53 @@ export default {
 .roulette-view--storytel {
   align-items: center;
   padding: 0 0 clamp(2.4rem, 8vh, 4rem);
+}
+
+/* Storytel two-column hero stage */
+.storytel-stage {
+  align-self: stretch;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  align-items: center;
+  min-height: 0;
+}
+
+.storytel-stage--hero {
+  grid-template-columns: 1fr 1fr;
+}
+
+.storytel-stage__left {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+  padding: 0 clamp(0.5rem, 1.5vw, 1.5rem) 0 clamp(0.75rem, 2.5vw, 2.5rem);
+}
+
+.storytel-stage__right {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+  padding: 0 clamp(0.75rem, 2.5vw, 2.5rem) 0 clamp(0.5rem, 1.5vw, 1.5rem);
+}
+
+.win-reveal-enter-active {
+  transition: opacity 0.45s ease 0.2s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
+}
+.win-reveal-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.win-reveal-enter,
+.win-reveal-leave-to {
+  opacity: 0;
+  transform: translateX(40px);
 }
 
 .result-label {

@@ -140,10 +140,15 @@ const normalizeOutcomeCategory = (key, payload, defaults) => {
   const source = payload && typeof payload === "object" ? payload : {};
   const base = defaults[key];
   const meta = OUTCOME_LOGIC[key];
+  const numberOrDefault = (value, fallback) => {
+    if (value == null) return fallback;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
 
   const normalized = {
-    sectorCount: Math.max(0, Number(source.sectorCount) || base.sectorCount),
-    baseWeight: Math.max(0, Number(source.baseWeight) || base.baseWeight)
+    sectorCount: Math.max(0, numberOrDefault(source.sectorCount, base.sectorCount)),
+    baseWeight: Math.max(0, numberOrDefault(source.baseWeight, base.baseWeight))
   };
 
   if (meta.hasDailyLimit) {

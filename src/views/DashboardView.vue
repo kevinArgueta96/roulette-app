@@ -308,16 +308,20 @@ export default {
       return OUTCOME_KEYS.filter((key) => (Number(this.winDistribution?.[key]?.sectorCount) || 0) > 0);
     },
     slotOutcomeLabel() {
-      return this.visibleOutcomeKeys
+      const labels = this.visibleOutcomeKeys
         .filter((key) => OUTCOME_LOGIC[key]?.hasSlots)
         .map((key) => OUTCOME_THEME[key]?.label || key)
         .join(" & ");
+
+      return labels || "Timed outcomes";
     },
     fallbackOutcomeLabel() {
-      return this.visibleOutcomeKeys
+      const labels = this.visibleOutcomeKeys
         .filter((key) => !OUTCOME_LOGIC[key]?.hasSlots)
         .map((key) => OUTCOME_THEME[key]?.label || key)
         .join(" & ");
+
+      return labels || "Fallback outcome";
     },
     dashboardStats() {
       const tracked = this.visibleOutcomeKeys

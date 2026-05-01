@@ -258,26 +258,11 @@ import { OUTCOME_THEME } from "@/themes";
 import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_LOGIC, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
 
 const CATEGORY_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const DEFAULT_DISTRIBUTION = DEFAULT_WIN_DISTRIBUTION();
-const OUTCOMES = OUTCOME_KEYS
-  .filter((key) => (Number(DEFAULT_DISTRIBUTION[key]?.sectorCount) || 0) > 0)
-  .map((key, i) => ({
-  key,
-  eyebrow: `Category ${CATEGORY_LETTERS[i]}`,
-  label: OUTCOME_THEME[key]?.label || key,
-  description: OUTCOME_LOGIC[key].hasSlots
-    ? `${OUTCOME_THEME[key]?.label || key} sectors with daily limit and time-based probability.`
-    : `${OUTCOME_THEME[key]?.label || key} sectors with configurable base probability.`,
-  color: OUTCOME_THEME[key]?.color || "#888",
-  hasDailyLimit: OUTCOME_LOGIC[key].hasDailyLimit,
-  hasSlots: OUTCOME_LOGIC[key].hasSlots
-}));
 
 export default {
   name: "DashboardWinConfig",
   data() {
     return {
-      outcomes: OUTCOMES,
       localConfig: DEFAULT_WIN_DISTRIBUTION(),
       nextSlotId: 0,
       errors: {
@@ -300,6 +285,12 @@ export default {
   },
   computed: {
     ...mapGetters(["winDistribution"]),
+    activeOutcomeKeys() {
+      return OUTCOME_KEYS.filter((key) => (Number(this.localConfig?.[key]?.sectorCount) || 0) > 0);
+    },
+    outcomes() {
+      return this.activeOutcomeKeys.map((key, index) => this.createOutcomeDescriptor(key, index));
+    },
     fallbackKeys() {
       return this.outcomes.filter((outcome) => !outcome.hasSlots).map((outcome) => outcome.key);
     },
@@ -371,7 +362,7 @@ export default {
       const buildRow = (sampleTime, label, isActive) => {
         const w = buildOutcomeWeights(cfg, sampleTime);
         const row = { label, isActive };
-        OUTCOME_KEYS.forEach((key) => {
+        this.activeOutcomeKeys.forEach((key) => {
           row[key] = ((w[key] || 0) * 100).toFixed(1);
         });
         return row;
@@ -432,6 +423,20 @@ export default {
     }
   },
   methods: {
+    createOutcomeDescriptor(key, index) {
+      const label = OUTCOME_THEME[key]?.label || key;
+      return {
+        key,
+        eyebrow: `Category ${CATEGORY_LETTERS[index]}`,
+        label,
+        description: OUTCOME_LOGIC[key].hasSlots
+          ? `${label} sectors with daily limit and time-based probability.`
+          : `${label} sectors with configurable base probability.`,
+        color: OUTCOME_THEME[key]?.color || "#888",
+        hasDailyLimit: OUTCOME_LOGIC[key].hasDailyLimit,
+        hasSlots: OUTCOME_LOGIC[key].hasSlots
+      };
+    },
     replaceOutcomeConfig(outcomeKey, patch) {
       this.localConfig = {
         ...this.localConfig,
@@ -630,7 +635,7 @@ export default {
       }
 
       this.errors.totalSectors = "";
-      const assigned = OUTCOME_KEYS.reduce((sum, key) => sum + (Number(this.localConfig[key].sectorCount) || 0), 0);
+      const assigned = this.activeOutcomeKeys.reduce((sum, key) => sum + (Number(this.localConfig[key].sectorCount) || 0), 0);
 
       if (assigned !== this.localConfig.totalSectors) {
         this.errors.sectorCounts = `Sector counts must add up to ${this.localConfig.totalSectors}. Current total: ${assigned}.`;
@@ -643,6 +648,11 @@ export default {
     validateOutcome(outcomeKey) {
       const outcome = this.localConfig[outcomeKey];
       this.errors.timelineBudget = "";
+
+      if (!outcome || !this.activeOutcomeKeys.includes(outcomeKey)) {
+        this.errors[outcomeKey] = "";
+        return true;
+      }
 
       if (Number(outcome.baseWeight) < 0 || Number(outcome.baseWeight) > 100) {
         this.errors[outcomeKey] = `${OUTCOME_LOGIC[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
@@ -745,7 +755,7 @@ export default {
     },
     validate() {
       const sectorsOk = this.validateSectorCounts();
-      const outcomesOk = OUTCOME_KEYS.every((key) => this.validateOutcome(key));
+      const outcomesOk = this.activeOutcomeKeys.every((key) => this.validateOutcome(key));
       return sectorsOk && outcomesOk;
     },
     getConfig() {

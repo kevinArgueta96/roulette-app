@@ -1,5 +1,15 @@
 <template>
-  <div id="app" class="app-shell" :class="[`app-shell--${theme}`, { 'app-shell--storytel-hero': theme === 'storytel' && isMainPrizeActive }]">
+  <div
+    id="app"
+    class="app-shell"
+    :class="[
+      `app-shell--${theme}`,
+      {
+        'app-shell--storytel-hero': theme === 'storytel' && isMainPrizeActive && !isDashboardRoute,
+        'app-shell--dashboard': isDashboardRoute
+      }
+    ]"
+  >
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
@@ -7,8 +17,8 @@
             to="/"
             class="brand-link"
             :class="{
-              'brand-link--hero': isMainPrizeActive && $route.name !== 'dashboard',
-              'brand-link--dashboard': $route.name === 'dashboard'
+              'brand-link--hero': isMainPrizeActive && !isDashboardRoute,
+              'brand-link--dashboard': isDashboardRoute
             }"
           >
             <img class="brand-logo" :src="brandLogoSrc" :alt="brandLogoAlt" fetchpriority="high" decoding="async" />
@@ -41,7 +51,7 @@
                 <router-link
                   to="/"
                   class="menu-dropdown__item"
-                  :class="{ 'menu-dropdown__item--active': $route.name === 'roulette' }"
+                  :class="{ 'menu-dropdown__item--active': !isDashboardRoute }"
                   role="menuitem"
                   @click.native="closeMenu"
                 >
@@ -50,7 +60,7 @@
                 <router-link
                   to="/dashboard"
                   class="menu-dropdown__item"
-                  :class="{ 'menu-dropdown__item--active': $route.name === 'dashboard' }"
+                  :class="{ 'menu-dropdown__item--active': isDashboardRoute }"
                   role="menuitem"
                   @click.native="closeMenu"
                 >
@@ -63,7 +73,7 @@
 
         <router-view class="router-outlet" />
 
-        <template v-if="theme !== 'storytel' && $route.name !== 'dashboard'">
+        <template v-if="theme !== 'storytel' && !isDashboardRoute">
           <transition name="slide-left">
             <img
               v-if="isMainPrizeActive"
@@ -96,7 +106,7 @@
         </div>
 
         <img
-          v-if="theme !== 'storytel' && $route.name !== 'dashboard'"
+          v-if="theme !== 'storytel' && !isDashboardRoute"
           class="bottom-wave"
           src="@/assets/brand/infe_sin_blanco.svg"
           alt=""
@@ -155,6 +165,9 @@ export default {
     },
     brandLogoAlt() {
       return this.theme === "storytel" ? "Storytel" : "Parrano";
+    },
+    isDashboardRoute() {
+      return this.$route.name === "dashboard";
     }
   },
   methods: {
@@ -575,6 +588,17 @@ export default {
   z-index: 5;
 }
 
+.app-shell--storytel.app-shell--dashboard .router-outlet {
+  overflow: auto;
+  padding-top: clamp(5.5rem, 12vh, 7.1rem);
+  padding-bottom: 1.4rem;
+  scroll-padding-top: clamp(5.5rem, 12vh, 7.1rem);
+}
+
+.app-shell--storytel.app-shell--dashboard .screen-header {
+  z-index: 40;
+}
+
 .app-shell--storytel .prize-product,
 .app-shell--storytel .bottom-wave {
   display: none;
@@ -623,7 +647,7 @@ export default {
 
 .app-shell--storytel-hero .brand-link,
 .app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
-  transform: translate(20vw, 8vh);
+  transform: translate(calc(25vw - (clamp(154px, 18vw, 220px) / 2)), 8vh);
 }
 
 .storytel-footer {

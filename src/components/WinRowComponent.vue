@@ -91,19 +91,15 @@ export default {
 
 <style scoped>
 .result-shell {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 50vw;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 30;
   pointer-events: none;
   opacity: 0;
-  transform: translateX(8vw);
-  transition: opacity 0.5s ease 0.1s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
+  transform: translateX(6vw);
+  transition: opacity 0.5s ease 0.15s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
 }
 
 .result-shell--visible {
@@ -118,7 +114,7 @@ export default {
 
 .result-card {
   display: block;
-  width: min(46vw, 520px);
+  width: min(88%, 44vw, 460px);
   height: auto;
   filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.18));
   animation: card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -181,7 +177,7 @@ export default {
 
 @media (orientation: landscape) {
   .result-card {
-    width: min(38vw, 420px);
+    width: min(88%, 40vw, 420px);
   }
 
   .result-typewriter {
