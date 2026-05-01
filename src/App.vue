@@ -648,7 +648,7 @@ export default {
 .app-shell--storytel-hero .brand-link,
 .app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
   position: fixed;
-  left: 30.5vw;
+  left: calc(25vw + ((clamp(5.8rem, 11vw, 7.5rem) - clamp(0.5rem, 1.4vw, 1.1rem)) / 2));
   top: clamp(3.35rem, 12.8vh, 5rem);
   transform: translateX(-50%);
 }

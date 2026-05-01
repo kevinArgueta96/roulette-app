@@ -98,7 +98,7 @@ export default {
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.5s ease 0.15s;
+  transition: opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
 }
 
 .result-shell--visible {
@@ -116,7 +116,7 @@ export default {
   width: 100%;
   height: auto;
   filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.18));
-  animation: card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: card-pop 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .result-typewriter {
@@ -166,11 +166,11 @@ export default {
 @keyframes card-pop {
   from {
     opacity: 0;
-    transform: scale(0.6);
+    transform: translateY(10px) scale(0.94);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 

@@ -228,16 +228,16 @@ export default {
   padding: 0 clamp(0.75rem, 2.5vw, 2.5rem) 0 clamp(0.5rem, 1.5vw, 1.5rem);
 }
 
-.win-reveal-enter-active {
-  transition: opacity 0.45s ease 0.2s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
-}
+.win-reveal-enter-active,
 .win-reveal-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .win-reveal-enter,
 .win-reveal-leave-to {
   opacity: 0;
-  transform: translateX(40px);
+  transform: translateX(18px) scale(0.985);
 }
 
 .result-label {
