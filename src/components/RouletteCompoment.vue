@@ -235,7 +235,8 @@ export default {
     isMainPrizeActive() {
       this.$nextTick(() => {
         this.handleResize();
-        window.setTimeout(() => this.handleResize(), 760);
+        window.setTimeout(() => this.handleResize(), 120);
+        window.setTimeout(() => this.handleResize(), 320);
       });
     }
   },
@@ -482,10 +483,6 @@ export default {
         this.ctx.save();
         this.ctx.translate(this.center, this.center);
         this.ctx.rotate(this.startAngle);
-        this.ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
-        this.ctx.shadowBlur = this.canvasSize * 0.018;
-        this.ctx.shadowOffsetX = this.canvasSize * 0.007;
-        this.ctx.shadowOffsetY = this.canvasSize * 0.006;
         this.ctx.drawImage(
           this._centerLogoImg,
           -logoSize / 2,
@@ -760,7 +757,6 @@ export default {
   padding-top: 0;
   gap: 0.25rem;
   transform: translateY(clamp(1.65rem, 4.6vh, 2rem));
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .roulette-shell--storytel.roulette-shell--hero {
