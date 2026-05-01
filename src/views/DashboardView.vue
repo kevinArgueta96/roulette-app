@@ -89,35 +89,26 @@
           </div>
 
           <div class="stats-grid">
-            <article class="stat-card stat-card--track">
-              <p class="stat-card__label">Main wins today</p>
-              <strong>{{ mainWinsToday }} <span class="stat-limit">/ {{ mainWinsLimit }}</span></strong>
-              <div class="stat-bar" role="progressbar" :aria-valuenow="mainWinsToday" :aria-valuemax="mainWinsLimit">
-                <div class="stat-bar__fill" :style="{ width: mainWinsProgress + '%' }" :class="mainWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
+            <article
+              v-for="stat in dashboardStats"
+              :key="stat.key"
+              class="stat-card"
+              :class="{ 'stat-card--highlight': stat.highlight, 'stat-card--track': stat.progress !== null }"
+            >
+              <p class="stat-card__label">{{ stat.label }}</p>
+              <strong>
+                {{ stat.value }}
+                <span v-if="stat.limit !== null" class="stat-limit">/ {{ stat.limit }}</span>
+              </strong>
+              <div
+                v-if="stat.progress !== null"
+                class="stat-bar"
+                role="progressbar"
+                :aria-valuenow="stat.value"
+                :aria-valuemax="stat.limit"
+              >
+                <div class="stat-bar__fill" :style="{ width: stat.progress + '%' }" :class="stat.progress >= 100 ? 'stat-bar__fill--full' : ''"></div>
               </div>
-            </article>
-            <article class="stat-card stat-card--highlight stat-card--track">
-              <p class="stat-card__label">Small wins today</p>
-              <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
-              <div class="stat-bar" role="progressbar" :aria-valuenow="smallWinsToday" :aria-valuemax="smallWinsLimit">
-                <div class="stat-bar__fill" :style="{ width: smallWinsProgress + '%' }" :class="smallWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
-              </div>
-            </article>
-            <article class="stat-card stat-card--highlight">
-              <p class="stat-card__label">Total sectors</p>
-              <strong>{{ totalSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">No win sectors</p>
-              <strong>{{ noWinSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Repeat sectors</p>
-              <strong>{{ repeatSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Total spins</p>
-              <strong>{{ totalSpin }}</strong>
             </article>
           </div>
         </section>
@@ -135,21 +126,9 @@
               <span>Current mode</span>
               <strong>{{ dataSource === "local" ? "Local" : "Online" }}</strong>
             </div>
-            <div class="status-item">
-              <span>Main win sectors</span>
-              <strong>{{ mainWinSectors }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Small win sectors</span>
-              <strong>{{ smallWinSectors }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Main wins remaining</span>
-              <strong>{{ Math.max(0, mainWinsLimit - mainWinsToday) }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Small wins remaining</span>
-              <strong>{{ Math.max(0, smallWinsLimit - smallWinsToday) }}</strong>
+            <div v-for="row in statusRows" :key="row.key" class="status-item">
+              <span>{{ row.label }}</span>
+              <strong>{{ row.value }}</strong>
             </div>
             <div class="status-item">
               <span>Last daily reset</span>
@@ -170,15 +149,15 @@
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--main"></span>
               <div>
-                <strong>Main win &amp; Small win</strong>
+                <strong>{{ slotOutcomeLabel }}</strong>
                 <p>Each time window sets its own per-spin probability (100% = always, lower = less frequent).</p>
               </div>
             </li>
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--repeat"></span>
               <div>
-                <strong>Repeat &amp; No win</strong>
-                <p>Always available. Their split automatically fills whatever probability wins don't use — and must total 100% between the two.</p>
+                <strong>{{ fallbackOutcomeLabel }}</strong>
+                <p>Always available. This fills whatever probability timed outcomes don't use.</p>
               </div>
             </li>
             <li class="mode-item">
@@ -282,6 +261,7 @@
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import DashboardWinConfig from "@/components/DashboardWinConfig.vue";
+import { OUTCOME_KEYS, OUTCOME_LOGIC, OUTCOME_THEME } from "@/themes";
 import { DEFAULT_WIN_DISTRIBUTION } from "@/utils";
 
 const FIREBASE_FIELD_MAP = {
@@ -290,6 +270,8 @@ const FIREBASE_FIELD_MAP = {
   totalSpecialSurprise: "totalSpecialSurprice",
   totalTopPrice: "totalTopPrice",
   totalGiftCard: "totalGitfCard",
+  totalGiftCard3m: "totalGiftCard3m",
+  totalGiftCard1m: "totalGiftCard1m",
   totalSpin: "totalSpin"
 };
 
@@ -318,42 +300,67 @@ export default {
       "totalSpecialSurprise",
       "totalTopPrice",
       "totalGiftCard",
+      "totalGiftCard3m",
+      "totalGiftCard1m",
       "totalSpin"
     ]),
-    mainWinsToday() {
-      return this.winDistribution?.mainWin?.givenToday ?? 0;
+    visibleOutcomeKeys() {
+      return OUTCOME_KEYS.filter((key) => (Number(this.winDistribution?.[key]?.sectorCount) || 0) > 0);
     },
-    mainWinsLimit() {
-      return this.winDistribution?.mainWin?.dailyLimit ?? 0;
+    slotOutcomeLabel() {
+      return this.visibleOutcomeKeys
+        .filter((key) => OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => OUTCOME_THEME[key]?.label || key)
+        .join(" & ");
     },
-    smallWinsToday() {
-      return this.winDistribution?.smallWin?.givenToday ?? 0;
+    fallbackOutcomeLabel() {
+      return this.visibleOutcomeKeys
+        .filter((key) => !OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => OUTCOME_THEME[key]?.label || key)
+        .join(" & ");
     },
-    smallWinsLimit() {
-      return this.winDistribution?.smallWin?.dailyLimit ?? 0;
+    dashboardStats() {
+      const tracked = this.visibleOutcomeKeys
+        .filter((key) => OUTCOME_LOGIC[key]?.hasDailyLimit)
+        .slice(0, 3)
+        .map((key, index) => {
+          const current = Number(this.winDistribution?.[key]?.givenToday) || 0;
+          const limit = Number(this.winDistribution?.[key]?.dailyLimit) || 0;
+          return {
+            key,
+            label: `${OUTCOME_THEME[key]?.label || key} today`,
+            value: current,
+            limit,
+            progress: limit ? Math.min(100, (current / limit) * 100) : 0,
+            highlight: index === 1
+          };
+        });
+
+      const fallbackSectorTotal = this.visibleOutcomeKeys
+        .filter((key) => !OUTCOME_LOGIC[key]?.hasSlots)
+        .reduce((sum, key) => sum + (Number(this.winDistribution?.[key]?.sectorCount) || 0), 0);
+
+      return [
+        ...tracked,
+        { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: true },
+        { key: "fallbackSectors", label: "Fallback sectors", value: fallbackSectorTotal, limit: null, progress: null, highlight: false },
+        { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false }
+      ];
     },
-    totalSectors() {
-      return this.winDistribution?.totalSectors ?? 0;
-    },
-    mainWinSectors() {
-      return this.winDistribution?.mainWin?.sectorCount ?? 0;
-    },
-    smallWinSectors() {
-      return this.winDistribution?.smallWin?.sectorCount ?? 0;
-    },
-    repeatSectors() {
-      return this.winDistribution?.repeat?.sectorCount ?? 0;
-    },
-    noWinSectors() {
-      return this.winDistribution?.noWin?.sectorCount ?? 0;
-    },
-    mainWinsProgress() {
-      if (!this.mainWinsLimit) return 0;
-      return Math.min(100, (this.mainWinsToday / this.mainWinsLimit) * 100);
-    },
-    smallWinsProgress() {
-      if (!this.smallWinsLimit) return 0;
-      return Math.min(100, (this.smallWinsToday / this.smallWinsLimit) * 100);
+    statusRows() {
+      const sectorRows = this.visibleOutcomeKeys.map((key) => ({
+        key: `${key}-sectors`,
+        label: `${OUTCOME_THEME[key]?.label || key} sectors`,
+        value: Number(this.winDistribution?.[key]?.sectorCount) || 0
+      }));
+      const remainingRows = this.visibleOutcomeKeys
+        .filter((key) => OUTCOME_LOGIC[key]?.hasDailyLimit)
+        .map((key) => ({
+          key: `${key}-remaining`,
+          label: `${OUTCOME_THEME[key]?.label || key} remaining`,
+          value: Math.max(0, (Number(this.winDistribution?.[key]?.dailyLimit) || 0) - (Number(this.winDistribution?.[key]?.givenToday) || 0))
+        }));
+      return [...sectorRows, ...remainingRows];
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -374,6 +381,8 @@ export default {
         totalSpecialSurprise: this.totalSpecialSurprise,
         totalTopPrice: this.totalTopPrice,
         totalGiftCard: this.totalGiftCard,
+        totalGiftCard3m: this.totalGiftCard3m,
+        totalGiftCard1m: this.totalGiftCard1m,
         totalSpin: this.totalSpin
       };
 
@@ -391,6 +400,8 @@ export default {
           totalSpecialSurprise: this.totalSpecialSurprise,
           totalTopPrice: this.totalTopPrice,
           totalGiftCard: this.totalGiftCard,
+          totalGiftCard3m: this.totalGiftCard3m,
+          totalGiftCard1m: this.totalGiftCard1m,
           totalSpin: this.totalSpin
         },
         winDistribution: this.winDistribution
@@ -405,6 +416,8 @@ export default {
           totalSpecialSurprise: 0,
           totalTopPrice: 0,
           totalGiftCard: 0,
+          totalGiftCard3m: 0,
+          totalGiftCard1m: 0,
           totalSpin: 0
         },
         winDistribution: DEFAULT_WIN_DISTRIBUTION()
@@ -522,20 +535,17 @@ export default {
           this.hydrateBootstrapData({ ...snapshot, errors: [] });
         } else {
           const dist = this.winDistribution;
-          const zeroed = {
-            ...dist,
-            lastResetDate: "",
-            mainWin: {
-              ...dist.mainWin,
-              givenToday: 0,
-              slots: (dist.mainWin?.slots || []).map((s) => ({ ...s, given: 0 }))
-            },
-            smallWin: {
-              ...dist.smallWin,
-              givenToday: 0,
-              slots: (dist.smallWin?.slots || []).map((s) => ({ ...s, given: 0 }))
-            }
-          };
+          const zeroed = { ...dist, lastResetDate: "" };
+          OUTCOME_KEYS.forEach((key) => {
+            const meta = OUTCOME_LOGIC[key];
+            const current = dist[key];
+            if (!current) return;
+            zeroed[key] = {
+              ...current,
+              ...(meta.hasDailyLimit ? { givenToday: 0 } : {}),
+              ...(meta.hasSlots ? { slots: (current.slots || []).map((s) => ({ ...s, given: 0 })) } : {})
+            };
+          });
           const ok = await service.saveWinDistribution(zeroed);
           if (!ok) throw new Error("save-failed");
           this.hydrateBootstrapData({ ...this.buildBootstrapSnapshot(), winDistribution: zeroed, errors: [] });
@@ -630,7 +640,7 @@ export default {
   flex-direction: column;
   gap: 1.1rem;
   padding: 1.2rem 0.65rem 1.6rem;
-  font-family: "Jost", sans-serif;
+  font-family: var(--font-body), sans-serif;
   font-weight: 400;
   line-height: 1.35;
 }
@@ -643,7 +653,7 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(18, 23, 20, 0.48);
+  background: rgba(var(--rgb-black), 0.48);
   backdrop-filter: blur(6px);
 }
 
@@ -651,20 +661,20 @@ export default {
   width: min(100%, 28rem);
   border-radius: 1.25rem;
   padding: 1.35rem;
-  background: rgba(255, 251, 244, 0.98);
-  border: 1px solid rgba(205, 174, 104, 0.24);
-  box-shadow: 0 22px 42px rgba(20, 25, 22, 0.2);
+  background: rgba(var(--rgb-card-alt), 0.98);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
+  box-shadow: 0 22px 42px rgba(var(--rgb-shadow), 0.2);
 }
 
 .modal-card h3 {
   margin: 0;
-  color: #1f2b22;
+  color: var(--color-text-strong);
   font-size: 1.3rem;
 }
 
 .modal-copy {
   margin: 0.65rem 0 0;
-  color: rgba(31, 43, 34, 0.72);
+  color: rgba(var(--rgb-text-strong), 0.72);
   line-height: 1.5;
 }
 
@@ -681,29 +691,29 @@ export default {
 
 .panel {
   border-radius: 1.25rem;
-  background: rgba(255, 250, 240, 0.96);
-  border: 1px solid rgba(205, 174, 104, 0.22);
-  box-shadow: 0 16px 34px rgba(37, 46, 34, 0.08);
+  background: rgba(var(--rgb-card), 0.96);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.22);
+  box-shadow: 0 16px 34px rgba(var(--rgb-shadow), 0.08);
 }
 
 .panel--overview {
-  background: linear-gradient(180deg, rgba(255, 251, 244, 0.98) 0%, rgba(250, 243, 230, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-card-alt), 0.98) 0%, rgba(var(--rgb-panel-warm), 0.96) 100%);
 }
 
 .panel--totals {
-  background: linear-gradient(180deg, rgba(252, 253, 250, 0.98) 0%, rgba(245, 248, 242, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-soft), 0.96) 100%);
 }
 
 .panel--status {
-  background: linear-gradient(180deg, rgba(250, 252, 248, 0.98) 0%, rgba(241, 247, 239, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
 }
 
 .panel--workflow {
-  background: linear-gradient(180deg, rgba(251, 246, 233, 0.98) 0%, rgba(245, 236, 214, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
 }
 
 .panel--schedules {
-  background: linear-gradient(180deg, rgba(249, 252, 248, 0.98) 0%, rgba(238, 246, 241, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
 }
 
 .dashboard-toolbar {
@@ -719,13 +729,13 @@ export default {
 .summary-panel__header h3 {
   margin: 0;
   font-size: clamp(1.25rem, 2vw, 1.8rem);
-  color: #1f2b22;
+  color: var(--color-text-strong);
 }
 
 .toolbar-copy p:last-child,
 .panel-copy {
   margin: 0.35rem 0 0;
-  color: rgba(31, 43, 34, 0.68);
+  color: rgba(var(--rgb-text-strong), 0.68);
   line-height: 1.45;
 }
 
@@ -736,7 +746,7 @@ export default {
   letter-spacing: 0.18em;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .toolbar-actions {
@@ -749,7 +759,7 @@ export default {
 .source-switch {
   display: inline-flex;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.08);
+  background: rgba(var(--rgb-primary), 0.08);
   padding: 0.2rem;
 }
 
@@ -760,12 +770,12 @@ export default {
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
   font-weight: 700;
-  color: rgba(31, 43, 34, 0.7);
+  color: rgba(var(--rgb-text-strong), 0.7);
 }
 
 .source-switch__item--active {
-  background: #1f5a3f;
-  color: #fff7e8;
+  background: var(--color-primary);
+  color: var(--color-button-fg-soft);
 }
 
 .toolbar-buttons {
@@ -782,8 +792,8 @@ export default {
   gap: 0.5rem;
   padding: 0.35rem 0.55rem;
   border-radius: 0.85rem;
-  background: rgba(31, 43, 34, 0.04);
-  border: 1px solid rgba(31, 43, 34, 0.07);
+  background: rgba(var(--rgb-text-strong), 0.04);
+  border: 1px solid rgba(var(--rgb-text-strong), 0.07);
 }
 
 .btn-group--primary {
@@ -804,21 +814,21 @@ export default {
 }
 
 .ghost-btn {
-  background: rgba(255, 251, 243, 0.9);
-  color: #1f5a3f;
-  border-color: rgba(31, 90, 63, 0.16);
+  background: rgba(var(--rgb-card), 0.9);
+  color: var(--color-primary);
+  border-color: rgba(var(--rgb-primary), 0.16);
 }
 
 .ghost-btn--danger {
-  color: #b92d22;
-  border-color: rgba(185, 45, 34, 0.18);
-  background: rgba(255, 244, 242, 0.92);
+  color: var(--color-accent-dark);
+  border-color: rgba(var(--rgb-danger), 0.18);
+  background: rgba(var(--rgb-card), 0.92);
 }
 
 .primary-btn {
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff8ec;
-  box-shadow: 0 10px 18px rgba(185, 45, 34, 0.2);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg-soft);
+  box-shadow: 0 10px 18px rgba(var(--rgb-danger), 0.2);
 }
 
 .dashboard-layout {
@@ -863,13 +873,13 @@ export default {
 }
 
 .source-badge--remote {
-  background: rgba(47, 96, 57, 0.1);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-primary-soft), 0.1);
+  color: var(--color-primary);
 }
 
 .source-badge--local {
-  background: rgba(185, 45, 34, 0.1);
-  color: #b92d22;
+  background: rgba(var(--rgb-danger), 0.1);
+  color: var(--color-accent-dark);
 }
 
 .stats-grid {
@@ -881,13 +891,13 @@ export default {
 .stat-card {
   border-radius: 1rem;
   padding: 0.95rem 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(253, 248, 238, 0.96) 100%);
-  border: 1px solid rgba(214, 189, 132, 0.18);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.92) 0%, rgba(var(--rgb-card-alt), 0.96) 100%);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.18);
 }
 
 .stat-card--highlight {
-  border-color: rgba(205, 174, 104, 0.35);
-  background: linear-gradient(180deg, rgba(255, 252, 240, 0.98) 0%, rgba(252, 245, 220, 0.96) 100%);
+  border-color: rgba(var(--rgb-gold-line), 0.35);
+  background: linear-gradient(180deg, rgba(var(--rgb-card), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
 }
 
 .stat-card__label {
@@ -896,19 +906,19 @@ export default {
   letter-spacing: 0.14em;
   font-size: 0.66rem;
   font-weight: 800;
-  color: rgba(31, 90, 63, 0.76);
+  color: rgba(var(--rgb-primary), 0.76);
 }
 
 .stat-card strong {
   display: block;
   font-size: clamp(1.45rem, 2.3vw, 2rem);
   line-height: 1;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .stat-limit {
   font-size: 0.85em;
-  color: rgba(29, 43, 34, 0.45);
+  color: rgba(var(--rgb-text), 0.45);
   font-weight: 400;
 }
 
@@ -921,19 +931,19 @@ export default {
   margin-top: 0.55rem;
   height: 5px;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.1);
+  background: rgba(var(--rgb-primary), 0.1);
   overflow: hidden;
 }
 
 .stat-bar__fill {
   height: 100%;
   border-radius: 999px;
-  background: #1f5a3f;
+  background: var(--color-primary);
   transition: width 0.4s ease;
 }
 
 .stat-bar__fill--full {
-  background: #b92d22;
+  background: var(--color-accent-dark);
 }
 
 .totals-panel {
@@ -964,7 +974,7 @@ export default {
 }
 
 .side-panel--soft {
-  background: linear-gradient(180deg, rgba(251, 246, 233, 0.98) 0%, rgba(245, 236, 214, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
 }
 
 .status-list {
@@ -979,7 +989,7 @@ export default {
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(205, 174, 104, 0.18);
+  border-bottom: 1px solid rgba(var(--rgb-gold-line), 0.18);
 }
 
 .status-item:last-child {
@@ -988,17 +998,17 @@ export default {
 }
 
 .status-item span {
-  color: rgba(31, 43, 34, 0.62);
+  color: rgba(var(--rgb-text-strong), 0.62);
 }
 
 .status-item strong {
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .mode-list {
   margin: 0.75rem 0 0;
   padding-left: 1.05rem;
-  color: rgba(31, 43, 34, 0.76);
+  color: rgba(var(--rgb-text-strong), 0.76);
   line-height: 1.5;
 }
 
@@ -1025,21 +1035,21 @@ export default {
   margin-top: 0.35rem;
 }
 
-.mode-item__dot--main  { background: #d9bf74; }
-.mode-item__dot--repeat { background: #a3bfa8; }
-.mode-item__dot--save  { background: #cf3b2d; }
+.mode-item__dot--main  { background: var(--color-gold); }
+.mode-item__dot--repeat { background: var(--color-primary-soft); }
+.mode-item__dot--save  { background: var(--color-accent); }
 
 .mode-item strong {
   display: block;
   font-size: 0.84rem;
-  color: #1d2b22;
+  color: var(--color-text);
   margin-bottom: 0.2rem;
 }
 
 .mode-item p {
   margin: 0;
   font-size: 0.79rem;
-  color: rgba(31, 43, 34, 0.65);
+  color: rgba(var(--rgb-text-strong), 0.65);
   line-height: 1.45;
 }
 
@@ -1055,22 +1065,22 @@ export default {
   max-width: 340px;
   padding: 0.9rem 1rem;
   border-radius: 0.9rem;
-  box-shadow: 0 16px 28px rgba(37, 46, 34, 0.18);
+  box-shadow: 0 16px 28px rgba(var(--rgb-shadow), 0.18);
 }
 
 .feedback-toast--success {
-  background: rgba(255, 251, 243, 0.98);
-  border: 1px solid rgba(205, 174, 104, 0.42);
+  background: rgba(var(--rgb-card), 0.98);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.42);
 }
 
 .feedback-toast--error {
-  background: rgba(255, 243, 241, 0.98);
-  border: 1px solid rgba(185, 45, 34, 0.24);
+  background: rgba(var(--rgb-card), 0.98);
+  border: 1px solid rgba(var(--rgb-danger), 0.24);
 }
 
 .feedback-toast__msg {
   margin: 0;
-  color: #1d2b22;
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -1158,7 +1168,7 @@ export default {
     width: 100%;
     padding: 0.25rem;
     border-radius: 1rem;
-    background: rgba(31, 90, 63, 0.1);
+    background: rgba(var(--rgb-primary), 0.1);
   }
 
   .source-switch__item {
@@ -1175,9 +1185,9 @@ export default {
   }
 
   .source-switch__item--active {
-    background: #1f5a3f;
-    color: #fff7e8;
-    box-shadow: 0 4px 12px rgba(31, 90, 63, 0.28);
+    background: var(--color-primary);
+    color: var(--color-button-fg-soft);
+    box-shadow: 0 4px 12px rgba(var(--rgb-primary), 0.28);
   }
 
   /* ── Action buttons — 2-column grid ── */
@@ -1193,8 +1203,8 @@ export default {
     gap: 0.55rem;
     padding: 0.6rem;
     border-radius: 1rem;
-    background: rgba(31, 43, 34, 0.04);
-    border: 1px solid rgba(205, 174, 104, 0.2);
+    background: rgba(var(--rgb-text-strong), 0.04);
+    border: 1px solid rgba(var(--rgb-gold-line), 0.2);
   }
 
   .ghost-btn {
@@ -1233,8 +1243,8 @@ export default {
   .btn-group--primary .ghost-btn {
     flex: 1;
     min-height: 56px;
-    background: rgba(255, 251, 243, 0.9);
-    border: 1px solid rgba(31, 90, 63, 0.2);
+    background: rgba(var(--rgb-card), 0.9);
+    border: 1px solid rgba(var(--rgb-primary), 0.2);
     font-size: 0.9rem;
   }
 
@@ -1252,7 +1262,7 @@ export default {
 
   .primary-btn:active:not(:disabled) {
     transform: scale(0.97);
-    box-shadow: 0 4px 10px rgba(185, 45, 34, 0.18);
+    box-shadow: 0 4px 10px rgba(var(--rgb-danger), 0.18);
   }
 
   /* ── Summary panel ── */
@@ -1319,9 +1329,9 @@ export default {
   gap: 0.75rem;
   padding: 0.7rem 0.85rem 0.7rem 1rem;
   border-radius: 1rem;
-  background: rgba(255, 251, 244, 0.97);
-  border: 1px solid rgba(205, 174, 104, 0.38);
-  box-shadow: 0 8px 28px rgba(37, 46, 34, 0.16), 0 2px 6px rgba(37, 46, 34, 0.08);
+  background: rgba(var(--rgb-card-alt), 0.97);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.38);
+  box-shadow: 0 8px 28px rgba(var(--rgb-shadow), 0.16), 0 2px 6px rgba(var(--rgb-shadow), 0.08);
   backdrop-filter: blur(8px);
   white-space: nowrap;
 }
@@ -1330,7 +1340,7 @@ export default {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #cf3b2d;
+  background: var(--color-accent);
   flex-shrink: 0;
   animation: dot-pulse 1.8s ease-in-out infinite;
 }
@@ -1344,7 +1354,7 @@ export default {
   margin: 0;
   font-size: 0.86rem;
   font-weight: 600;
-  color: #1d2b22;
+  color: var(--color-text);
   flex: 1;
 }
 
@@ -1366,22 +1376,22 @@ export default {
 
 .unsaved-bar__discard {
   background: transparent;
-  color: rgba(31, 43, 34, 0.7);
-  border-color: rgba(31, 43, 34, 0.14);
+  color: rgba(var(--rgb-text-strong), 0.7);
+  border-color: rgba(var(--rgb-text-strong), 0.14);
 }
 
 .unsaved-bar__discard:hover:not(:disabled) {
-  background: rgba(31, 43, 34, 0.06);
+  background: rgba(var(--rgb-text-strong), 0.06);
 }
 
 .unsaved-bar__save {
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff8ec;
-  box-shadow: 0 6px 14px rgba(185, 45, 34, 0.24);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg-soft);
+  box-shadow: 0 6px 14px rgba(var(--rgb-danger), 0.24);
 }
 
 .unsaved-bar__save:hover:not(:disabled) {
-  box-shadow: 0 8px 18px rgba(185, 45, 34, 0.32);
+  box-shadow: 0 8px 18px rgba(var(--rgb-danger), 0.32);
 }
 
 .unsaved-bar__discard:disabled,

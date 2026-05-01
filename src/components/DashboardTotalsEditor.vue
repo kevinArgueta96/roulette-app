@@ -148,14 +148,14 @@ export default {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #315846;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .section-heading__deco {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(122, 151, 131, 0.18) 25%, rgba(122, 151, 131, 0.48) 50%, transparent 75%);
+  background: linear-gradient(90deg, transparent, rgba(var(--rgb-border), 0.18) 25%, rgba(var(--rgb-border), 0.48) 50%, transparent 75%);
   border-radius: 1px;
 }
 
@@ -176,8 +176,8 @@ export default {
   min-height: 0;
   padding: 1rem 1rem;
   border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 250, 245, 0.96) 100%);
-  border: 1px solid rgba(123, 153, 132, 0.18);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.92) 0%, rgba(var(--rgb-panel-soft), 0.96) 100%);
+  border: 1px solid rgba(var(--rgb-border), 0.18);
 }
 
 .field-label {
@@ -185,17 +185,17 @@ export default {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(49, 88, 70, 0.72);
+  color: rgba(var(--rgb-muted), 0.72);
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .field-group:focus-within .field-label {
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .field-group--error .field-label {
-  color: #b92d22;
+  color: var(--color-accent-dark);
 }
 
 .field-input-wrap {
@@ -209,7 +209,7 @@ export default {
   left: 0;
   right: 0;
   height: 2px;
-  background: #7a9783;
+  background: var(--color-border);
   transform: scaleX(0);
   transform-origin: center;
   transition: transform 0.25s ease;
@@ -221,7 +221,7 @@ export default {
 }
 
 .field-group--error .field-input-wrap::after {
-  background: #b92d22;
+  background: var(--color-accent-dark);
   transform: scaleX(1);
 }
 
@@ -229,13 +229,13 @@ export default {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1.5px solid rgba(122, 151, 131, 0.28);
+  border-bottom: 1.5px solid rgba(var(--rgb-border), 0.28);
   padding: 0.3rem 0 0.15rem 0;
   font-family: inherit;
   font-size: 1.1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #1d2b22;
+  color: var(--color-text);
   outline: none;
   -moz-appearance: textfield;
   appearance: textfield;
@@ -249,14 +249,14 @@ export default {
 }
 
 .field-group--error .field-input {
-  border-bottom-color: rgba(185, 45, 34, 0.4);
-  color: #b92d22;
+  border-bottom-color: rgba(var(--rgb-danger), 0.4);
+  color: var(--color-accent-dark);
 }
 
 .field-error {
   margin: 0;
   font-size: 0.64rem;
-  color: #b92d22;
+  color: var(--color-accent-dark);
   letter-spacing: 0.04em;
 }
 

@@ -1,19 +1,25 @@
 <template>
-  <div class="roulette-view">
+  <div class="roulette-view" :class="{ 'roulette-view--storytel': isStorytel }">
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
 
     <RouletteCompoment @showImg="onShowImg" />
 
-    <transition name="write-reveal">
+    <!-- Parrano: hero text reveal -->
+    <transition v-if="!isStorytel" name="write-reveal">
       <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
         <template v-if="isPrizeHeroResult">
           <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
         </template>
         <template v-else>
-        <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
-        <p class="result-label__title">{{ resultCopy.title }}</p>
+          <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
+          <p class="result-label__title">{{ resultCopy.title }}</p>
         </template>
       </div>
+    </transition>
+
+    <!-- Storytel: side card reveal -->
+    <transition v-if="isStorytel" name="write-reveal">
+      <WinRowComponent v-if="hasResult" :win-type="winType" :visible="hasResult" />
     </transition>
   </div>
 </template>
@@ -22,41 +28,56 @@
 import { mapActions, mapGetters } from "vuex";
 import RouletteCompoment from "@/components/RouletteCompoment.vue";
 import ConfettiComponent from "@/components/ConfettiComponent.vue";
+import WinRowComponent from "@/components/WinRowComponent.vue";
 
 const RESULT_CONFIG = {
   repeat: {
     duration: 4000,
     confetti: false,
     kicker: "Repeat",
-    title: "Kokeile uudestaan",
+    title: "Arki ansaitsee parempaa!",
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
     duration: 10000,
     confetti: true,
     kicker: "Main prize",
-    title: "LAHJAKASSI",
+    title: "Olet voittanut!",
     description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
     duration: 9000,
     confetti: true,
     kicker: "Surprise win",
-    title: "Yllätyspalkinto",
+    title: "Onnittelut!",
     description: "Voitit yllätyspalkinnon."
+  },
+  giftCard3m: {
+    duration: 9000,
+    confetti: true,
+    kicker: "Gift card 3 months",
+    title: "Onnittelut!",
+    description: "Voitit 3kk lahjakortin."
+  },
+  giftCard1m: {
+    duration: 9000,
+    confetti: true,
+    kicker: "Gift card 1 month",
+    title: "Onnittelut!",
+    description: "Voitit 1kk lahjakortin."
   },
   noWin: {
     duration: 5000,
     confetti: false,
     kicker: "No win",
-    title: "Ei voittoa",
+    title: "Kiitos osallistumisesta!",
     description: "Tämä sektori ei anna palkintoa."
   }
 };
 
 export default {
   name: "RouletteView",
-  components: { RouletteCompoment, ConfettiComponent },
+  components: { RouletteCompoment, ConfettiComponent, WinRowComponent },
   data() {
     return {
       winType: "",
@@ -66,6 +87,9 @@ export default {
   },
   computed: {
     ...mapGetters(["isMainPrizeActive"]),
+    isStorytel() {
+      return process.env.VUE_APP_THEME === "storytel";
+    },
     hasResult() {
       return Boolean(this.winType);
     },
@@ -73,13 +97,10 @@ export default {
       return this.winType === "mainPrize";
     },
     isPrizeHeroResult() {
-      return this.winType === "mainPrize" || this.winType === "surpriseWin" || this.winType === "noWin" || this.winType === "repeat";
+      return Boolean(RESULT_CONFIG[this.winType]);
     },
     prizeHeroTitle() {
-      if (this.winType === "surpriseWin") return "Onnittelut!";
-      if (this.winType === "noWin") return "Kiitos osallistumisesta!";
-      if (this.winType === "repeat") return "Arki ansaitsee parempaa!";
-      return "Olet voittanut!";
+      return RESULT_CONFIG[this.winType]?.title || "Olet voittanut!";
     },
     heroTitleSizeClass() {
       const len = (this.prizeHeroTitle || "").length;
@@ -112,7 +133,7 @@ export default {
       this.winType = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
-      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" || type === "surpriseWin" || type === "noWin" || type === "repeat" });
+      this.updateState({ mutationType: "setMainPrizeActive", payload: Boolean(RESULT_CONFIG[type]) });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: type });
 
       this.resultTimer = window.setTimeout(() => {
@@ -125,7 +146,9 @@ export default {
       this.isVisibleConfetti = false;
       this.updateState({ mutationType: "setMainPrizeActive", payload: false });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
-      this.updateState({ mutationType: "setSpinRoullete", payload: true });
+      window.setTimeout(() => {
+        this.updateState({ mutationType: "setSpinRoullete", payload: true });
+      }, 700);
     },
     clearTimers() {
       if (this.resultTimer) {
@@ -146,6 +169,11 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 5.8rem;
+}
+
+.roulette-view--storytel {
+  align-items: center;
+  padding: 0 0 clamp(2.4rem, 8vh, 4rem);
 }
 
 .result-label {
@@ -171,8 +199,8 @@ export default {
   font-weight: 400;
   line-height: 0.88;
   letter-spacing: 0;
-  color: #2e6a49;
-  text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
+  color: var(--color-primary-soft);
+  text-shadow: 0 4px 14px rgba(var(--rgb-panel), 0.55);
   opacity: 0;
   clip-path: inset(0 100% 0 0);
   animation: handwriting-reveal 0.92s cubic-bezier(0.2, 0.84, 0.22, 1) 0.84s forwards;
@@ -200,18 +228,18 @@ export default {
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-weight: 800;
 }
 
 .result-label__title {
   margin: 0.15rem 0 0;
-  color: #1d2b22;
+  color: var(--color-text);
   font-size: 1.6rem;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.7);
+  text-shadow: 0 2px 8px rgba(var(--rgb-panel), 0.7);
 }
 
 
@@ -240,12 +268,20 @@ export default {
   .result-label--main {
     top: 2.2rem;
   }
+
+  .roulette-view--storytel {
+    padding-bottom: clamp(2.6rem, 8vh, 4rem);
+  }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
   .roulette-view {
     padding-top: 0;
     padding-bottom: 2.4rem;
+  }
+
+  .roulette-view--storytel {
+    padding-bottom: clamp(2.2rem, 7vh, 3.2rem);
   }
 }
 
@@ -260,6 +296,11 @@ export default {
 
   .result-label__main-title {
     font-size: clamp(2.8rem, 7.5vw, 5rem);
+  }
+
+  .roulette-view--storytel {
+    padding-top: 0;
+    padding-bottom: clamp(3rem, 9vh, 5rem);
   }
 }
 

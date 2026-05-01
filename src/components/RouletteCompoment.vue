@@ -1,7 +1,14 @@
 <template>
-  <div class="roulette-shell" :class="{ 'roulette-shell--hero': isMainPrizeActive }">
+  <div class="roulette-shell" :class="[{ 'roulette-shell--hero': isMainPrizeActive }, `roulette-shell--${theme}`]">
     <div class="pointer-wrap" :class="{ 'pointer-wrap--hidden': isMainPrizeActive }">
-      <div class="wheel-pointer"></div>
+      <img
+        v-if="theme === 'storytel'"
+        class="wheel-pointer-img"
+        src="/storytel-assets/arrow-icon.svg"
+        alt=""
+        aria-hidden="true"
+      />
+      <div v-else class="wheel-pointer"></div>
     </div>
 
     <div
@@ -55,7 +62,7 @@
         <path class="sweep-worm" pathLength="339" d="M 208,100 A 108,108 0 0 1 -8,100"/>
       </svg>
 
-      <div class="wheel-center" :style="wheelCenterStyle">
+      <div v-if="theme !== 'storytel'" class="wheel-center" :style="wheelCenterStyle">
         <div class="wheel-center__ring">
           <img
             class="wheel-center__logo"
@@ -74,7 +81,7 @@
       </transition>
 
       <button
-        v-if="showHeroRepeatButton || !isMainPrizeActive"
+        v-if="theme !== 'storytel' && (showHeroRepeatButton || !isMainPrizeActive)"
         class="spin-button"
         :class="{ 'spin-button--hero-repeat': showHeroRepeatButton }"
         type="button"
@@ -101,7 +108,9 @@ import {
   findActiveSlotIndex,
   getFallbackIndexForDistribution,
   getSectorResultType,
-  shouldResetDaily
+  shouldResetDaily,
+  OUTCOME_KEYS,
+  OUTCOME_LOGIC
 } from "@/utils";
 import {
   textDefaultRouletteStyle,
@@ -112,6 +121,7 @@ const FULL_SPINS = 6;
 const SPIN_DURATION = 4600;
 const STRESS_TEST_DURATION = 650;
 const SWIPE_THRESHOLD = 36;
+const STORYTEL_CENTER_LOGO_SRC = "/storytel-assets/new-logo-center.png";
 
 export default {
   name: "RouletteCompoment",
@@ -146,6 +156,8 @@ export default {
       "totalSpecialSurprise",
       "totalTopPrice",
       "totalGiftCard",
+      "totalGiftCard3m",
+      "totalGiftCard1m",
       "totalSpin",
       "initialAngle",
       "spinRoullete",
@@ -174,25 +186,32 @@ export default {
       return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      return Math.max(33, this.canvasSize * 0.038);
+      const scale = this.theme === "storytel" ? 0.022 : 0.038;
+      const min   = this.theme === "storytel" ? 18    : 33;
+      return Math.max(min, this.canvasSize * scale);
     },
     teslaFontSize() {
-      return Math.max(44, this.canvasSize * 0.044);
+      const scale = this.theme === "storytel" ? 0.026 : 0.044;
+      const min   = this.theme === "storytel" ? 22    : 44;
+      return Math.max(min, this.canvasSize * scale);
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
+    },
+    theme() {
+      return process.env.VUE_APP_THEME || "parrano";
     },
     showHeroRepeatButton() {
       return this.isMainPrizeActive && this.activeHeroResultType === "repeat";
     },
     showMainPrizeCopy() {
-      return this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
+      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
     },
     showMainPrizeBurst() {
-      return this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
+      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
     },
     showSmallPrizeSweep() {
-      return this.isMainPrizeActive && this.activeHeroResultType === "surpriseWin";
+      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType === "surpriseWin";
     },
     wheelCenterStyle() {
       return {
@@ -206,12 +225,26 @@ export default {
         totalSpecialSurprise: this.totalSpecialSurprise,
         totalTopPrice: this.totalTopPrice,
         totalGiftCard: this.totalGiftCard,
+        totalGiftCard3m: this.totalGiftCard3m,
+        totalGiftCard1m: this.totalGiftCard1m,
         totalSpin: this.totalSpin
       };
     }
   },
   mounted() {
     this.startAngle = this.normalizeRadians(this.initialAngle || 0);
+    if (this.theme === "storytel") {
+      const img = new Image();
+      img.src = STORYTEL_CENTER_LOGO_SRC;
+      img.onload = () => { this.drawRouletteWheel(); };
+      this._centerLogoImg = img;
+
+      if (document.fonts?.load) {
+        document.fonts.load('700 24px "Storytel Euclid"').then(() => {
+          this.drawRouletteWheel();
+        });
+      }
+    }
     this.initializeCanvas();
     this.observeResize();
     this.registerDebugApi();
@@ -361,23 +394,37 @@ export default {
 
       this.ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
 
-      this.ctx.beginPath();
-      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#d9bf74";
-      this.ctx.fill();
+      if (this.theme === "storytel") {
+        // Storytel: black outer ring + white inner ring
+        this.ctx.beginPath();
+        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
+        this.ctx.fillStyle = "#000000";
+        this.ctx.fill();
 
-      this.ctx.beginPath();
-      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.3, 0, Math.PI * 2);
-      this.ctx.fillStyle = "#c9a353";
-      this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 0.5, 0, Math.PI * 2);
+        this.ctx.fillStyle = "#ffffff";
+        this.ctx.fill();
+      } else {
+        // Parrano: gold double ring
+        this.ctx.beginPath();
+        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
+        this.ctx.fillStyle = this.cssVar("--color-gold", "#d9bf74");
+        this.ctx.fill();
+
+        this.ctx.beginPath();
+        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.3, 0, Math.PI * 2);
+        this.ctx.fillStyle = this.cssVar("--color-gold-dark", "#c9a353");
+        this.ctx.fill();
+      }
 
       this.sectors.forEach((sector, index) => {
         const angle = this.startAngle + index * this.arc;
         const halfArc = angle + this.arc / 2;
-        const lines = this.getSectorLines(sector.label);
-        const isMainPrize = sector.outcomeKey === "mainWin";
-        const fontSize = isMainPrize ? this.teslaFontSize : this.defaultFontSize;
-        const lineHeight = fontSize * 1.02;
+        const lines = this.getSectorLines(sector);
+        const isTopOutcome = sector.outcomeKey === "mainWin" || sector.outcomeKey === "mainPrize";
+        const fontSize = isTopOutcome ? this.teslaFontSize : this.defaultFontSize;
+        const lineHeight = fontSize * 1.08;
         const textOffset = ((lines.length - 1) * lineHeight) / 2;
 
         this.ctx.beginPath();
@@ -387,7 +434,7 @@ export default {
         this.ctx.fillStyle = sector.color;
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = sector.color;
+        this.ctx.strokeStyle = this.theme === "storytel" ? "#ffffff" : sector.color;
         this.ctx.stroke();
 
         this.ctx.save();
@@ -396,25 +443,80 @@ export default {
           this.center + Math.sin(halfArc) * this.textRadius
         );
         this.ctx.rotate(halfArc);
-        this.ctx.textAlign = "center";
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = sector.textColor;
-        this.ctx.font = `${isMainPrize ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${isMainPrize ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily}`;
+        const fontFamily = this.theme === "storytel"
+          ? '"Storytel Euclid", system-ui'
+          : (isTopOutcome ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily);
+        this.ctx.font = `${isTopOutcome ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${fontFamily}`;
+        const isStorytel = this.theme === "storytel";
+        const textX = isStorytel
+          ? -Math.max(...lines.map((line) => this.ctx.measureText(line).width)) / 2
+          : 0;
+        this.ctx.textAlign = isStorytel ? "left" : "center";
 
         lines.forEach((line, lineIndex) => {
-          this.ctx.fillText(line, 0, lineIndex * lineHeight - textOffset);
+          this.ctx.fillText(line, textX, lineIndex * lineHeight - textOffset);
         });
 
         this.ctx.restore();
       });
 
-      
+      if (this.theme === "storytel") {
+        this.drawStorytelCenter();
+      }
+    },
+    drawStorytelCenter() {
+      const centerRadius = this.canvasSize * 0.117;
+
+      if (this._centerLogoImg && this._centerLogoImg.complete) {
+        const logoSize = centerRadius * 2.02;
+        this.ctx.save();
+        this.ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
+        this.ctx.shadowBlur = this.canvasSize * 0.018;
+        this.ctx.shadowOffsetX = this.canvasSize * 0.007;
+        this.ctx.shadowOffsetY = this.canvasSize * 0.006;
+        this.ctx.drawImage(
+          this._centerLogoImg,
+          this.center - logoSize / 2,
+          this.center - logoSize / 2,
+          logoSize,
+          logoSize
+        );
+        this.ctx.restore();
+        return;
+      }
+
+      this.ctx.beginPath();
+      this.ctx.arc(this.center, this.center, centerRadius, 0, Math.PI * 2);
+      this.ctx.fillStyle = "#000000";
+      this.ctx.fill();
+      this.ctx.lineWidth = Math.max(2, this.canvasSize * 0.006);
+      this.ctx.strokeStyle = "#ffffff";
+      this.ctx.stroke();
     },
     getSectorLines(sector) {
-      if (typeof sector === "string") {
-        return [sector];
+      const storytelLines = {
+        mainPrize: ["Pääpalkinto"],
+        surpriseWin: ["Yllätyspalkinto"],
+        repeat: ["Kokeile", "uudestaan"],
+        giftCard3m: ["3kk", "lahjakortti"],
+        giftCard1m: ["1kk", "lahjakortti"]
+      };
+
+      if (this.theme === "storytel" && storytelLines[sector?.outcomeKey]) {
+        return storytelLines[sector.outcomeKey];
       }
-      return Object.values(sector);
+
+      const label = sector?.label ?? sector;
+      if (typeof label === "string") {
+        return label.trim().split(/\s+/).filter(Boolean);
+      }
+      return Object.values(label);
+    },
+    cssVar(name, fallback) {
+      if (typeof window === "undefined") return fallback;
+      return window.getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
     },
     spin(spinConfig = {}) {
       if (!this.canSpin) return;
@@ -540,7 +642,8 @@ export default {
     },
     async persistSpinResult(winnerIndex) {
       const winnerSector = this.sectors[winnerIndex] || null;
-      const outcomeKey = winnerSector?.outcomeKey || "noWin";
+      const fallbackKey = OUTCOME_KEYS.find((key) => !OUTCOME_LOGIC[key].hasDailyLimit) || OUTCOME_KEYS[0];
+      const outcomeKey = winnerSector?.outcomeKey || fallbackKey;
       const totals = buildNextTotals(this.currentTotals, outcomeKey);
       const mutationMap = {
         totalReplay: "setTotalReplay",
@@ -548,6 +651,8 @@ export default {
         totalSpecialSurprise: "setTotalSpecialSurprise",
         totalTopPrice: "setTotalTopPrice",
         totalGiftCard: "setTotalGiftCard",
+        totalGiftCard3m: "setTotalGiftCard3m",
+        totalGiftCard1m: "setTotalGiftCard1m",
         totalSpin: "setTotalSpin"
       };
       Object.keys(mutationMap).forEach((key) => {
@@ -555,15 +660,15 @@ export default {
       });
 
       const currentTime = formatTime24h();
-      const isMainWin = outcomeKey === "mainWin";
-      const isSmallWin = outcomeKey === "smallWin";
+      const meta = OUTCOME_LOGIC[outcomeKey];
 
-      if (isMainWin || isSmallWin) {
-        const category = isMainWin ? "mainWin" : "smallWin";
-        const slots = this.winDistribution?.[category]?.slots || [];
+      if (meta?.hasSlots) {
+        const slots = this.winDistribution?.[outcomeKey]?.slots || [];
         const activeSlotIdx = findActiveSlotIndex(slots, currentTime);
-        const mutation = isMainWin ? "incrementMainWinGiven" : "incrementSmallWinGiven";
-        this.updateState({ mutationType: mutation, payload: activeSlotIdx });
+        this.updateState({
+          mutationType: "incrementSlotGiven",
+          payload: { outcomeKey, slotIndex: activeSlotIdx }
+        });
         await service.saveWinDistribution(this.winDistribution).catch(() => null);
       }
 
@@ -629,8 +734,47 @@ export default {
   height: 0;
   border-left: 17px solid transparent;
   border-right: 17px solid transparent;
-  border-top: 48px solid #cb3027;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18));
+  border-top: 48px solid var(--color-accent);
+  filter: drop-shadow(0 4px 6px rgba(var(--rgb-black), 0.18));
+}
+
+.wheel-pointer-img {
+  display: block;
+  width: clamp(44px, 6vw, 74px);
+  height: auto;
+  filter: drop-shadow(0 5px 9px rgba(var(--rgb-black), 0.16));
+}
+
+.roulette-shell--storytel {
+  justify-content: center;
+  padding-top: 0;
+  gap: 0.25rem;
+  transform: translateY(clamp(1.65rem, 4.6vh, 2rem));
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.roulette-shell--storytel.roulette-shell--hero {
+  --hero-factor: 1;
+  transform: translateX(-24vw);
+}
+
+.roulette-shell--storytel .pointer-wrap {
+  margin-bottom: clamp(-2.1rem, -3.2vw, -1.5rem);
+}
+
+.roulette-shell--storytel .wheel-stage {
+  width: min(100%, calc(464px * var(--wheel-scale)));
+  max-width: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
+  max-height: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
+}
+
+.roulette-shell--storytel .spin-button {
+  display: none;
+}
+
+.roulette-shell--storytel .wheel-pointer-img {
+  width: clamp(30px, 3.2vw, 36px);
+  filter: none;
 }
 
 .wheel-stage {
@@ -680,7 +824,7 @@ export default {
 
 .burst-ray {
   fill: none;
-  stroke: #d9bf74;
+  stroke: var(--color-gold);
   stroke-width: 4.5;
   stroke-linecap: round;
   stroke-dasharray: 22 1000;
@@ -712,7 +856,7 @@ export default {
 
 .sweep-worm {
   fill: none;
-  stroke: #d9bf74;
+  stroke: var(--color-gold);
   stroke-width: 5;
   stroke-linecap: round;
   stroke-dasharray: 50 500;
@@ -747,8 +891,8 @@ export default {
   width: clamp(118px, 13.6vw, 148px);
   height: clamp(118px, 13.6vw, 148px);
   border-radius: 999px;
-  background: #2E5E39;
-  border: 4px solid #d8bb71;
+  background: var(--color-green);
+  border: 4px solid var(--color-gold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -767,15 +911,15 @@ export default {
   flex-shrink: 0;
   border: 0;
   border-radius: 0.22rem;
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff6e7;
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg);
   padding: 0.81rem 2.09rem;
   min-width: 165px;
   font-size: 1.65rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(110, 20, 16, 0.28);
+  box-shadow: 0 3px 8px rgba(var(--rgb-black), 0.18);
+  border: 1px solid rgba(var(--rgb-danger), 0.28);
   margin-top: 1.1rem;
   cursor: pointer;
   transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
@@ -783,13 +927,13 @@ export default {
 
 .spin-button:not(:disabled):hover {
   transform: translateY(-2px) scale(1.025);
-  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.28);
-  background: linear-gradient(180deg, #dc4234 0%, #c7312a 100%);
+  box-shadow: 0 7px 20px rgba(var(--rgb-black), 0.28);
+  background: linear-gradient(180deg, var(--color-accent-hot) 0%, var(--color-accent-hover) 100%);
 }
 
 .spin-button:not(:disabled):active {
   transform: translateY(1px) scale(0.975);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 1px 4px rgba(var(--rgb-black), 0.14);
   transition-duration: 0.07s;
 }
 
@@ -799,7 +943,7 @@ export default {
   position: absolute;
   inset: -3px;
   border-radius: inherit;
-  border: 2px solid rgba(207, 59, 45, 0.55);
+  border: 2px solid rgba(var(--rgb-accent), 0.55);
   opacity: 0;
   transform: scale(1);
   animation: btn-pulse-ring 2.4s ease-out infinite;
@@ -830,7 +974,7 @@ export default {
   z-index: 10;
   margin: 0;
   display: inline-block;
-  color: #295f41;
+  color: var(--color-primary-soft);
   font-family: "Lumios Marker", cursive;
   font-size: clamp(4rem, 9vw, 6.6rem);
   font-weight: 400;
@@ -884,8 +1028,8 @@ export default {
 
 .spin-button--hero-repeat {
   margin-top: 0.6rem;
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff6e7;
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg);
   opacity: 1;
   pointer-events: none;
   cursor: default;

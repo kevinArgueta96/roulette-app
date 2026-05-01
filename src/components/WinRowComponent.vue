@@ -1,10 +1,28 @@
 <template>
   <div class="result-shell" :class="[`result-shell--${winType || 'idle'}`, { 'result-shell--visible': visible }]">
     <template v-if="resultCopy">
-      <div class="result-card">
-        <p class="result-kicker">{{ resultCopy.kicker }}</p>
-        <h2>{{ resultCopy.title }}</h2>
-        <p class="result-description">{{ resultCopy.description }}</p>
+      <div class="result-stage">
+        <img
+          class="result-card"
+          :src="resultCopy.src"
+          :alt="resultCopy.alt"
+          fetchpriority="high"
+          decoding="async"
+        />
+        <p class="result-typewriter" :key="winType + (visible ? 'on' : 'off')">
+          <span
+            v-for="(word, wi) in titleWords"
+            :key="wi"
+            class="result-typewriter__word"
+          >
+            <span
+              v-for="(char, ci) in word.chars"
+              :key="ci"
+              class="result-typewriter__char"
+              :style="{ animationDelay: `${0.55 + word.offset * 0.045 + ci * 0.045}s` }"
+            >{{ char }}</span>
+          </span>
+        </p>
       </div>
     </template>
     <p v-else class="result-placeholder">Esperando resultado</p>
@@ -12,36 +30,37 @@
 </template>
 
 <script>
-const RESULT_COPY = {
+const RESULT_COPY = Object.freeze({
   mainPrize: {
-    kicker: "Main prize",
-    title: "LAHJAKASSI",
-    description: "Premio principal desbloqueado."
+    title: "Olet voittanut!",
+    alt: "Main prize",
+    src: "/storytel-assets/win-cards/mainPrize.svg"
   },
   surpriseWin: {
-    kicker: "Surprise win",
-    title: "Yllätyspalkinto",
-    description: "Ganaste un premio sorpresa."
+    title: "Voitit yllätyspalkinnon!",
+    alt: "Surprise prize",
+    src: "/storytel-assets/win-cards/surpriseWin.svg"
+  },
+  giftCard3m: {
+    title: "Voitit 3kk lahjakortin!",
+    alt: "3 month gift card",
+    src: "/storytel-assets/win-cards/giftCard3m.svg"
+  },
+  giftCard1m: {
+    title: "Voitit 1kk lahjakortin!",
+    alt: "1 month gift card",
+    src: "/storytel-assets/win-cards/giftCard1m.svg"
   },
   repeat: {
-    kicker: "Repeat",
-    title: "Kokeile uudestaan",
-    description: "Tienes otra oportunidad."
-  },
-  noWin: {
-    kicker: "No win",
-    title: "Esta vez no hubo premio",
-    description: "Las secciones verdes no otorgan premio."
+    title: "Yritä uudelleen!",
+    alt: "Try again",
+    src: "/storytel-assets/win-cards/repeat.svg"
   }
-};
+});
 
 export default {
   name: "WinColumn",
   props: {
-    srcImg: {
-      type: String,
-      default: ""
-    },
     visible: {
       type: Boolean,
       default: false
@@ -49,15 +68,22 @@ export default {
     winType: {
       type: String,
       default: ""
-    },
-    sizeGift: {
-      type: Number,
-      default: 0
     }
   },
   computed: {
     resultCopy() {
       return RESULT_COPY[this.winType] || null;
+    },
+    titleChars() {
+      return Array.from(this.resultCopy?.title || "");
+    },
+    titleWords() {
+      let offset = 0;
+      return (this.resultCopy?.title || "").split(" ").map((word) => {
+        const entry = { chars: Array.from(word), offset };
+        offset += word.length + 1;
+        return entry;
+      });
     }
   }
 };
@@ -65,82 +91,101 @@ export default {
 
 <style scoped>
 .result-shell {
-  width: 100%;
-  min-height: 100%;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 50vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 240ms ease, transform 240ms ease;
+  z-index: 30;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(8vw);
+  transition: opacity 0.5s ease 0.1s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s;
 }
 
 .result-shell--visible {
   opacity: 1;
+  transform: translateX(0);
+}
+
+.result-stage {
+  position: relative;
+  display: inline-block;
 }
 
 .result-card {
-  width: min(100%, 22rem);
-  border-radius: 24px;
-  padding: 1.5rem;
-  color: #fff;
-  box-shadow: 0 20px 40px rgba(43, 53, 58, 0.16);
-  animation: fadeIn 320ms ease;
+  display: block;
+  width: min(46vw, 520px);
+  height: auto;
+  filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.18));
+  animation: card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.result-shell--mainPrize .result-card {
-  background: linear-gradient(135deg, #ffcc4d 0%, #ff8a3d 100%);
+.result-typewriter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -48%);
+  width: 66%;
+  margin: 0;
+  text-align: center;
+  font-family: 'Storytel Euclid', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3.4vw, 2.6rem);
+  line-height: 1.1;
   color: #2b353a;
 }
 
-.result-shell--surpriseWin .result-card {
-  background: linear-gradient(135deg, #ff8a3d 0%, #ff501c 100%);
+.result-shell--surpriseWin .result-typewriter,
+.result-shell--giftCard3m .result-typewriter,
+.result-shell--giftCard1m .result-typewriter {
+  color: #fdf1f0;
 }
 
-.result-shell--repeat .result-card {
-  background: linear-gradient(135deg, #4b5563 0%, #111827 100%);
+.result-typewriter__word {
+  display: inline-block;
+  white-space: nowrap;
 }
 
-.result-shell--noWin .result-card {
-  background: linear-gradient(135deg, #72bf78 0%, #4d9f57 100%);
+.result-typewriter__word:not(:last-child)::after {
+  content: '\00a0';
 }
 
-.result-kicker {
-  margin: 0 0 0.5rem;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  opacity: 0.8;
-  font-weight: 700;
+.result-typewriter__char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: typewriter-char 0.18s ease forwards;
 }
 
-h2 {
-  margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  line-height: 1;
+@keyframes typewriter-char {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.result-description {
-  margin: 0.85rem 0 0;
-  font-size: 1rem;
-  line-height: 1.45;
-}
-
-.result-placeholder {
-  margin: 0;
-  color: rgba(43, 53, 58, 0.45);
-  font-size: 0.95rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-}
-
-@keyframes fadeIn {
+@keyframes card-pop {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.6);
   }
-
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (orientation: landscape) {
+  .result-card {
+    width: min(38vw, 420px);
+  }
+
+  .result-typewriter {
+    font-size: clamp(1.2rem, 2.8vw, 2.2rem);
   }
 }
 </style>

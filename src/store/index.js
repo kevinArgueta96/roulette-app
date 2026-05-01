@@ -1,7 +1,13 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import { initialOptionsConfigRoulette } from "@/config/config-roulette.js";
-import { RANDOM_START_ANGLES, DEFAULT_WIN_DISTRIBUTION, normalizeWinDistribution } from "@/utils";
+import {
+  RANDOM_START_ANGLES,
+  DEFAULT_WIN_DISTRIBUTION,
+  normalizeWinDistribution,
+  OUTCOME_KEYS,
+  OUTCOME_LOGIC
+} from "@/utils";
 
 Vue.use(Vuex);
 
@@ -13,6 +19,8 @@ const createState = () => ({
   totalSpecialSurprise: 0,
   totalTopPrice: 0,
   totalGiftCard: 0,
+  totalGiftCard3m: 0,
+  totalGiftCard1m: 0,
   totalSpin: 0,
   winDistribution: DEFAULT_WIN_DISTRIBUTION(),
   initialAngle: RANDOM_START_ANGLES[0],
@@ -27,6 +35,8 @@ const totalKeys = [
   "totalSpecialSurprise",
   "totalTopPrice",
   "totalGiftCard",
+  "totalGiftCard3m",
+  "totalGiftCard1m",
   "totalSpin"
 ];
 
@@ -63,36 +73,37 @@ export default new Vuex.Store({
     setTotalGiftCard(state, payload) {
       state.totalGiftCard = Number(payload) || 0;
     },
+    setTotalGiftCard3m(state, payload) {
+      state.totalGiftCard3m = Number(payload) || 0;
+    },
+    setTotalGiftCard1m(state, payload) {
+      state.totalGiftCard1m = Number(payload) || 0;
+    },
     setTotalSpin(state, payload) {
       state.totalSpin = Number(payload) || 0;
     },
     setWinDistribution(state, payload) {
       state.winDistribution = normalizeWinDistribution(payload);
     },
-    incrementMainWinGiven(state, slotIndex) {
+    incrementSlotGiven(state, { outcomeKey, slotIndex }) {
+      if (!outcomeKey || !distHasOutcome(state.winDistribution, outcomeKey)) return;
+      const meta = OUTCOME_LOGIC[outcomeKey];
+      if (!meta?.hasSlots) return;
       const dist = state.winDistribution;
-      state.winDistribution = {
-        ...dist,
-        mainWin: {
-          ...dist.mainWin,
-          givenToday: dist.mainWin.givenToday + 1,
-          slots: dist.mainWin.slots.map((slot, i) =>
-            i === slotIndex ? { ...slot, given: slot.given + 1 } : slot
-          )
-        }
+      const category = dist[outcomeKey];
+      const slots = Array.isArray(category?.slots) ? category.slots : [];
+      const updated = {
+        ...category,
+        slots: slots.map((slot, i) =>
+          i === slotIndex ? { ...slot, given: (slot.given || 0) + 1 } : slot
+        )
       };
-    },
-    incrementSmallWinGiven(state, slotIndex) {
-      const dist = state.winDistribution;
+      if (meta.hasDailyLimit) {
+        updated.givenToday = (category.givenToday || 0) + 1;
+      }
       state.winDistribution = {
         ...dist,
-        smallWin: {
-          ...dist.smallWin,
-          givenToday: dist.smallWin.givenToday + 1,
-          slots: dist.smallWin.slots.map((slot, i) =>
-            i === slotIndex ? { ...slot, given: slot.given + 1 } : slot
-          )
-        }
+        [outcomeKey]: updated
       };
     },
     updateOutcomeConfig(state, { outcomeKey, patch }) {
@@ -107,26 +118,26 @@ export default new Vuex.Store({
     },
     resetDailyCounters(state, newDate) {
       const dist = state.winDistribution;
-      state.winDistribution = {
+      const next = {
         ...dist,
-        lastResetDate: newDate,
-        mainWin: {
-          ...dist.mainWin,
-          givenToday: 0,
-          slots: dist.mainWin.slots.map((slot) => ({ ...slot, given: 0 }))
-        },
-        smallWin: {
-          ...dist.smallWin,
-          givenToday: 0,
-          slots: dist.smallWin.slots.map((slot) => ({ ...slot, given: 0 }))
-        },
-        repeat: {
-          ...dist.repeat
-        },
-        noWin: {
-          ...dist.noWin
-        }
+        lastResetDate: newDate
       };
+
+      OUTCOME_KEYS.forEach((key) => {
+        const category = dist[key];
+        if (!category) return;
+        const meta = OUTCOME_LOGIC[key];
+        const updated = { ...category };
+        if (meta.hasDailyLimit) {
+          updated.givenToday = 0;
+        }
+        if (meta.hasSlots && Array.isArray(category.slots)) {
+          updated.slots = category.slots.map((slot) => ({ ...slot, given: 0 }));
+        }
+        next[key] = updated;
+      });
+
+      state.winDistribution = next;
     },
     setInitialAngle(state, payload) {
       state.initialAngle = Number(payload) || 0;

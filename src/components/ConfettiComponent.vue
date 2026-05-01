@@ -8,6 +8,27 @@ import ConfettiGenerator from "confetti-js";
 const isMobile = () => window.matchMedia("(max-width: 768px)").matches
   || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
+const CONFETTI_COLORS = {
+  parrano: [
+    [216, 187, 113],
+    [245, 215, 138],
+    [246, 237, 209],
+    [255, 80, 20],
+    [255, 255, 255],
+    [46, 94, 57],
+    [203, 48, 39],
+    [154, 115, 37]
+  ],
+  storytel: [
+    [255, 80, 28],
+    [255, 237, 163],
+    [255, 242, 241],
+    [201, 236, 255],
+    [43, 53, 58],
+    [255, 255, 255]
+  ]
+};
+
 export default {
   name: "ConfettiComponent",
   props: {
@@ -18,6 +39,7 @@ export default {
   },
   data() {
     const mobile = isMobile();
+    const theme = process.env.VUE_APP_THEME || "parrano";
     return {
       confetti: null,
       confettiSettings: {
@@ -28,16 +50,7 @@ export default {
         clock: mobile ? 22 : 16,
         rotate: !mobile,
         props: ["circle"],
-        colors: [
-          [216, 187, 113],
-          [245, 215, 138],
-          [246, 237, 209],
-          [255, 80, 20],
-          [255, 255, 255],
-          [46, 94, 57],
-          [203, 48, 39],
-          [154, 115, 37]
-        ]
+        colors: CONFETTI_COLORS[theme] || CONFETTI_COLORS.parrano
       }
     };
   },

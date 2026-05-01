@@ -50,13 +50,13 @@
                 @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
               />
               <p class="effective-range">
-                <template v-if="outcome.key === 'repeat'">
-                  <span v-if="effectiveRepeatRange.min === effectiveRepeatRange.max">Effective: {{ effectiveRepeatRange.max }}%</span>
-                  <span v-else>Effective: {{ effectiveRepeatRange.min }}% – {{ effectiveRepeatRange.max }}%</span>
-                </template>
-                <template v-else-if="outcome.key === 'noWin'">
-                  <span v-if="effectiveNoWinRange.min === effectiveNoWinRange.max">Effective: {{ effectiveNoWinRange.max }}%</span>
-                  <span v-else>Effective: {{ effectiveNoWinRange.min }}% – {{ effectiveNoWinRange.max }}%</span>
+                <template v-if="effectiveFallbackRanges[outcome.key]">
+                  <span v-if="effectiveFallbackRanges[outcome.key].min === effectiveFallbackRanges[outcome.key].max">
+                    Effective: {{ effectiveFallbackRanges[outcome.key].max }}%
+                  </span>
+                  <span v-else>
+                    Effective: {{ effectiveFallbackRanges[outcome.key].min }}% – {{ effectiveFallbackRanges[outcome.key].max }}%
+                  </span>
                 </template>
               </p>
             </div>
@@ -100,7 +100,7 @@
             <p class="slots-help">
               Probability per spin during this time window (100% = always appears).
               <template v-if="fallbackRemainingAtPeak === 0">
-                <br/><span class="slots-help--warn">Warning: active windows consume 100% — Repeat and No win will never trigger during these hours.</span>
+                <br/><span class="slots-help--warn">Warning: active windows consume 100% — {{ fallbackLabel }} will not trigger during these hours.</span>
               </template>
             </p>
 
@@ -199,7 +199,7 @@
         <div class="fallback-split__header">
           <div>
             <p class="block-eyebrow">Non-win split</p>
-            <h4 class="block-title">Repeat &amp; No win</h4>
+            <h4 class="block-title">{{ fallbackLabel }}</h4>
           </div>
           <div class="fallback-split__total">
             <span class="fallback-split__total-label">Total</span>
@@ -207,7 +207,7 @@
           </div>
         </div>
         <p class="fallback-split__copy">
-          When Main win and Small win don't use 100%, the remainder is split between Repeat and No win using the ratios below. These two must total 100%.
+          {{ fallbackCopy }}
         </p>
         <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
       </div>
@@ -225,27 +225,26 @@
         </p>
 
         <div class="probability-timeline">
-          <div class="timeline-header">
+          <div class="timeline-header" :style="timelineGridStyle">
             <span>Time window</span>
-            <span>Main win</span>
-            <span>Small win</span>
-            <span>Repeat</span>
-            <span>No win</span>
+            <span v-for="outcome in outcomes" :key="outcome.key">{{ outcome.label }}</span>
           </div>
           <div
             v-for="(row, i) in probabilityTimeline"
             :key="i"
             class="timeline-row"
             :class="{ 'timeline-row--active': row.isActive }"
+            :style="timelineGridStyle"
           >
             <span class="timeline-label">
               {{ row.label }}
               <span v-if="row.isActive" class="timeline-now-badge">NOW</span>
             </span>
-            <span :class="Number(row.mainWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.mainWin }}%</span>
-            <span :class="Number(row.smallWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.smallWin }}%</span>
-            <span>{{ row.repeat }}%</span>
-            <span>{{ row.noWin }}%</span>
+            <span
+              v-for="outcome in outcomes"
+              :key="outcome.key"
+              :class="Number(row[outcome.key]) > 0 ? 'timeline-val--win' : 'timeline-val--zero'"
+            >{{ row[outcome.key] }}%</span>
           </div>
         </div>
       </div>
@@ -255,46 +254,24 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
+import { OUTCOME_THEME } from "@/themes";
+import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_LOGIC, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
 
-const OUTCOMES = [
-  {
-    key: "mainWin",
-    eyebrow: "Category A",
-    label: "Main win",
-    description: "Lahjakassi sectors, daily limit, and time-based probability.",
-    color: OUTCOME_META.mainWin.color,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  {
-    key: "smallWin",
-    eyebrow: "Category B",
-    label: "Small win",
-    description: "Yllatyspalkinto sectors, daily limit, and time-based probability.",
-    color: OUTCOME_META.smallWin.color,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  {
-    key: "repeat",
-    eyebrow: "Category C",
-    label: "Repeat",
-    description: "Kokeile uudestaan sectors with configurable base probability.",
-    color: OUTCOME_META.repeat.color,
-    hasDailyLimit: false,
-    hasSlots: false
-  },
-  {
-    key: "noWin",
-    eyebrow: "Category D",
-    label: "No win",
-    description: "Blank green sectors that absorb the remaining non-winning outcomes.",
-    color: OUTCOME_META.noWin.color,
-    hasDailyLimit: false,
-    hasSlots: false
-  }
-];
+const CATEGORY_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const DEFAULT_DISTRIBUTION = DEFAULT_WIN_DISTRIBUTION();
+const OUTCOMES = OUTCOME_KEYS
+  .filter((key) => (Number(DEFAULT_DISTRIBUTION[key]?.sectorCount) || 0) > 0)
+  .map((key, i) => ({
+  key,
+  eyebrow: `Category ${CATEGORY_LETTERS[i]}`,
+  label: OUTCOME_THEME[key]?.label || key,
+  description: OUTCOME_LOGIC[key].hasSlots
+    ? `${OUTCOME_THEME[key]?.label || key} sectors with daily limit and time-based probability.`
+    : `${OUTCOME_THEME[key]?.label || key} sectors with configurable base probability.`,
+  color: OUTCOME_THEME[key]?.color || "#888",
+  hasDailyLimit: OUTCOME_LOGIC[key].hasDailyLimit,
+  hasSlots: OUTCOME_LOGIC[key].hasSlots
+}));
 
 export default {
   name: "DashboardWinConfig",
@@ -306,11 +283,8 @@ export default {
       errors: {
         totalSectors: "",
         sectorCounts: "",
-        mainWin: "",
-        smallWin: "",
         timelineBudget: "",
-        repeat: "",
-        noWin: ""
+        ...OUTCOME_KEYS.reduce((acc, key) => ({ ...acc, [key]: "" }), {})
       },
       editingValues: {},
       currentTime: formatTime24h(new Date())
@@ -326,18 +300,42 @@ export default {
   },
   computed: {
     ...mapGetters(["winDistribution"]),
+    fallbackKeys() {
+      return this.outcomes.filter((outcome) => !outcome.hasSlots).map((outcome) => outcome.key);
+    },
+    slotKeys() {
+      return this.outcomes.filter((outcome) => outcome.hasSlots).map((outcome) => outcome.key);
+    },
+    fallbackLabel() {
+      return this.fallbackKeys.map((key) => OUTCOME_THEME[key]?.label || key).join(" & ");
+    },
+    fallbackCopy() {
+      const timed = this.slotKeys.map((key) => OUTCOME_THEME[key]?.label || key).join(", ");
+      if (this.fallbackKeys.length <= 1) {
+        return `When ${timed || "timed outcomes"} don't use 100%, the remaining probability goes to ${this.fallbackLabel}.`;
+      }
+      return `When ${timed || "timed outcomes"} don't use 100%, the remainder is split between ${this.fallbackLabel}. These ratios must total 100%.`;
+    },
+    timelineGridStyle() {
+      return {
+        gridTemplateColumns: `minmax(0, 1.8fr) repeat(${this.outcomes.length}, minmax(0, 1fr))`
+      };
+    },
     fallbackSplitTotal() {
-      return this.clampPercent(this.localConfig.repeat?.baseWeight) + this.clampPercent(this.localConfig.noWin?.baseWeight);
+      return this.fallbackKeys.reduce(
+        (sum, key) => sum + this.clampPercent(this.localConfig[key]?.baseWeight),
+        0
+      );
     },
     maxWinProbability() {
-      const allSlots = [
-        ...(this.localConfig.mainWin?.slots || []),
-        ...(this.localConfig.smallWin?.slots || [])
-      ];
-      if (!allSlots.length) return 0;
-      const maxMain = Math.max(0, ...(this.localConfig.mainWin?.slots || []).map((s) => Number(s.weight) || 0));
-      const maxSmall = Math.max(0, ...(this.localConfig.smallWin?.slots || []).map((s) => Number(s.weight) || 0));
-      return Math.min(100, maxMain + maxSmall);
+      const allSlotWeights = this.slotKeys.flatMap(
+        (key) => (this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0)
+      );
+      if (!allSlotWeights.length) return 0;
+      const perKeyMax = this.slotKeys.map(
+        (key) => Math.max(0, ...(this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0))
+      );
+      return Math.min(100, perKeyMax.reduce((sum, v) => sum + v, 0));
     },
     fallbackRemainingAtPeak() {
       return Math.max(0, 100 - this.maxWinProbability);
@@ -347,10 +345,10 @@ export default {
     },
     activeSlotMap() {
       const cfg = this.persistedConfigSnapshot;
-      return {
-        mainWin: findActiveSlotIndex(cfg.mainWin.slots, this.currentTime),
-        smallWin: findActiveSlotIndex(cfg.smallWin.slots, this.currentTime)
-      };
+      return this.slotKeys.reduce((acc, key) => {
+        acc[key] = findActiveSlotIndex(cfg[key]?.slots || [], this.currentTime);
+        return acc;
+      }, {});
     },
     probabilityTimeline() {
       const cfg = this.persistedConfigSnapshot;
@@ -365,36 +363,31 @@ export default {
         return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
       };
 
-      const slotRanges = [
-        ...(cfg.mainWin.slots || []),
-        ...(cfg.smallWin.slots || [])
-      ]
+      const slotRanges = this.slotKeys
+        .flatMap((key) => (cfg[key]?.slots || []))
         .filter((s) => s.startTime && s.endTime && toMin(s.startTime) < toMin(s.endTime))
         .map((s) => ({ start: toMin(s.startTime), end: toMin(s.endTime) }));
 
+      const buildRow = (sampleTime, label, isActive) => {
+        const w = buildOutcomeWeights(cfg, sampleTime);
+        const row = { label, isActive };
+        OUTCOME_KEYS.forEach((key) => {
+          row[key] = ((w[key] || 0) * 100).toFixed(1);
+        });
+        return row;
+      };
+
       if (!slotRanges.length) {
-        const w = buildOutcomeWeights(cfg, this.currentTime);
-        return [{
-          label: "All day",
-          mainWin: (w.mainWin * 100).toFixed(1),
-          smallWin: (w.smallWin * 100).toFixed(1),
-          repeat: (w.repeat * 100).toFixed(1),
-          noWin: (w.noWin * 100).toFixed(1),
-          isActive: true
-        }];
+        return [buildRow(this.currentTime, "All day", true)];
       }
 
       const boundaries = [...new Set(slotRanges.flatMap((r) => [r.start, r.end]))].sort((a, b) => a - b);
       const intervals = [];
 
-      if (boundaries[0] > 0) {
-        intervals.push({ start: 0, end: boundaries[0] });
-      }
-
+      if (boundaries[0] > 0) intervals.push({ start: 0, end: boundaries[0] });
       for (let i = 0; i < boundaries.length - 1; i++) {
         intervals.push({ start: boundaries[i], end: boundaries[i + 1] });
       }
-
       if (boundaries[boundaries.length - 1] < 23 * 60 + 59) {
         intervals.push({ start: boundaries[boundaries.length - 1], end: 23 * 60 + 59 });
       }
@@ -402,31 +395,25 @@ export default {
       const currentMin = toMin(this.currentTime);
 
       return intervals.map(({ start, end }) => {
-        const mid = Math.floor((start + end) / 2);
-        const sampleTime = toLabel(mid);
-        const w = buildOutcomeWeights(cfg, sampleTime);
-        const isActive = currentMin >= start && currentMin < end;
-        return {
-          label: `${toLabel(start)} – ${toLabel(end)}`,
-          mainWin: (w.mainWin * 100).toFixed(1),
-          smallWin: (w.smallWin * 100).toFixed(1),
-          repeat: (w.repeat * 100).toFixed(1),
-          noWin: (w.noWin * 100).toFixed(1),
-          isActive
-        };
+        const sampleTime = toLabel(Math.floor((start + end) / 2));
+        return buildRow(sampleTime, `${toLabel(start)} – ${toLabel(end)}`, currentMin >= start && currentMin < end);
       });
     },
+    effectiveFallbackRanges() {
+      const ranges = {};
+      this.fallbackKeys.forEach((key) => {
+        const ratio = this.clampPercent(this.localConfig[key]?.baseWeight);
+        const max = ratio;
+        const min = (ratio / 100) * this.fallbackRemainingAtPeak;
+        ranges[key] = { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      });
+      return ranges;
+    },
     effectiveRepeatRange() {
-      const ratio = this.clampPercent(this.localConfig.repeat?.baseWeight);
-      const max = ratio;
-      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
-      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      return this.effectiveFallbackRanges.repeat || { min: 0, max: 0 };
     },
     effectiveNoWinRange() {
-      const ratio = this.clampPercent(this.localConfig.noWin?.baseWeight);
-      const max = ratio;
-      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
-      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      return this.effectiveFallbackRanges.noWin || { min: 0, max: 0 };
     }
   },
   watch: {
@@ -510,66 +497,45 @@ export default {
     },
     toEditorConfig(value) {
       const normalized = normalizeWinDistribution(value);
+      const config = { totalSectors: normalized.totalSectors, lastResetDate: normalized.lastResetDate };
 
-      return {
-        totalSectors: normalized.totalSectors,
-        mainWin: {
-          ...normalized.mainWin,
-          baseWeight: this.clampPercent(normalized.mainWin.baseWeight * 100),
-          slots: normalized.mainWin.slots.map((slot) => this.createEditorSlot(slot))
-        },
-        smallWin: {
-          ...normalized.smallWin,
-          baseWeight: this.clampPercent(normalized.smallWin.baseWeight * 100),
-          slots: normalized.smallWin.slots.map((slot) => this.createEditorSlot(slot))
-        },
-        repeat: {
-          ...normalized.repeat,
-          baseWeight: this.clampPercent(normalized.repeat.baseWeight * 100)
-        },
-        noWin: {
-          ...normalized.noWin,
-          baseWeight: this.clampPercent(normalized.noWin.baseWeight * 100)
-        },
-        lastResetDate: normalized.lastResetDate
-      };
+      OUTCOME_KEYS.forEach((key) => {
+        const meta = OUTCOME_LOGIC[key];
+        const src = normalized[key] || {};
+        config[key] = {
+          ...src,
+          baseWeight: this.clampPercent((Number(src.baseWeight) || 0) * 100)
+        };
+        if (meta.hasSlots) {
+          config[key].slots = (src.slots || []).map((slot) => this.createEditorSlot(slot));
+        }
+      });
+
+      return config;
     },
     toPersistedConfig(value) {
       const source = value && typeof value === "object" ? value : DEFAULT_WIN_DISTRIBUTION();
-      return normalizeWinDistribution({
-        totalSectors: source.totalSectors,
-        mainWin: {
-          ...source.mainWin,
-          baseWeight: this.clampPercent(source.mainWin?.baseWeight) / 100,
-          slots: (source.mainWin?.slots || []).map((slot) => ({
+      const payload = { totalSectors: source.totalSectors, lastResetDate: source.lastResetDate || "" };
+
+      OUTCOME_KEYS.forEach((key) => {
+        const meta = OUTCOME_LOGIC[key];
+        const src = source[key] || {};
+        payload[key] = {
+          ...src,
+          baseWeight: this.clampPercent(src.baseWeight) / 100
+        };
+        if (meta.hasSlots) {
+          payload[key].slots = (src.slots || []).map((slot) => ({
             startTime: slot.startTime,
             endTime: slot.endTime,
             limit: Math.max(0, Number(slot.limit) || 0),
             given: Math.max(0, Number(slot.given) || 0),
             weight: this.clampPercent(slot.weight) / 100
-          }))
-        },
-        smallWin: {
-          ...source.smallWin,
-          baseWeight: this.clampPercent(source.smallWin?.baseWeight) / 100,
-          slots: (source.smallWin?.slots || []).map((slot) => ({
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            limit: Math.max(0, Number(slot.limit) || 0),
-            given: Math.max(0, Number(slot.given) || 0),
-            weight: this.clampPercent(slot.weight) / 100
-          }))
-        },
-        repeat: {
-          ...source.repeat,
-          baseWeight: this.clampPercent(source.repeat?.baseWeight) / 100
-        },
-        noWin: {
-          ...source.noWin,
-          baseWeight: this.clampPercent(source.noWin?.baseWeight) / 100
-        },
-        lastResetDate: source.lastResetDate || ""
+          }));
+        }
       });
+
+      return normalizeWinDistribution(payload);
     },
     applyConfigChange() {
       if (!this.validate()) {
@@ -679,21 +645,21 @@ export default {
       this.errors.timelineBudget = "";
 
       if (Number(outcome.baseWeight) < 0 || Number(outcome.baseWeight) > 100) {
-        this.errors[outcomeKey] = `${OUTCOME_META[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
+        this.errors[outcomeKey] = `${OUTCOME_LOGIC[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasDailyLimit && Number(outcome.dailyLimit) < 0) {
+      if (OUTCOME_LOGIC[outcomeKey].hasDailyLimit && Number(outcome.dailyLimit) < 0) {
         this.errors[outcomeKey] = "Daily limit cannot be negative.";
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasDailyLimit && Number(outcome.givenToday) > Number(outcome.dailyLimit)) {
+      if (OUTCOME_LOGIC[outcomeKey].hasDailyLimit && Number(outcome.givenToday) > Number(outcome.dailyLimit)) {
         this.errors[outcomeKey] = "Given today cannot be greater than the daily limit.";
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasSlots) {
+      if (OUTCOME_LOGIC[outcomeKey].hasSlots) {
         const invalidSlot = outcome.slots.find((slot) => {
           const start = this.timeToMinutes(slot.startTime);
           const end = this.timeToMinutes(slot.endTime);
@@ -737,23 +703,18 @@ export default {
       return true;
     },
     validateTimelinePrizeCap() {
-      const ranges = [
-        ...this.localConfig.mainWin.slots.map((slot) => ({
+      const ranges = this.slotKeys.flatMap((key) =>
+        (this.localConfig[key]?.slots || []).map((slot) => ({
           start: this.timeToMinutes(slot.startTime),
           end: this.timeToMinutes(slot.endTime),
           weight: Number(slot.weight) || 0,
-          key: "mainWin"
-        })),
-        ...this.localConfig.smallWin.slots.map((slot) => ({
-          start: this.timeToMinutes(slot.startTime),
-          end: this.timeToMinutes(slot.endTime),
-          weight: Number(slot.weight) || 0,
-          key: "smallWin"
+          key
         }))
-      ];
+      );
 
-      if (this.fallbackSplitTotal !== 100) {
-        return `Repeat and No win must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
+      if (Math.abs(this.fallbackSplitTotal - 100) > 0.01) {
+        const fallbackLabel = this.fallbackKeys.map((k) => OUTCOME_THEME[k]?.label || k).join(" + ");
+        return `${fallbackLabel} must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
       }
 
       if (!ranges.length) {
@@ -764,12 +725,10 @@ export default {
 
       for (let index = 0; index < boundaries.length - 1; index += 1) {
         const sample = boundaries[index] + ((boundaries[index + 1] - boundaries[index]) / 2);
-        const mainWeight = this.findSlotWeightAt("mainWin", sample);
-        const smallWeight = this.findSlotWeightAt("smallWin", sample);
-        const total = mainWeight + smallWeight;
+        const total = this.slotKeys.reduce((sum, key) => sum + this.findSlotWeightAt(key, sample), 0);
 
         if (total > 100.001) {
-          return `Main win + Small win exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
+          return `Slot probabilities exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
         }
       }
 
@@ -859,13 +818,13 @@ export default {
 .outcome-eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.66rem;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .block-title {
   margin: 0;
   font-size: 1.15rem;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .total-field,
@@ -878,7 +837,7 @@ export default {
 .field-label,
 .slot-label {
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .slot-label {
@@ -889,14 +848,14 @@ export default {
 .slot-input {
   width: 100%;
   min-width: 0;
-  border: 1px solid rgba(122, 151, 131, 0.18);
+  border: 1px solid rgba(var(--rgb-border), 0.18);
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(var(--rgb-panel), 0.94);
   padding: 0.7rem 0.8rem;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1d2b22;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
   outline: none;
 }
@@ -906,12 +865,12 @@ export default {
 }
 
 .total-field--error .number-input {
-  border-color: #b92d22;
+  border-color: var(--color-accent-dark);
 }
 
 .config-error {
   margin: 0;
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -923,13 +882,13 @@ export default {
   gap: 1rem;
   padding: 0.9rem 1rem;
   border-radius: 1rem;
-  background: rgba(255, 251, 243, 0.92);
-  border: 1px solid rgba(205, 174, 104, 0.24);
+  background: rgba(var(--rgb-card), 0.92);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
 }
 
 .probability-summary--error {
-  border-color: rgba(185, 45, 34, 0.28);
-  background: rgba(255, 243, 241, 0.96);
+  border-color: rgba(var(--rgb-danger), 0.28);
+  background: rgba(var(--rgb-card), 0.96);
 }
 
 .probability-summary__eyebrow {
@@ -938,28 +897,28 @@ export default {
   letter-spacing: 0.14em;
   font-weight: 800;
   font-size: 0.62rem;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .probability-summary h5 {
   margin: 0;
   font-size: 0.95rem;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .probability-summary strong {
   font-size: 1.1rem;
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .probability-summary__total--ok {
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .probability-summary__copy {
   margin: -0.35rem 0 0;
-  color: rgba(29, 43, 34, 0.66);
+  color: rgba(var(--rgb-text), 0.66);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -976,8 +935,8 @@ export default {
   gap: 0.95rem;
   padding: 1rem 1rem 1rem 1.1rem;
   border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(247, 250, 245, 0.94) 100%);
-  border: 1px solid rgba(122, 151, 131, 0.14);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.78) 0%, rgba(var(--rgb-panel-soft), 0.94) 100%);
+  border: 1px solid rgba(var(--rgb-border), 0.14);
   border-left-width: 3px;
   min-width: 0;
 }
@@ -1009,19 +968,19 @@ export default {
 .outcome-name {
   margin: 0;
   font-size: 1rem;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .outcome-preview {
   white-space: nowrap;
   font-size: 0.76rem;
   font-weight: 700;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .outcome-description {
   margin: 0;
-  color: rgba(29, 43, 34, 0.62);
+  color: rgba(var(--rgb-text), 0.62);
   line-height: 1.45;
   font-size: 0.84rem;
 }
@@ -1040,8 +999,8 @@ export default {
   display: block;
   padding: 0.7rem 0.8rem;
   border-radius: 0.75rem;
-  background: rgba(255, 251, 243, 0.92);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-card), 0.92);
+  color: var(--color-primary);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1056,38 +1015,38 @@ export default {
   gap: 0.4rem;
   padding: 0.65rem 0.8rem;
   border-radius: 0.75rem;
-  background: rgba(255, 251, 243, 0.92);
+  background: rgba(var(--rgb-card), 0.92);
 }
 
 .given-today__count {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .given-today__limit {
   font-size: 0.8em;
   font-weight: 400;
-  color: rgba(29, 43, 34, 0.45);
+  color: rgba(var(--rgb-text), 0.45);
 }
 
 .given-bar {
   height: 4px;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.12);
+  background: rgba(var(--rgb-primary), 0.12);
   overflow: hidden;
 }
 
 .given-bar__fill {
   height: 100%;
   border-radius: 999px;
-  background: #1f5a3f;
+  background: var(--color-primary);
   transition: width 0.35s ease;
 }
 
 .given-bar__fill--full {
-  background: #b92d22;
+  background: var(--color-accent-dark);
 }
 
 .fallback-split {
@@ -1096,13 +1055,13 @@ export default {
   gap: 0.6rem;
   padding: 1rem 1.1rem;
   border-radius: 1rem;
-  background: rgba(255, 251, 243, 0.92);
-  border: 1px solid rgba(205, 174, 104, 0.24);
+  background: rgba(var(--rgb-card), 0.92);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
 }
 
 .fallback-split--error {
-  border-color: rgba(185, 45, 34, 0.32);
-  background: rgba(255, 243, 241, 0.96);
+  border-color: rgba(var(--rgb-danger), 0.32);
+  background: rgba(var(--rgb-card), 0.96);
 }
 
 .fallback-split__header {
@@ -1125,24 +1084,24 @@ export default {
   letter-spacing: 0.14em;
   font-weight: 800;
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .fallback-split__total-value--ok {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
 .fallback-split__total-value--error {
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
 .fallback-split__copy {
   margin: 0;
-  color: rgba(29, 43, 34, 0.7);
+  color: rgba(var(--rgb-text), 0.7);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -1152,7 +1111,7 @@ export default {
   flex-direction: column;
   gap: 0.85rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(122, 151, 131, 0.12);
+  border-top: 1px solid rgba(var(--rgb-border), 0.12);
 }
 
 .timeline-section__header {
@@ -1166,7 +1125,7 @@ export default {
 .probability-summary__sub {
   margin: 0;
   font-size: 0.75rem;
-  color: rgba(29, 43, 34, 0.55);
+  color: rgba(var(--rgb-text), 0.55);
 }
 
 /* Probability timeline table */
@@ -1175,7 +1134,7 @@ export default {
   flex-direction: column;
   border-radius: 1rem;
   overflow: hidden;
-  border: 1px solid rgba(122, 151, 131, 0.16);
+  border: 1px solid rgba(var(--rgb-border), 0.16);
 }
 
 .timeline-header,
@@ -1188,26 +1147,26 @@ export default {
 }
 
 .timeline-header {
-  background: rgba(31, 90, 63, 0.07);
+  background: rgba(var(--rgb-primary), 0.07);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 800;
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.65);
+  color: rgba(var(--rgb-muted), 0.65);
 }
 
 .timeline-row {
-  background: rgba(255, 255, 255, 0.72);
-  border-top: 1px solid rgba(122, 151, 131, 0.1);
+  background: rgba(var(--rgb-panel), 0.72);
+  border-top: 1px solid rgba(var(--rgb-border), 0.1);
   font-size: 0.85rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .timeline-row--active {
-  background: rgba(31, 90, 63, 0.06);
-  border-left: 3px solid #1f5a3f;
+  background: rgba(var(--rgb-primary), 0.06);
+  border-left: 3px solid var(--color-primary);
 }
 
 .timeline-label {
@@ -1221,8 +1180,8 @@ export default {
   display: inline-block;
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  background: #1f5a3f;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-white);
   font-size: 0.52rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1230,26 +1189,26 @@ export default {
 }
 
 .timeline-val--win {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .timeline-val--zero {
-  color: rgba(29, 43, 34, 0.35);
+  color: rgba(var(--rgb-text), 0.35);
 }
 
 /* Slot active badge and row highlight */
 .slot-row--active {
-  border-color: rgba(31, 90, 63, 0.35);
-  background: rgba(31, 90, 63, 0.04);
+  border-color: rgba(var(--rgb-primary), 0.35);
+  background: rgba(var(--rgb-primary), 0.04);
 }
 
 .slot-active-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.12);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-primary), 0.12);
+  color: var(--color-primary);
   font-size: 0.55rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1260,7 +1219,7 @@ export default {
 .effective-range {
   margin: 0.15rem 0 0;
   font-size: 0.75rem;
-  color: rgba(29, 43, 34, 0.58);
+  color: rgba(var(--rgb-text), 0.58);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1272,13 +1231,13 @@ export default {
 
 .slots-help {
   margin: -0.2rem 0 0;
-  color: rgba(29, 43, 34, 0.62);
+  color: rgba(var(--rgb-text), 0.62);
   font-size: 0.8rem;
   line-height: 1.45;
 }
 
 .slots-help--warn {
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-weight: 600;
 }
 
@@ -1292,15 +1251,15 @@ export default {
 
 .slots-header {
   padding: 0 0.25rem;
-  color: rgba(49, 88, 70, 0.58);
+  color: rgba(var(--rgb-muted), 0.58);
   font-size: 0.58rem;
 }
 
 .slot-row {
   padding: 0.85rem;
   border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(122, 151, 131, 0.14);
+  background: rgba(var(--rgb-panel), 0.92);
+  border: 1px solid rgba(var(--rgb-border), 0.14);
 }
 
 .slot-field {
@@ -1319,7 +1278,7 @@ export default {
 }
 
 .slot-given strong {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1340,8 +1299,8 @@ export default {
 .slot-reset {
   min-height: 2rem;
   padding: 0.45rem 0.8rem;
-  background: rgba(31, 90, 63, 0.08);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-primary), 0.08);
+  color: var(--color-primary);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1357,8 +1316,8 @@ export default {
   align-self: center;
   width: 2rem;
   height: 2rem;
-  background: rgba(185, 45, 34, 0.08);
-  color: #b92d22;
+  background: rgba(var(--rgb-danger), 0.08);
+  color: var(--color-accent-dark);
   font-size: 1.15rem;
   cursor: pointer;
 }
@@ -1370,17 +1329,17 @@ export default {
 .empty-slots {
   padding: 0.85rem 0.95rem;
   border-radius: 0.85rem;
-  background: rgba(255, 251, 243, 0.8);
-  border: 1px dashed rgba(122, 151, 131, 0.2);
-  color: rgba(29, 43, 34, 0.58);
+  background: rgba(var(--rgb-card), 0.8);
+  border: 1px dashed rgba(var(--rgb-border), 0.2);
+  color: rgba(var(--rgb-text), 0.58);
   font-size: 0.82rem;
 }
 
 .add-slot-btn {
   align-self: flex-start;
-  border: 1px dashed rgba(122, 151, 131, 0.35);
-  background: rgba(255, 255, 255, 0.92);
-  color: #1f5a3f;
+  border: 1px dashed rgba(var(--rgb-border), 0.35);
+  background: rgba(var(--rgb-panel), 0.92);
+  color: var(--color-primary);
   border-radius: 0.7rem;
   padding: 0.6rem 0.9rem;
   font-weight: 700;
