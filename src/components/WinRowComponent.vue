@@ -108,7 +108,7 @@ export default {
 .result-stage {
   position: relative;
   display: inline-block;
-  width: min(100%, 33vw, 350px);
+  width: min(100%, 40vw, 600px);
 }
 
 .result-card {
@@ -176,7 +176,7 @@ export default {
 
 @media (orientation: landscape) {
   .result-stage {
-    width: min(100%, 32vw, 345px);
+    width: min(100%, 40vw, 600px);
   }
 
   .result-typewriter {
