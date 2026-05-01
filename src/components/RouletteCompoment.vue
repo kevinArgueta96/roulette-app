@@ -771,9 +771,9 @@ export default {
 }
 
 .roulette-shell--storytel .wheel-stage {
-  width: min(100%, calc(464px * var(--wheel-scale)));
-  max-width: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
-  max-height: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
+  width: min(100%, calc((var(--app-height, 100vh) - 3.2rem) * var(--wheel-scale)), 760px);
+  max-width: min(100%, calc((var(--app-height, 100vh) - 3.2rem) * var(--wheel-scale)), 760px);
+  max-height: min(100%, calc((var(--app-height, 100vh) - 3.2rem) * var(--wheel-scale)), 760px);
 }
 
 .roulette-shell--storytel.roulette-shell--hero .wheel-stage {
