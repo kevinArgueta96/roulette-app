@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960.78 960.24">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: -.09em;
+      }
+
+      .cls-2 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-3 {
+        fill: #f6a0b3;
+      }
+
+      .cls-4 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-5 {
+        fill: #383838;
+        font-family: StorytelEuclid-Semibold, 'Storytel Euclid';
+        font-size: 133.87px;
+        font-weight: 600;
+      }
+    </style>
+  </defs>
+  <g id="Capa_2-2" data-name="Capa 2">
+    <g id="Capa_1-2" data-name="Capa 1-2">
+      <path class="cls-3" d="M839.17,125.86C698.09-8.03,434.01-38.71,266.07,51.27,116.75,131.27,14.59,275.24,1.78,444.65c-20.57,271.96,138.85,492.59,408.17,515.32l104.51.27c189.62.51,356.65-67.28,411.69-256.08,55.79-191.36,55.7-429.91-86.98-578.3h0Z"/>
+    </g>
+  </g>
+</svg>
