@@ -98,23 +98,22 @@ export default {
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transform: translateX(6vw);
-  transition: opacity 0.5s ease 0.15s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+  transition: opacity 0.5s ease 0.15s;
 }
 
 .result-shell--visible {
   opacity: 1;
-  transform: translateX(0);
 }
 
 .result-stage {
   position: relative;
   display: inline-block;
+  width: min(100%, 33vw, 350px);
 }
 
 .result-card {
   display: block;
-  width: min(88%, 44vw, 460px);
+  width: 100%;
   height: auto;
   filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.18));
   animation: card-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -176,8 +175,8 @@ export default {
 }
 
 @media (orientation: landscape) {
-  .result-card {
-    width: min(88%, 40vw, 420px);
+  .result-stage {
+    width: min(100%, 32vw, 345px);
   }
 
   .result-typewriter {

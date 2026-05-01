@@ -231,6 +231,14 @@ export default {
       };
     }
   },
+  watch: {
+    isMainPrizeActive() {
+      this.$nextTick(() => {
+        this.handleResize();
+        window.setTimeout(() => this.handleResize(), 760);
+      });
+    }
+  },
   mounted() {
     this.startAngle = this.normalizeRadians(this.initialAngle || 0);
     if (this.theme === "storytel") {
@@ -755,7 +763,7 @@ export default {
 
 .roulette-shell--storytel.roulette-shell--hero {
   --hero-factor: 1;
-  transform: translateY(clamp(0.4rem, 1.6vh, 0.85rem));
+  transform: none;
 }
 
 .roulette-shell--storytel .pointer-wrap {
@@ -766,6 +774,12 @@ export default {
   width: min(100%, calc(464px * var(--wheel-scale)));
   max-width: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
   max-height: min(100%, calc((var(--app-height, 100vh) - 8.2rem) * var(--wheel-scale)));
+}
+
+.roulette-shell--storytel.roulette-shell--hero .wheel-stage {
+  width: min(100%, calc(356px * var(--wheel-scale)));
+  max-width: min(100%, calc(356px * var(--wheel-scale)));
+  max-height: min(100%, calc(356px * var(--wheel-scale)));
 }
 
 .roulette-shell--storytel .spin-button {

@@ -200,6 +200,14 @@ export default {
   grid-template-columns: 1fr 1fr;
 }
 
+.storytel-stage--hero .storytel-stage__left {
+  padding: clamp(4.8rem, 9vh, 5.7rem) clamp(0.5rem, 1.4vw, 1.1rem) 0 clamp(5.8rem, 11vw, 7.5rem);
+}
+
+.storytel-stage--hero .storytel-stage__right {
+  padding: clamp(2.5rem, 6vh, 3.4rem) clamp(3.4rem, 7vw, 4.7rem) 0 clamp(0.5rem, 1.4vw, 1.1rem);
+}
+
 .storytel-stage__left {
   grid-column: 1;
   display: flex;

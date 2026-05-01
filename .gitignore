@@ -35,3 +35,10 @@ pnpm-debug.log*
 !src/assets/**/*.png
 
 /changes/*
+
+# Local design/reference files
+new-desing-sotrytel/
+
+# Local agent coordination files
+.mcp.json
+.open-agent-bridge/
