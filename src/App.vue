@@ -649,13 +649,13 @@ export default {
 .app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
   position: fixed;
   left: calc(25vw + ((clamp(5.8rem, 11vw, 7.5rem) - clamp(0.5rem, 1.4vw, 1.1rem)) / 2));
-  top: clamp(4.35rem, 15.7vh, 6.35rem);
+  top: clamp(4.85rem, 17vh, 7rem);
   transform: translateX(-50%);
 }
 
 .app-shell--storytel-hero .brand-logo {
-  width: clamp(250px, 28vw, 360px);
-  max-height: clamp(4.25rem, 9.8vh, 5.9rem);
+  width: clamp(275px, 30vw, 390px);
+  max-height: clamp(4.65rem, 10.8vh, 6.45rem);
 }
 
 .storytel-footer {

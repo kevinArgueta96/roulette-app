@@ -480,14 +480,16 @@ export default {
       if (this._centerLogoImg && this._centerLogoImg.complete) {
         const logoSize = centerRadius * 2.02;
         this.ctx.save();
+        this.ctx.translate(this.center, this.center);
+        this.ctx.rotate(this.startAngle);
         this.ctx.shadowColor = "rgba(0, 0, 0, 0.42)";
         this.ctx.shadowBlur = this.canvasSize * 0.018;
         this.ctx.shadowOffsetX = this.canvasSize * 0.007;
         this.ctx.shadowOffsetY = this.canvasSize * 0.006;
         this.ctx.drawImage(
           this._centerLogoImg,
-          this.center - logoSize / 2,
-          this.center - logoSize / 2,
+          -logoSize / 2,
+          -logoSize / 2,
           logoSize,
           logoSize
         );
