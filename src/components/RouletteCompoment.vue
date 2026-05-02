@@ -775,9 +775,9 @@ export default {
 }
 
 .roulette-shell--storytel.roulette-shell--hero .wheel-stage {
-  width: min(100%, calc((var(--app-height, 100vh) - 6rem) * var(--wheel-scale)), 600px);
-  max-width: min(100%, calc((var(--app-height, 100vh) - 6rem) * var(--wheel-scale)), 600px);
-  max-height: min(100%, calc((var(--app-height, 100vh) - 6rem) * var(--wheel-scale)), 600px);
+  width: min(100%, calc((var(--app-height, 100vh) - 5rem) * var(--wheel-scale)), 42vw, 720px);
+  max-width: min(100%, calc((var(--app-height, 100vh) - 5rem) * var(--wheel-scale)), 42vw, 720px);
+  max-height: min(100%, calc((var(--app-height, 100vh) - 5rem) * var(--wheel-scale)), 42vw, 720px);
 }
 
 .roulette-shell--storytel .spin-button {

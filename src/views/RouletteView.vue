@@ -1,6 +1,6 @@
 <template>
   <div class="roulette-view" :class="{ 'roulette-view--storytel': isStorytel }">
-    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
+    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" :variant="confettiVariant" :origin="confettiOrigin" />
 
     <!-- Storytel: structured two-column hero layout -->
     <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': hasResult }">
@@ -63,7 +63,7 @@ const RESULT_CONFIG = {
   },
   giftCard3m: {
     duration: 11000,
-    confetti: true,
+    confetti: false,
     kicker: "Gift card 3 months",
     title: "Onnittelut!",
     description: "Voitit 3kk lahjakortin."
@@ -90,8 +90,12 @@ export default {
   data() {
     return {
       winType: "",
+      confettiVariant: "",
+      confettiOrigin: null,
       isVisibleConfetti: false,
-      resultTimer: null
+      resultTimer: null,
+      heroDelayTimer: null,
+      confettiDelayTimer: null
     };
   },
   computed: {
@@ -128,6 +132,23 @@ export default {
   },
   methods: {
     ...mapActions(["updateState"]),
+    captureWheelCenter() {
+      const root = this.$refs.storytelRoulette?.$el || this.$el;
+      const stage = root.querySelector(".wheel-stage");
+      const rect = stage?.getBoundingClientRect();
+
+      if (!rect) {
+        return {
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2
+        };
+      }
+
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+    },
     onShowImg({ type }) {
       const result = RESULT_CONFIG[type];
 
@@ -139,9 +160,29 @@ export default {
       }
 
       this.clearTimers();
-      this.winType = type;
+
+      if (this.isStorytel && type === "mainPrize") {
+        this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
+        this.confettiDelayTimer = window.setTimeout(() => {
+          this.confettiOrigin = this.captureWheelCenter();
+          this.confettiVariant = type;
+          this.isVisibleConfetti = result.confetti;
+
+          this.heroDelayTimer = window.setTimeout(() => {
+            this.showResult(type, result);
+          }, 1200);
+        }, 280);
+        return;
+      }
+
+      this.confettiVariant = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
+
+      this.showResult(type, result);
+    },
+    showResult(type, result) {
+      this.winType = type;
       this.updateState({ mutationType: "setMainPrizeActive", payload: Boolean(RESULT_CONFIG[type]) });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: type });
 
@@ -152,6 +193,8 @@ export default {
     resetResultState() {
       this.clearTimers();
       this.winType = "";
+      this.confettiVariant = "";
+      this.confettiOrigin = null;
       this.isVisibleConfetti = false;
       this.$nextTick(() => {
         this.$refs.storytelRoulette?.handleResize?.();
@@ -166,6 +209,14 @@ export default {
       if (this.resultTimer) {
         window.clearTimeout(this.resultTimer);
         this.resultTimer = null;
+      }
+      if (this.heroDelayTimer) {
+        window.clearTimeout(this.heroDelayTimer);
+        this.heroDelayTimer = null;
+      }
+      if (this.confettiDelayTimer) {
+        window.clearTimeout(this.confettiDelayTimer);
+        this.confettiDelayTimer = null;
       }
     }
   }
@@ -205,11 +256,11 @@ export default {
 }
 
 .storytel-stage--hero .storytel-stage__left {
-  padding: clamp(4.8rem, 9vh, 5.7rem) clamp(0.5rem, 1.4vw, 1.1rem) 0 clamp(5.8rem, 11vw, 7.5rem);
+  padding: clamp(2rem, 8vh, 5.7rem) clamp(0.4rem, 1.2vw, 1rem) 0 clamp(2rem, 9vw, 6.5rem);
 }
 
 .storytel-stage--hero .storytel-stage__right {
-  padding: clamp(2.5rem, 6vh, 3.4rem) clamp(3.4rem, 7vw, 4.7rem) 0 clamp(0.5rem, 1.4vw, 1.1rem);
+  padding: clamp(1.2rem, 5vh, 3.4rem) clamp(2rem, 6vw, 4.5rem) 0 clamp(0.4rem, 1.2vw, 1rem);
 }
 
 .storytel-stage__left {
@@ -220,6 +271,10 @@ export default {
   height: 100%;
   min-width: 0;
   padding: 0 clamp(0.5rem, 1.5vw, 1.5rem) 0 clamp(0.75rem, 2.5vw, 2.5rem);
+  transform: translateX(0);
+  transition:
+    padding 0.86s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.86s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .storytel-stage__right {
