@@ -5,7 +5,7 @@
     <!-- Storytel: structured two-column hero layout -->
     <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': hasResult }">
       <div class="storytel-stage__left">
-        <RouletteCompoment @showImg="onShowImg" />
+        <RouletteCompoment ref="storytelRoulette" @showImg="onShowImg" />
       </div>
       <transition name="win-reveal">
         <div v-if="hasResult" class="storytel-stage__right">
@@ -41,42 +41,42 @@ import WinRowComponent from "@/components/WinRowComponent.vue";
 
 const RESULT_CONFIG = {
   repeat: {
-    duration: 4000,
+    duration: 6000,
     confetti: false,
     kicker: "Repeat",
     title: "Arki ansaitsee parempaa!",
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    duration: 10000,
+    duration: 12000,
     confetti: true,
     kicker: "Main prize",
     title: "Olet voittanut!",
     description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
-    duration: 9000,
-    confetti: true,
+    duration: 11000,
+    confetti: false,
     kicker: "Surprise win",
     title: "Onnittelut!",
     description: "Voitit yllätyspalkinnon."
   },
   giftCard3m: {
-    duration: 9000,
+    duration: 11000,
     confetti: true,
     kicker: "Gift card 3 months",
     title: "Onnittelut!",
     description: "Voitit 3kk lahjakortin."
   },
   giftCard1m: {
-    duration: 9000,
+    duration: 11000,
     confetti: true,
     kicker: "Gift card 1 month",
     title: "Onnittelut!",
     description: "Voitit 1kk lahjakortin."
   },
   noWin: {
-    duration: 5000,
+    duration: 7000,
     confetti: false,
     kicker: "No win",
     title: "Kiitos osallistumisesta!",
@@ -153,6 +153,9 @@ export default {
       this.clearTimers();
       this.winType = "";
       this.isVisibleConfetti = false;
+      this.$nextTick(() => {
+        this.$refs.storytelRoulette?.handleResize?.();
+      });
       this.updateState({ mutationType: "setMainPrizeActive", payload: false });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
       window.setTimeout(() => {
@@ -187,6 +190,7 @@ export default {
 
 /* Storytel two-column hero stage */
 .storytel-stage {
+  position: relative;
   align-self: stretch;
   width: 100%;
   display: grid;
@@ -234,6 +238,16 @@ export default {
     opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.win-reveal-leave-active {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: none;
+}
+
 .win-reveal-enter,
 .win-reveal-leave-to {
   opacity: 0;

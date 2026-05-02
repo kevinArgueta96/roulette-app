@@ -4,25 +4,12 @@
       <div class="result-stage">
         <img
           class="result-card"
-          :src="resultCopy.src"
+          :key="resultImageKey"
+          :src="resultImageSrc"
           :alt="resultCopy.alt"
           fetchpriority="high"
           decoding="async"
         />
-        <p class="result-typewriter" :key="winType + (visible ? 'on' : 'off')">
-          <span
-            v-for="(word, wi) in titleWords"
-            :key="wi"
-            class="result-typewriter__word"
-          >
-            <span
-              v-for="(char, ci) in word.chars"
-              :key="ci"
-              class="result-typewriter__char"
-              :style="{ animationDelay: `${0.55 + word.offset * 0.045 + ci * 0.045}s` }"
-            >{{ char }}</span>
-          </span>
-        </p>
       </div>
     </template>
     <p v-else class="result-placeholder">Esperando resultado</p>
@@ -32,34 +19,36 @@
 <script>
 const RESULT_COPY = Object.freeze({
   mainPrize: {
-    title: "Olet voittanut!",
-    alt: "Main prize",
-    src: "/storytel-assets/win-cards/mainPrize.svg"
+    alt: "Paapalkinto",
+    src: "/storytel-assets/animations-wins/big-prize.svg"
   },
   surpriseWin: {
-    title: "Voitit yllätyspalkinnon!",
-    alt: "Surprise prize",
-    src: "/storytel-assets/win-cards/surpriseWin.svg"
+    alt: "Yllatyspalkinto",
+    src: "/storytel-assets/animations-wins/small-prize.svg"
   },
   giftCard3m: {
-    title: "Voitit 3kk lahjakortin!",
-    alt: "3 month gift card",
-    src: "/storytel-assets/win-cards/giftCard3m.svg"
+    alt: "3kk lahjakortti",
+    src: "/storytel-assets/animations-wins/3-months-free.svg"
   },
   giftCard1m: {
-    title: "Voitit 1kk lahjakortin!",
-    alt: "1 month gift card",
-    src: "/storytel-assets/win-cards/giftCard1m.svg"
+    alt: "1kk lahjakortti",
+    src: "/storytel-assets/animations-wins/3-months-free.svg"
   },
   repeat: {
-    title: "Yritä uudelleen!",
-    alt: "Try again",
-    src: "/storytel-assets/win-cards/repeat.svg"
+    alt: "Kokeile uudestaan",
+    src: "/storytel-assets/animations-wins/try-again.svg"
   }
 });
 
+let animationSequence = 0;
+
 export default {
   name: "WinColumn",
+  data() {
+    return {
+      animationRunId: ""
+    };
+  },
   props: {
     visible: {
       type: Boolean,
@@ -74,16 +63,27 @@ export default {
     resultCopy() {
       return RESULT_COPY[this.winType] || null;
     },
-    titleChars() {
-      return Array.from(this.resultCopy?.title || "");
+    resultImageKey() {
+      return `${this.winType}-${this.animationRunId}`;
     },
-    titleWords() {
-      let offset = 0;
-      return (this.resultCopy?.title || "").split(" ").map((word) => {
-        const entry = { chars: Array.from(word), offset };
-        offset += word.length + 1;
-        return entry;
-      });
+    resultImageSrc() {
+      if (!this.resultCopy) return "";
+      return `${this.resultCopy.src}?run=${this.animationRunId}`;
+    }
+  },
+  watch: {
+    visible: {
+      immediate: true,
+      handler(isVisible) {
+        if (isVisible && this.resultCopy) {
+          this.animationRunId = `${Date.now()}-${animationSequence += 1}`;
+        }
+      }
+    },
+    winType(nextType, previousType) {
+      if (this.visible && nextType && nextType !== previousType) {
+        this.animationRunId = `${Date.now()}-${animationSequence += 1}`;
+      }
     }
   }
 };
@@ -109,6 +109,7 @@ export default {
   position: relative;
   display: inline-block;
   width: min(100%, 40vw, 600px);
+  animation: result-float 3.8s ease-in-out 1s infinite;
 }
 
 .result-card {
@@ -117,50 +118,6 @@ export default {
   height: auto;
   filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.18));
   animation: card-pop 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.result-typewriter {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -48%);
-  width: 66%;
-  margin: 0;
-  text-align: center;
-  font-family: 'Storytel Euclid', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: clamp(1.4rem, 3.4vw, 2.6rem);
-  line-height: 1.1;
-  color: #2b353a;
-}
-
-.result-shell--surpriseWin .result-typewriter,
-.result-shell--giftCard3m .result-typewriter,
-.result-shell--giftCard1m .result-typewriter {
-  color: #fdf1f0;
-}
-
-.result-typewriter__word {
-  display: inline-block;
-  white-space: nowrap;
-}
-
-.result-typewriter__word:not(:last-child)::after {
-  content: '\00a0';
-}
-
-.result-typewriter__char {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(6px);
-  animation: typewriter-char 0.18s ease forwards;
-}
-
-@keyframes typewriter-char {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes card-pop {
@@ -174,13 +131,37 @@ export default {
   }
 }
 
+@keyframes card-pop-main {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-4deg);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.08) rotate(1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes result-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-13px);
+  }
+}
+
+.result-shell--mainPrize .result-card {
+  animation: card-pop-main 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 @media (orientation: landscape) {
   .result-stage {
     width: min(100%, 40vw, 600px);
-  }
-
-  .result-typewriter {
-    font-size: clamp(1.2rem, 2.8vw, 2.2rem);
   }
 }
 </style>

@@ -186,13 +186,13 @@ export default {
       return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      const scale = this.theme === "storytel" ? 0.022 : 0.038;
-      const min   = this.theme === "storytel" ? 18    : 33;
+      const scale = this.theme === "storytel" ? 0.029 : 0.038;
+      const min   = this.theme === "storytel" ? 25    : 33;
       return Math.max(min, this.canvasSize * scale);
     },
     teslaFontSize() {
-      const scale = this.theme === "storytel" ? 0.026 : 0.044;
-      const min   = this.theme === "storytel" ? 22    : 44;
+      const scale = this.theme === "storytel" ? 0.033 : 0.044;
+      const min   = this.theme === "storytel" ? 29    : 44;
       return Math.max(min, this.canvasSize * scale);
     },
     canSpin() {
@@ -249,7 +249,7 @@ export default {
       this._centerLogoImg = img;
 
       if (document.fonts?.load) {
-        document.fonts.load('700 24px "Storytel Euclid"').then(() => {
+        document.fonts.load('800 24px "Storytel Euclid"').then(() => {
           this.drawRouletteWheel();
         });
       }
@@ -476,7 +476,7 @@ export default {
       }
     },
     drawStorytelCenter() {
-      const centerRadius = this.canvasSize * 0.117;
+      const centerRadius = this.canvasSize * 0.155;
 
       if (this._centerLogoImg && this._centerLogoImg.complete) {
         const logoSize = centerRadius * 2.02;

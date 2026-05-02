@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Capa_2" data-name="Capa 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960.78 960.24">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: -.09em;
+      }
+
+      .cls-2 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-3 {
+        fill: #f6a0b3;
+      }
+
+      .cls-4 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-5 {
+        fill: #383838;
+        font-family: StorytelEuclid-Semibold, 'Storytel Euclid';
+        font-size: 133.87px;
+        font-weight: 600;
+      }
+
+      text tspan {
+        opacity: 0;
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: text-write 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
+      text tspan:nth-child(1) { animation-delay: .42s; }
+      text tspan:nth-child(2) { animation-delay: .56s; }
+      text tspan:nth-child(3) { animation-delay: .7s; }
+      text tspan:nth-child(4) { animation-delay: .84s; }
+      text tspan:nth-child(5) { animation-delay: 1.08s; }
+
+      @keyframes text-write {
+        from {
+          opacity: 0;
+          transform: translateY(18px) scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+    </style>
+  </defs>
+  <g id="Capa_2-2" data-name="Capa 2">
+    <g id="Capa_1-2" data-name="Capa 1-2">
+      <path class="cls-3" d="M839.17,125.86C698.09-8.03,434.01-38.71,266.07,51.27,116.75,131.27,14.59,275.24,1.78,444.65c-20.57,271.96,138.85,492.59,408.17,515.32l104.51.27c189.62.51,356.65-67.28,411.69-256.08,55.79-191.36,55.7-429.91-86.98-578.3h0Z"/>
+    </g>
+    <text class="cls-5" transform="translate(330.79 480.84)"><tspan class="cls-1" x="0" y="0">Y</tspan><tspan class="cls-4" x="79.65" y="0">ti</tspan><tspan class="cls-2" x="171.09" y="0">r</tspan><tspan class="cls-4" x="217.28" y="0">ä</tspan><tspan class="cls-4"><tspan x="-129.66" y="121.84">uudellen!</tspan></tspan></text>
+  </g>
+</svg>
