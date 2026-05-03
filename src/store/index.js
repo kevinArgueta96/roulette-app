@@ -8,6 +8,7 @@ import {
   OUTCOME_KEYS,
   OUTCOME_LOGIC
 } from "@/utils";
+import themeModule from "./modules/theme";
 
 Vue.use(Vuex);
 
@@ -42,6 +43,7 @@ const totalKeys = [
 
 
 export default new Vuex.Store({
+  modules: { theme: themeModule },
   state: createState(),
   getters: Object.keys(createState()).reduce((accumulator, key) => ({
     ...accumulator,

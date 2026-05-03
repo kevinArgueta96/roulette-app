@@ -102,10 +102,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["isMainPrizeActive"]),
-    isStorytel() {
-      return process.env.VUE_APP_THEME === "storytel";
-    },
+    ...mapGetters(["isMainPrizeActive", "isStorytel"]),
     hasResult() {
       return Boolean(this.winType);
     },

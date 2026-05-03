@@ -162,8 +162,13 @@ export default {
       "initialAngle",
       "spinRoullete",
       "isMainPrizeActive",
-      "activeHeroResultType"
+      "activeHeroResultType",
+      "themeId",
+      "themeMeta"
     ]),
+    themeWheel() {
+      return this.themeMeta?.wheel || {};
+    },
     sectors() {
       return buildSectorsFromDistribution(this.winDistribution);
     },
@@ -186,32 +191,34 @@ export default {
       return Math.max(7, this.canvasSize * 0.014);
     },
     defaultFontSize() {
-      const scale = this.theme === "storytel" ? 0.029 : 0.038;
-      const min   = this.theme === "storytel" ? 25    : 33;
-      return Math.max(min, this.canvasSize * scale);
+      return Math.max(
+        this.themeWheel.defaultMinSize ?? 33,
+        this.canvasSize * (this.themeWheel.defaultScale ?? 0.038)
+      );
     },
     teslaFontSize() {
-      const scale = this.theme === "storytel" ? 0.033 : 0.044;
-      const min   = this.theme === "storytel" ? 29    : 44;
-      return Math.max(min, this.canvasSize * scale);
+      return Math.max(
+        this.themeWheel.teslaMinSize ?? 44,
+        this.canvasSize * (this.themeWheel.teslaScale ?? 0.044)
+      );
     },
     canSpin() {
       return this.spinRoullete && !this.isSpinning;
     },
     theme() {
-      return process.env.VUE_APP_THEME || "parrano";
+      return this.themeId || "parrano";
     },
     showHeroRepeatButton() {
       return this.isMainPrizeActive && this.activeHeroResultType === "repeat";
     },
     showMainPrizeCopy() {
-      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
+      return !this.themeMeta?.features?.heroLayout && this.isMainPrizeActive && this.activeHeroResultType !== "repeat";
     },
     showMainPrizeBurst() {
-      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
+      return this.themeMeta?.features?.showMainPrizeBurstFlower && this.isMainPrizeActive && this.activeHeroResultType === "mainPrize";
     },
     showSmallPrizeSweep() {
-      return this.theme !== "storytel" && this.isMainPrizeActive && this.activeHeroResultType === "surpriseWin";
+      return !this.themeMeta?.features?.heroLayout && this.isMainPrizeActive && this.activeHeroResultType === "surpriseWin";
     },
     wheelCenterStyle() {
       return {
@@ -242,7 +249,7 @@ export default {
   },
   mounted() {
     this.startAngle = this.normalizeRadians(this.initialAngle || 0);
-    if (this.theme === "storytel") {
+    if (this.themeMeta?.features?.storytelCenter) {
       const img = new Image();
       img.src = STORYTEL_CENTER_LOGO_SRC;
       img.onload = () => { this.drawRouletteWheel(); };
@@ -403,29 +410,16 @@ export default {
 
       this.ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
 
-      if (this.theme === "storytel") {
-        // Storytel: black outer ring + white inner ring
-        this.ctx.beginPath();
-        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
-        this.ctx.fillStyle = "#000000";
-        this.ctx.fill();
+      const ring = this.themeWheel.outerRing || { outerColor: "var(--color-gold)", innerColor: "var(--color-gold-dark)" };
+      this.ctx.beginPath();
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
+      this.ctx.fillStyle = ring.outerColor.startsWith("var(") ? this.cssVar(ring.outerColor.slice(4, -1), "#d9bf74") : ring.outerColor;
+      this.ctx.fill();
 
-        this.ctx.beginPath();
-        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 0.5, 0, Math.PI * 2);
-        this.ctx.fillStyle = "#ffffff";
-        this.ctx.fill();
-      } else {
-        // Parrano: gold double ring
-        this.ctx.beginPath();
-        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 2.1, 0, Math.PI * 2);
-        this.ctx.fillStyle = this.cssVar("--color-gold", "#d9bf74");
-        this.ctx.fill();
-
-        this.ctx.beginPath();
-        this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * 1.3, 0, Math.PI * 2);
-        this.ctx.fillStyle = this.cssVar("--color-gold-dark", "#c9a353");
-        this.ctx.fill();
-      }
+      this.ctx.beginPath();
+      this.ctx.arc(this.center, this.center, this.outerRadius + this.borderWidth * (this.themeMeta?.features?.storytelCenter ? 0.5 : 1.3), 0, Math.PI * 2);
+      this.ctx.fillStyle = ring.innerColor.startsWith("var(") ? this.cssVar(ring.innerColor.slice(4, -1), "#c9a353") : ring.innerColor;
+      this.ctx.fill();
 
       this.sectors.forEach((sector, index) => {
         const angle = this.startAngle + index * this.arc;
@@ -443,7 +437,7 @@ export default {
         this.ctx.fillStyle = sector.color;
         this.ctx.fill();
         this.ctx.lineWidth = this.borderWidth;
-        this.ctx.strokeStyle = this.theme === "storytel" ? "#ffffff" : sector.color;
+        this.ctx.strokeStyle = this.themeWheel.sectorStrokeStyle || sector.color;
         this.ctx.stroke();
 
         this.ctx.save();
@@ -454,15 +448,14 @@ export default {
         this.ctx.rotate(halfArc);
         this.ctx.textBaseline = "middle";
         this.ctx.fillStyle = sector.textColor;
-        const fontFamily = this.theme === "storytel"
-          ? '"Storytel Euclid", system-ui'
-          : (isTopOutcome ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily);
+        const fontFamily = this.themeWheel.fontFamily
+          || (isTopOutcome ? textTeslaRouletteStyle.fontFamily : textDefaultRouletteStyle.fontFamily);
         this.ctx.font = `${isTopOutcome ? textTeslaRouletteStyle.fontWeight : textDefaultRouletteStyle.fontWeight} ${fontSize}px ${fontFamily}`;
-        const isStorytel = this.theme === "storytel";
-        const textX = isStorytel
+        const alignLeft = this.themeWheel.textAlign === "left";
+        const textX = alignLeft
           ? -Math.max(...lines.map((line) => this.ctx.measureText(line).width)) / 2
           : 0;
-        this.ctx.textAlign = isStorytel ? "left" : "center";
+        this.ctx.textAlign = alignLeft ? "left" : "center";
 
         lines.forEach((line, lineIndex) => {
           this.ctx.fillText(line, textX, lineIndex * lineHeight - textOffset);
@@ -471,7 +464,7 @@ export default {
         this.ctx.restore();
       });
 
-      if (this.theme === "storytel") {
+      if (this.themeMeta?.features?.storytelCenter) {
         this.drawStorytelCenter();
       }
     },
@@ -503,16 +496,9 @@ export default {
       this.ctx.stroke();
     },
     getSectorLines(sector) {
-      const storytelLines = {
-        mainPrize: ["Pääpalkinto"],
-        surpriseWin: ["Yllätyspalkinto"],
-        repeat: ["Kokeile", "uudestaan"],
-        giftCard3m: ["3kk", "lahjakortti"],
-        giftCard1m: ["1kk", "lahjakortti"]
-      };
-
-      if (this.theme === "storytel" && storytelLines[sector?.outcomeKey]) {
-        return storytelLines[sector.outcomeKey];
+      const multilineLabels = this.themeWheel.multilineLabels;
+      if (multilineLabels && multilineLabels[sector?.outcomeKey]) {
+        return multilineLabels[sector.outcomeKey];
       }
 
       const label = sector?.label ?? sector;

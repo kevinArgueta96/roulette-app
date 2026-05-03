@@ -3,10 +3,11 @@ import App from "./App.vue";
 import store from "./store";
 import router from "./router";
 import "./styles/themes.css";
+import { resolveThemeId, applyThemeAttr } from "./themes/resolveTheme";
 
 Vue.config.productionTip = false;
 
-document.documentElement.dataset.theme = process.env.VUE_APP_THEME || "parrano";
+applyThemeAttr(resolveThemeId());
 
 new Vue({
   store,

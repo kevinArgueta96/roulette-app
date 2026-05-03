@@ -71,3 +71,44 @@ export const OUTCOME_THEME = {
   giftCard3m: { color: "#c9ecff", textColor: "#2b353a", label: "3kk lahjakortti" },
   giftCard1m: { color: "#2b353a", textColor: "#fdf1f0", label: "1kk lahjakortti" }
 };
+
+export const meta = {
+  id: "storytel",
+  label: "Storytel",
+  shellClass: "app-shell--storytel",
+  assetsBase: "/storytel-assets",
+  logo: "/storytel-assets/logo.png",
+  background: "/storytel-assets/background.svg",
+  decorations: [],
+  features: {
+    heroLayout: true,
+    storytelCenter: true,
+    showHeroResultLabel: false,
+    showMainPrizeBurstFlower: false
+  },
+  confettiColors: [
+    [255, 80, 28],
+    [43, 53, 58],
+    [255, 196, 0],
+    [50, 110, 220],
+    [220, 40, 100],
+    [0, 166, 118]
+  ],
+  wheel: {
+    fontFamily: '"Storytel Euclid", system-ui',
+    textAlign: "left",
+    defaultScale: 0.029,
+    defaultMinSize: 25,
+    teslaScale: 0.033,
+    teslaMinSize: 29,
+    sectorStrokeStyle: "#ffffff",
+    outerRing: { outerColor: "#000000", innerColor: "#ffffff" },
+    multilineLabels: {
+      mainPrize: ["Pääpalkinto"],
+      surpriseWin: ["Yllätys", "voitto"],
+      giftCard3m: ["3kk", "lahjakortti"],
+      giftCard1m: ["1kk", "lahjakortti"]
+    }
+  },
+  totalsPathSuffix: "-storytel"
+};

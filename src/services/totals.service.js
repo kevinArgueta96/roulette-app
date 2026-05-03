@@ -6,9 +6,11 @@ import {
   OUTCOME_KEYS,
   OUTCOME_LOGIC
 } from "@/utils";
+import { resolveThemeId } from "@/themes/resolveTheme";
+import { REGISTRY } from "@/themes";
 
-const THEME = process.env.VUE_APP_THEME || "parrano";
-const PATH_SUFFIX = THEME === "parrano" ? "" : `-${THEME}`;
+const THEME = resolveThemeId();
+const PATH_SUFFIX = REGISTRY[THEME]?.meta?.totalsPathSuffix ?? (THEME === "parrano" ? "" : `-${THEME}`);
 const PATHS = {
   options: `roulette${PATH_SUFFIX}.json`,
   totals: `total-prices${PATH_SUFFIX}.json`,

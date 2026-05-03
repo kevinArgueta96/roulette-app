@@ -60,3 +60,41 @@ export const OUTCOME_THEME = {
   repeat: { color: "#F8F0D8", textColor: "#2d5b38", label: "KOKEILE UUDESTAAN" },
   noWin: { color: "#2E5E39", textColor: "#f6edd1", label: "" }
 };
+
+export const meta = {
+  id: "parrano",
+  label: "Parrano",
+  shellClass: "app-shell--parrano",
+  assetsBase: "/parrano-assets",
+  logo: "/parrano-assets/new-logo.webp",
+  background: null,
+  decorations: ["/parrano-assets/main-l.webp", "/parrano-assets/main-r.webp"],
+  features: {
+    heroLayout: false,
+    storytelCenter: false,
+    showHeroResultLabel: true,
+    showMainPrizeBurstFlower: true
+  },
+  confettiColors: [
+    [216, 187, 113],
+    [245, 215, 138],
+    [246, 237, 209],
+    [255, 80, 20],
+    [255, 255, 255],
+    [46, 94, 57],
+    [203, 48, 39],
+    [154, 115, 37]
+  ],
+  wheel: {
+    fontFamily: null,
+    textAlign: "center",
+    defaultScale: 0.038,
+    defaultMinSize: 33,
+    teslaScale: 0.044,
+    teslaMinSize: 44,
+    sectorStrokeStyle: null,
+    outerRing: { outerColor: "var(--color-gold)", innerColor: "var(--color-gold-dark)" },
+    multilineLabels: null
+  },
+  totalsPathSuffix: ""
+};

@@ -14,30 +14,15 @@
 
 <script>
 import ConfettiGenerator from "confetti-js";
+import { mapGetters } from "vuex";
 
 const isMobile = () => window.matchMedia("(max-width: 768px)").matches
   || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-const CONFETTI_COLORS = {
-  parrano: [
-    [216, 187, 113],
-    [245, 215, 138],
-    [246, 237, 209],
-    [255, 80, 20],
-    [255, 255, 255],
-    [46, 94, 57],
-    [203, 48, 39],
-    [154, 115, 37]
-  ],
-  storytel: [
-    [255, 80, 28],
-    [43, 53, 58],
-    [255, 196, 0],
-    [50, 110, 220],
-    [220, 40, 100],
-    [0, 166, 118]
-  ]
-};
+const DEFAULT_CONFETTI_COLORS = [
+  [216, 187, 113], [245, 215, 138], [246, 237, 209],
+  [255, 80, 20], [255, 255, 255], [46, 94, 57]
+];
 
 export default {
   name: "ConfettiComponent",
@@ -55,9 +40,11 @@ export default {
       default: null
     }
   },
+  computed: {
+    ...mapGetters(["themeMeta"])
+  },
   data() {
     const mobile = isMobile();
-    const theme = process.env.VUE_APP_THEME || "parrano";
     return {
       confetti: null,
       burstParticles: [],
@@ -71,7 +58,7 @@ export default {
         clock: mobile ? 22 : 16,
         rotate: !mobile,
         props: ["circle"],
-        colors: CONFETTI_COLORS[theme] || CONFETTI_COLORS.parrano
+        colors: DEFAULT_CONFETTI_COLORS
       }
     };
   },
@@ -89,6 +76,8 @@ export default {
     }
   },
   mounted() {
+    const colors = this.themeMeta?.confettiColors || DEFAULT_CONFETTI_COLORS;
+    this.confettiSettings = { ...this.confettiSettings, colors };
     this.confetti = new ConfettiGenerator(this.confettiSettings);
 
     if (this.isVisibleConfetti) {
@@ -184,7 +173,7 @@ export default {
       if (!ctx) return;
 
       const origin = this.origin || this.getWheelOrigin();
-      const colors = (CONFETTI_COLORS.storytel || CONFETTI_COLORS.parrano)
+      const colors = (this.themeMeta?.confettiColors || DEFAULT_CONFETTI_COLORS)
         .map(([r, g, b]) => `rgb(${r}, ${g}, ${b})`);
       const mobile = isMobile();
       const particleCount = mobile ? 1500 : 4200;

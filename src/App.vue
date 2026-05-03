@@ -156,15 +156,15 @@ export default {
     document.removeEventListener("click", this.handleOutsideClick);
   },
   computed: {
-    ...mapGetters(["isMainPrizeActive"]),
+    ...mapGetters(["isMainPrizeActive", "themeId", "themeMeta"]),
     theme() {
-      return process.env.VUE_APP_THEME || "parrano";
+      return this.themeId;
     },
     brandLogoSrc() {
-      return this.theme === "storytel" ? "/storytel-assets/logo.png" : "/parrano-assets/new-logo.webp";
+      return this.themeMeta?.logo || "/parrano-assets/new-logo.webp";
     },
     brandLogoAlt() {
-      return this.theme === "storytel" ? "Storytel" : "Parrano";
+      return this.themeMeta?.label || "Parrano";
     },
     isDashboardRoute() {
       return this.$route.name === "dashboard";
