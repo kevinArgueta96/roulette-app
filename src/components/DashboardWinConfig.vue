@@ -31,12 +31,29 @@
 
       <!-- Outcome accordion -->
       <ul class="win-row-list">
-        <li
-          v-for="outcome in outcomes"
-          :key="outcome.key"
-          class="win-row"
-          :class="{ 'win-row--expanded': expandedOutcome === outcome.key }"
-        >
+        <template v-for="(outcome, index) in outcomes">
+          <li
+            v-if="index === 0 && outcome.hasSlots && fallbackOutcomesGroup.length > 0"
+            :key="`grp-timed-${index}`"
+            class="win-group-label"
+          >
+            <span class="win-group-label__icon">⏱</span>
+            <span class="win-group-label__text">By time window</span>
+          </li>
+          <li
+            v-if="!outcome.hasSlots && (index === 0 || outcomes[index - 1].hasSlots)"
+            :key="`grp-prob-${index}`"
+            class="win-group-label"
+            :class="{ 'win-group-label--sep': slotOutcomesGroup.length > 0 }"
+          >
+            <span class="win-group-label__icon">%</span>
+            <span class="win-group-label__text">By probability</span>
+          </li>
+          <li
+            :key="outcome.key"
+            class="win-row"
+            :class="{ 'win-row--expanded': expandedOutcome === outcome.key }"
+          >
           <button
             type="button"
             class="win-row__head"
@@ -150,7 +167,8 @@
               </ul>
             </div>
           </div>
-        </li>
+          </li>
+        </template>
       </ul>
 
       <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
@@ -260,7 +278,12 @@ export default {
       return OUTCOME_KEYS.filter((key) => (Number(this.localConfig?.[key]?.sectorCount) || 0) > 0);
     },
     outcomes() {
-      return this.activeOutcomeKeys.map((key, index) => this.createOutcomeDescriptor(key, index));
+      const sorted = [...this.activeOutcomeKeys].sort((a, b) => {
+        const aSlot = OUTCOME_LOGIC[a]?.hasSlots ? 0 : 1;
+        const bSlot = OUTCOME_LOGIC[b]?.hasSlots ? 0 : 1;
+        return aSlot - bSlot;
+      });
+      return sorted.map((key, index) => this.createOutcomeDescriptor(key, index));
     },
     fallbackKeys() {
       return this.outcomes.filter((outcome) => !outcome.hasSlots).map((outcome) => outcome.key);
@@ -387,6 +410,12 @@ export default {
     },
     effectiveNoWinRange() {
       return this.effectiveFallbackRanges.noWin || { min: 0, max: 0 };
+    },
+    slotOutcomesGroup() {
+      return this.outcomes.filter((o) => o.hasSlots);
+    },
+    fallbackOutcomesGroup() {
+      return this.outcomes.filter((o) => !o.hasSlots);
     },
     slotModalOutcome() {
       if (!this.activeSlotOutcome) return null;
@@ -1379,6 +1408,34 @@ export default {
 .win-row__slot-sep {
   color: rgba(var(--rgb-text-strong), 0.35);
   margin: 0 0.1rem;
+}
+
+/* ── Group labels ── */
+.win-group-label {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.25rem 0.2rem;
+}
+
+.win-group-label--sep {
+  margin-top: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(var(--rgb-border), 0.14);
+}
+
+.win-group-label__icon {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.win-group-label__text {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: rgba(var(--rgb-muted), 0.65);
 }
 
 @media (max-width: 760px) {

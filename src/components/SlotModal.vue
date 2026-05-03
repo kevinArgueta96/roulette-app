@@ -63,12 +63,14 @@
             </div>
           </div>
 
-          <button type="button" class="slot-modal__add-btn" @click="addSlot">+ Add window</button>
         </div>
 
         <footer class="slot-modal__foot">
-          <button type="button" class="slot-modal__cancel-btn" @click="$emit('close')">Cancel</button>
-          <button type="button" class="slot-modal__save-btn" @click="save">Save windows</button>
+          <button type="button" class="slot-modal__add-btn" @click="addSlot">+ Add window</button>
+          <div class="slot-modal__foot-right">
+            <button type="button" class="slot-modal__cancel-btn" @click="$emit('close')">Cancel</button>
+            <button type="button" class="slot-modal__save-btn" @click="save">Save windows</button>
+          </div>
         </footer>
       </div>
     </div>
@@ -224,7 +226,7 @@ export default {
 .slot-modal__fields {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.65rem;
 }
 
@@ -249,12 +251,17 @@ export default {
   border: 1px solid rgba(var(--rgb-border), 0.18);
   border-radius: 0.65rem;
   background: rgba(var(--rgb-card), 0.9);
-  padding: 0.55rem 0.65rem;
+  padding: 0.55rem 0.4rem;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--color-text);
   outline: none;
+  box-sizing: border-box;
+}
+
+input[type="time"].slot-modal__input {
+  padding-right: 0.25rem;
 }
 
 .slot-modal__given-field {
@@ -322,10 +329,17 @@ export default {
 
 .slot-modal__foot {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   padding: 1rem 1.35rem;
   border-top: 1px solid rgba(var(--rgb-gold-line), 0.18);
+  flex-shrink: 0;
+}
+
+.slot-modal__foot-right {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .slot-modal__cancel-btn {

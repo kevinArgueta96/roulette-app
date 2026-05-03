@@ -330,8 +330,25 @@ export default {
           };
         });
 
+      const probabilityTotalsMap = {
+        surpriseWin: this.totalSpecialSurprise,
+        repeat: this.totalReplay
+      };
+
+      const probabilityCards = this.visibleOutcomeKeys
+        .filter((key) => !OUTCOME_LOGIC[key]?.hasDailyLimit && probabilityTotalsMap[key] !== undefined)
+        .map((key) => ({
+          key,
+          label: `${OUTCOME_THEME[key]?.label || key} total`,
+          value: probabilityTotalsMap[key] || 0,
+          limit: null,
+          progress: null,
+          highlight: false
+        }));
+
       return [
         ...tracked,
+        ...probabilityCards,
         { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false },
         { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: false }
       ];
@@ -822,7 +839,7 @@ export default {
 /* ── Stat row ── */
 .stat-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.8rem;
   padding-top: 0.5rem;
 }
@@ -1275,7 +1292,7 @@ export default {
 
 @media (max-width: 900px) {
   .stat-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .toolbar-actions {
@@ -1294,6 +1311,10 @@ export default {
 }
 
 @media (max-width: 640px) {
+  .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-view {
     padding-inline: 0.4rem;
     gap: 0.85rem;
