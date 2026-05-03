@@ -652,6 +652,17 @@ export default {
   box-shadow: 0 16px 30px rgba(var(--rgb-text), 0.12);
 }
 
+.app-shell--storytel-hero {
+  --storytel-logo-top: clamp(1rem, 3vh, 2.5rem);
+  --storytel-logo-height: clamp(5rem, 11.6vh, 7rem);
+  --storytel-logo-gap: 20px;
+  --storytel-wheel-top-offset: calc(
+    var(--storytel-logo-top) +
+    var(--storytel-logo-height) +
+    var(--storytel-logo-gap)
+  );
+}
+
 .app-shell--storytel-hero .menu-shell {
   opacity: 0;
   pointer-events: none;
@@ -661,7 +672,7 @@ export default {
 .app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
   position: fixed;
   left: calc(25vw + ((clamp(2rem, 9vw, 6.5rem) - clamp(0.4rem, 1.2vw, 1rem)) / 2));
-  top: clamp(1.5rem, 5vh, 3.5rem);
+  top: var(--storytel-logo-top);
   transform: translateX(-50%);
   animation: storytel-logo-enter 1.08s cubic-bezier(0.19, 1, 0.22, 1) both;
   --brand-hero-shift: 0px;
@@ -670,7 +681,7 @@ export default {
 
 .app-shell--storytel-hero .brand-logo {
   width: clamp(300px, 32vw, 420px);
-  max-height: clamp(5rem, 11.6vh, 7rem);
+  max-height: var(--storytel-logo-height);
 }
 
 .storytel-footer {

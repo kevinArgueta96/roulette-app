@@ -273,7 +273,8 @@ export default {
 }
 
 .storytel-stage--hero .storytel-stage__left {
-  padding: clamp(2rem, 8vh, 5.7rem) clamp(0.4rem, 1.2vw, 1rem) 0 clamp(2rem, 9vw, 6.5rem);
+  align-items: flex-start;
+  padding: var(--storytel-wheel-top-offset) clamp(0.4rem, 1.2vw, 1rem) 0 clamp(2rem, 9vw, 6.5rem);
   flex-basis: 50%;
   max-width: 50%;
 }
