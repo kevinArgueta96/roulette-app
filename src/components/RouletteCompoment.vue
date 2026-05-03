@@ -749,10 +749,10 @@ export default {
 .roulette-shell--storytel.roulette-shell--hero {
   --hero-factor: 1;
   transform: none;
-  justify-content: flex-start;
 }
 
-.roulette-shell--storytel.roulette-shell--hero .pointer-wrap {
+.roulette-shell--storytel.roulette-shell--hero .pointer-wrap,
+.roulette-shell--storytel.roulette-shell--hero .wheel-action-slot {
   display: none;
 }
 
@@ -767,9 +767,9 @@ export default {
 }
 
 .roulette-shell--storytel.roulette-shell--hero .wheel-stage {
-  width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 48vw, min(86vh, 980px));
-  max-width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 48vw, min(86vh, 980px));
-  max-height: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 48vw, min(86vh, 980px));
+  width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 32vw, min(58vh, 660px));
+  max-width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 32vw, min(58vh, 660px));
+  max-height: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * var(--wheel-scale)), 32vw, min(58vh, 660px));
 }
 
 .roulette-shell--storytel .spin-button {

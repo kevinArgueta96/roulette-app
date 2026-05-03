@@ -673,7 +673,7 @@ export default {
   position: fixed;
   left: calc(25vw + ((clamp(2rem, 9vw, 6.5rem) - clamp(0.4rem, 1.2vw, 1rem)) / 2));
   top: auto;
-  bottom: calc(var(--app-height, 100vh) - var(--storytel-wheel-top-offset) + 10px);
+  bottom: calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset) + clamp(2.6rem, 8vh, 4rem) + min(32vw, 58vh, 660px)) / 2 + 10px);
   transform: translateX(-50%);
   animation: storytel-logo-enter 1.08s cubic-bezier(0.19, 1, 0.22, 1) both;
   --brand-hero-shift: 0px;

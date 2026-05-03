@@ -311,12 +311,7 @@ export default {
   flex: 0 0 50%;
   max-width: 50%;
   overflow: visible;
-  align-items: flex-start;
   padding: var(--storytel-wheel-top-offset) clamp(2rem, 6vw, 4.5rem) 0 clamp(0.4rem, 1.2vw, 1rem);
-}
-
-.storytel-stage--hero .storytel-stage__right ::v-deep .result-shell {
-  align-items: flex-start;
 }
 
 .win-reveal-enter-active,
