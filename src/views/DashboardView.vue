@@ -8,11 +8,10 @@
       @change="onImportFile"
     />
 
-    <section class="dashboard-toolbar panel">
+    <header class="dashboard-toolbar panel">
       <div class="toolbar-copy">
         <p class="toolbar-eyebrow">Control panel</p>
         <h2>Dashboard</h2>
-        <p>Manage daily limits, hourly distribution, and the active data source for the roulette.</p>
       </div>
 
       <div class="toolbar-actions">
@@ -73,46 +72,46 @@
           </div>
         </div>
       </div>
+    </header>
+
+    <section class="stat-row">
+      <article
+        v-for="stat in dashboardStats"
+        :key="stat.key"
+        class="stat-card"
+        :class="{ 'stat-card--highlight': stat.highlight, 'stat-card--track': stat.progress !== null }"
+      >
+        <p class="stat-card__label">{{ stat.label }}</p>
+        <strong>
+          {{ stat.value }}
+          <span v-if="stat.limit !== null" class="stat-limit">/ {{ stat.limit }}</span>
+        </strong>
+        <div
+          v-if="stat.progress !== null"
+          class="stat-bar"
+          role="progressbar"
+          :aria-valuenow="stat.value"
+          :aria-valuemax="stat.limit"
+        >
+          <div class="stat-bar__fill" :style="{ width: stat.progress + '%' }" :class="stat.progress >= 100 ? 'stat-bar__fill--full' : ''"></div>
+        </div>
+      </article>
     </section>
 
-    <section class="dashboard-layout">
-      <div class="dashboard-top-grid">
-        <section class="panel summary-panel panel--overview">
-          <div class="summary-panel__header">
+    <section class="dashboard-main-grid">
+      <div class="dashboard-main-left">
+        <div class="panel panel--rules">
+          <div class="panel-heading">
             <div>
-              <p class="panel-eyebrow">Overview</p>
-              <h3>Current status</h3>
+              <p class="panel-eyebrow">Win Rules</p>
+              <h3>Distribution by category</h3>
             </div>
-            <span class="source-badge" :class="`source-badge--${dataSource}`">
-              {{ dataSource === "local" ? "Local JSON" : "Firebase" }}
-            </span>
           </div>
+          <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
+        </div>
+      </div>
 
-          <div class="stats-grid">
-            <article
-              v-for="stat in dashboardStats"
-              :key="stat.key"
-              class="stat-card"
-              :class="{ 'stat-card--highlight': stat.highlight, 'stat-card--track': stat.progress !== null }"
-            >
-              <p class="stat-card__label">{{ stat.label }}</p>
-              <strong>
-                {{ stat.value }}
-                <span v-if="stat.limit !== null" class="stat-limit">/ {{ stat.limit }}</span>
-              </strong>
-              <div
-                v-if="stat.progress !== null"
-                class="stat-bar"
-                role="progressbar"
-                :aria-valuenow="stat.value"
-                :aria-valuemax="stat.limit"
-              >
-                <div class="stat-bar__fill" :style="{ width: stat.progress + '%' }" :class="stat.progress >= 100 ? 'stat-bar__fill--full' : ''"></div>
-              </div>
-            </article>
-          </div>
-        </section>
-
+      <aside class="dashboard-sidebar">
         <section class="panel side-panel panel--status">
           <div class="panel-heading">
             <div>
@@ -175,18 +174,7 @@
             </li>
           </ul>
         </section>
-      </div>
-
-      <section class="panel totals-panel panel--totals">
-        <div class="panel-heading">
-          <div>
-            <p class="panel-eyebrow">Win Rules</p>
-            <h3>Distribution by category</h3>
-          </div>
-          <p class="panel-copy">Set time-window amounts for Pääpalkinto and 3kk lahjakortti, plus probability percentages for Yllätyspalkinto and Kokeile uudestaan.</p>
-        </div>
-        <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
-      </section>
+      </aside>
     </section>
 
     <transition name="save-bar">
@@ -212,54 +200,48 @@
     </transition>
 
     <div v-if="showResetLocalModal" class="modal-overlay" @click.self="closeResetLocalModal">
-        <section
-          class="modal-card"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-counters-title"
-          aria-describedby="reset-counters-copy"
-        >
-          <p class="panel-eyebrow">Confirm action</p>
-          <h3 id="reset-counters-title">Reset counters?</h3>
-          <p id="reset-counters-copy" class="modal-copy">
-            This will reset all daily and slot delivery counts to 0. The configured hourly slots and limits will be kept.
-          </p>
-
-          <div class="modal-actions">
-            <button class="ghost-btn" type="button" @click="closeResetLocalModal">
-              Cancel
-            </button>
-            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetCounters">
-              {{ isRefreshing ? "Resetting..." : "Reset counters" }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <section
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-counters-title"
+        aria-describedby="reset-counters-copy"
+      >
+        <p class="panel-eyebrow">Confirm action</p>
+        <h3 id="reset-counters-title">Reset counters?</h3>
+        <p id="reset-counters-copy" class="modal-copy">
+          This will reset all daily and slot delivery counts to 0. The configured hourly slots and limits will be kept.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" @click="closeResetLocalModal">Cancel</button>
+          <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetCounters">
+            {{ isRefreshing ? "Resetting..." : "Reset counters" }}
+          </button>
+        </div>
+      </section>
+    </div>
 
     <div v-if="showRestoreDefaultsModal" class="modal-overlay" @click.self="closeRestoreDefaultsModal">
-        <section
-          class="modal-card"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="restore-defaults-title"
-          aria-describedby="restore-defaults-copy"
-        >
-          <p class="panel-eyebrow">Confirm action</p>
-          <h3 id="restore-defaults-title">Restore factory defaults?</h3>
-          <p id="restore-defaults-copy" class="modal-copy">
-            This will permanently erase ALL hourly slots, daily limits, and counters. The configured schedule (12:00–12:15, 13:00–13:15…) will be lost.
-          </p>
-
-          <div class="modal-actions">
-            <button class="ghost-btn" type="button" @click="closeRestoreDefaultsModal">
-              Cancel
-            </button>
-            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmRestoreDefaults">
-              {{ isRefreshing ? "Restoring..." : "Yes, wipe everything" }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <section
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restore-defaults-title"
+        aria-describedby="restore-defaults-copy"
+      >
+        <p class="panel-eyebrow">Confirm action</p>
+        <h3 id="restore-defaults-title">Restore factory defaults?</h3>
+        <p id="restore-defaults-copy" class="modal-copy">
+          This will permanently erase ALL hourly slots, daily limits, and counters. The configured schedule (12:00–12:15, 13:00–13:15…) will be lost.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" @click="closeRestoreDefaultsModal">Cancel</button>
+          <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmRestoreDefaults">
+            {{ isRefreshing ? "Restoring..." : "Yes, wipe everything" }}
+          </button>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -334,7 +316,7 @@ export default {
     dashboardStats() {
       const tracked = this.visibleOutcomeKeys
         .filter((key) => OUTCOME_LOGIC[key]?.hasDailyLimit)
-        .slice(0, 3)
+        .slice(0, 2)
         .map((key, index) => {
           const current = Number(this.winDistribution?.[key]?.givenToday) || 0;
           const limit = Number(this.winDistribution?.[key]?.dailyLimit) || 0;
@@ -344,19 +326,14 @@ export default {
             value: current,
             limit,
             progress: limit ? Math.min(100, (current / limit) * 100) : 0,
-            highlight: index === 1
+            highlight: index === 0
           };
         });
 
-      const fallbackSectorTotal = this.visibleOutcomeKeys
-        .filter((key) => !OUTCOME_LOGIC[key]?.hasSlots)
-        .reduce((sum, key) => sum + (Number(this.winDistribution?.[key]?.sectorCount) || 0), 0);
-
       return [
         ...tracked,
-        { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: true },
-        { key: "fallbackSectors", label: "Percentage sectors", value: fallbackSectorTotal, limit: null, progress: null, highlight: false },
-        { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false }
+        { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false },
+        { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: false }
       ];
     },
     nowLabel() {
@@ -668,7 +645,7 @@ export default {
       link.download = "roulette-win-rules-v4.json";
       link.click();
       window.URL.revokeObjectURL(url);
-        this.showToast("success", "Win rules JSON exported.");
+      this.showToast("success", "Win rules JSON exported.");
     },
     async discardChanges() {
       this.hasUnsavedChanges = false;
@@ -710,109 +687,41 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  padding: 1.2rem 0.65rem 1.6rem;
+  padding: 0 0.65rem 1.6rem;
   font-family: var(--font-body), sans-serif;
   font-weight: 400;
   line-height: 1.35;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+/* ── Sticky toolbar ── */
+.dashboard-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgba(var(--rgb-black), 0.48);
-  backdrop-filter: blur(6px);
-}
-
-.modal-card {
-  width: min(100%, 28rem);
-  border-radius: 1.25rem;
-  padding: 1.35rem;
-  background: rgba(var(--rgb-card-alt), 0.98);
-  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
-  box-shadow: 0 22px 42px rgba(var(--rgb-shadow), 0.2);
-}
-
-.modal-card h3 {
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 1.3rem;
-}
-
-.modal-copy {
-  margin: 0.65rem 0 0;
-  color: rgba(var(--rgb-text-strong), 0.72);
-  line-height: 1.5;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.2rem;
-}
-
-.ghost-btn--disabled {
-  opacity: 0.58;
-}
-
-.panel {
-  border-radius: 1.25rem;
-  background: rgba(var(--rgb-card), 0.96);
-  border: 1px solid rgba(var(--rgb-gold-line), 0.22);
-  box-shadow: 0 16px 34px rgba(var(--rgb-shadow), 0.08);
-}
-
-.panel--overview {
-  background: linear-gradient(180deg, rgba(var(--rgb-card-alt), 0.98) 0%, rgba(var(--rgb-panel-warm), 0.96) 100%);
-}
-
-.panel--totals {
-  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-soft), 0.96) 100%);
-}
-
-.panel--status {
-  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
-}
-
-.panel--workflow {
-  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
-}
-
-.panel--schedules {
-  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
-}
-
-.dashboard-toolbar {
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.15rem 1.2rem;
+  padding: 0.95rem 1.2rem;
+  backdrop-filter: blur(10px);
+  background: rgba(var(--rgb-card), 0.94);
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 1px solid rgba(var(--rgb-gold-line), 0.2);
 }
 
-.toolbar-copy h2,
-.panel-heading h3,
-.summary-panel__header h3 {
+.toolbar-copy h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
   color: var(--color-text-strong);
-}
-
-.toolbar-copy p:last-child,
-.panel-copy {
-  margin: 0.35rem 0 0;
-  color: rgba(var(--rgb-text-strong), 0.68);
-  line-height: 1.45;
+  line-height: 1.15;
 }
 
 .toolbar-eyebrow,
 .panel-eyebrow {
-  margin: 0 0 0.3rem;
+  margin: 0 0 0.2rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.68rem;
@@ -822,9 +731,10 @@ export default {
 
 .toolbar-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .source-switch {
@@ -837,11 +747,13 @@ export default {
 .source-switch__item {
   border: 0;
   background: transparent;
-  min-width: 92px;
-  padding: 0.55rem 0.9rem;
+  min-width: 80px;
+  padding: 0.45rem 0.85rem;
   border-radius: 999px;
   font-weight: 700;
+  font-size: 0.84rem;
   color: rgba(var(--rgb-text-strong), 0.7);
+  cursor: pointer;
 }
 
 .source-switch__item--active {
@@ -877,11 +789,12 @@ export default {
 .ghost-btn,
 .primary-btn {
   border-radius: 0.8rem;
-  padding: 0.72rem 1rem;
+  padding: 0.62rem 0.9rem;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   letter-spacing: 0.05em;
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .ghost-btn {
@@ -896,67 +809,22 @@ export default {
   background: rgba(var(--rgb-card), 0.92);
 }
 
+.ghost-btn--disabled {
+  opacity: 0.58;
+}
+
 .primary-btn {
   background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   color: var(--color-button-fg-soft);
   box-shadow: 0 10px 18px rgba(var(--rgb-danger), 0.2);
 }
 
-.dashboard-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dashboard-top-grid {
+/* ── Stat row ── */
+.stat-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr) minmax(280px, 0.9fr);
-  gap: 1rem;
-  align-items: stretch;
-}
-
-.summary-panel {
-  padding: 1rem 1.1rem;
-}
-
-.totals-panel {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.summary-panel__header,
-.panel-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.8rem;
-  margin-bottom: 0.9rem;
-}
-
-.source-badge {
-  border-radius: 999px;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.source-badge--remote {
-  background: rgba(var(--rgb-primary-soft), 0.1);
-  color: var(--color-primary);
-}
-
-.source-badge--local {
-  background: rgba(var(--rgb-danger), 0.1);
-  color: var(--color-accent-dark);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
+  padding-top: 0.5rem;
 }
 
 .stat-card {
@@ -982,7 +850,7 @@ export default {
 
 .stat-card strong {
   display: block;
-  font-size: clamp(1.45rem, 2.3vw, 2rem);
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
   line-height: 1;
   color: var(--color-text);
 }
@@ -1017,31 +885,61 @@ export default {
   background: var(--color-accent-dark);
 }
 
-.totals-panel {
-  padding: 1rem 1.1rem;
-}
-
-.editors-panel,
-.side-panel {
-  padding: 1rem 1.1rem;
-}
-
-.editors-panel--full {
-  width: 100%;
-}
-
-.schedule-grid {
+/* ── Main 2-col grid ── */
+.dashboard-main-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.1rem;
+  align-items: start;
 }
 
-.schedule-grid__item {
+.dashboard-main-left {
   min-width: 0;
 }
 
-.schedule-grid__item--full {
-  grid-column: 1 / -1;
+.dashboard-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Panels ── */
+.panel {
+  border-radius: 1.25rem;
+  background: rgba(var(--rgb-card), 0.96);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.22);
+  box-shadow: 0 16px 34px rgba(var(--rgb-shadow), 0.08);
+}
+
+.panel--rules {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-soft), 0.96) 100%);
+  padding: 1rem 1.1rem;
+}
+
+.panel--status {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
+}
+
+.panel--workflow {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.panel-heading h3 {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  color: var(--color-text-strong);
+}
+
+.side-panel {
+  padding: 1rem 1.1rem;
 }
 
 .side-panel--soft {
@@ -1074,13 +972,15 @@ export default {
 
 .status-item strong {
   color: var(--color-text);
+  font-size: 0.88rem;
 }
 
 .status-clock {
   font-variant-numeric: tabular-nums;
   color: rgba(var(--rgb-text-strong), 0.7);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .status-item--window {
@@ -1102,7 +1002,7 @@ export default {
   justify-content: space-between;
   gap: 0.75rem;
   color: rgba(var(--rgb-text-strong), 0.62);
-  font-size: 0.92rem;
+  font-size: 0.84rem;
 }
 
 .status-item__remaining {
@@ -1116,7 +1016,7 @@ export default {
   gap: 0.35rem;
   padding: 0.18rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1125,8 +1025,8 @@ export default {
 
 .status-pill::before {
   content: "";
-  width: 0.45rem;
-  height: 0.45rem;
+  width: 0.42rem;
+  height: 0.42rem;
   border-radius: 999px;
   background: currentColor;
   flex-shrink: 0;
@@ -1168,29 +1068,71 @@ export default {
   margin-top: 0.35rem;
 }
 
-.mode-item__dot--main  { background: var(--color-gold); }
+.mode-item__dot--main   { background: var(--color-gold); }
 .mode-item__dot--repeat { background: var(--color-primary-soft); }
-.mode-item__dot--save  { background: var(--color-accent); }
+.mode-item__dot--save   { background: var(--color-accent); }
 
 .mode-item strong {
   display: block;
-  font-size: 0.84rem;
+  font-size: 0.83rem;
   color: var(--color-text);
   margin-bottom: 0.2rem;
 }
 
 .mode-item p {
   margin: 0;
-  font-size: 0.79rem;
+  font-size: 0.78rem;
   color: rgba(var(--rgb-text-strong), 0.65);
   line-height: 1.45;
 }
 
+/* ── Confirm modals ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(var(--rgb-black), 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(100%, 28rem);
+  border-radius: 1.25rem;
+  padding: 1.35rem;
+  background: rgba(var(--rgb-card-alt), 0.98);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
+  box-shadow: 0 22px 42px rgba(var(--rgb-shadow), 0.2);
+}
+
+.modal-card h3 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 1.3rem;
+}
+
+.modal-copy {
+  margin: 0.65rem 0 0;
+  color: rgba(var(--rgb-text-strong), 0.72);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+/* ── Toast ── */
 .feedback-toast {
   position: fixed;
   right: 1.4rem;
   bottom: 1.4rem;
-  z-index: 20;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -1215,6 +1157,7 @@ export default {
   margin: 0;
   color: var(--color-text);
   font-weight: 600;
+  font-size: 0.88rem;
 }
 
 .toast-in-enter-active,
@@ -1228,229 +1171,7 @@ export default {
   transform: translateY(8px);
 }
 
-@media (max-width: 1080px) {
-  .dashboard-top-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .dashboard-toolbar,
-  .summary-panel,
-  .editors-panel,
-  .side-panel {
-    padding: 0.95rem;
-  }
-
-  .toolbar-actions {
-    width: 100%;
-    align-items: stretch;
-  }
-
-  .toolbar-buttons {
-    justify-content: stretch;
-  }
-
-  .ghost-btn,
-  .primary-btn {
-    flex: 1 1 180px;
-  }
-
-  .stats-grid,
-  .schedule-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 901px) {
-  .schedule-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-}
-
-@media (max-width: 640px) {
-  .dashboard-view {
-    padding-inline: 0.4rem;
-    gap: 0.85rem;
-  }
-
-  /* ── Toolbar ── */
-  .dashboard-toolbar {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.1rem 1rem 1.2rem;
-  }
-
-  .toolbar-copy h2 {
-    font-size: 1.35rem;
-  }
-
-  .toolbar-copy p:last-child {
-    font-size: 0.8rem;
-  }
-
-  .toolbar-actions {
-    width: 100%;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  /* ── Source switch — large pill toggle ── */
-  .source-switch {
-    width: 100%;
-    padding: 0.25rem;
-    border-radius: 1rem;
-    background: rgba(var(--rgb-primary), 0.1);
-  }
-
-  .source-switch__item {
-    flex: 1 1 0;
-    min-height: 52px;
-    font-size: 0.95rem;
-    letter-spacing: 0.04em;
-    border-radius: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.18s ease, color 0.18s ease;
-  }
-
-  .source-switch__item--active {
-    background: var(--color-primary);
-    color: var(--color-button-fg-soft);
-    box-shadow: 0 4px 12px rgba(var(--rgb-primary), 0.28);
-  }
-
-  /* ── Action buttons — 2-column grid ── */
-  .toolbar-buttons {
-    width: 100%;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .btn-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.55rem;
-    padding: 0.6rem;
-    border-radius: 1rem;
-    background: rgba(var(--rgb-text-strong), 0.04);
-    border: 1px solid rgba(var(--rgb-gold-line), 0.2);
-  }
-
-  .ghost-btn {
-    min-height: 52px;
-    padding: 0.8rem 0.75rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-    border-radius: 0.7rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.2;
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
-  }
-
-  .ghost-btn:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-
-  .ghost-btn:disabled {
-    opacity: 0.42;
-  }
-
-  /* ── Primary action row: Refresh + Save ── */
-  .btn-group--primary {
-    display: flex;
-    gap: 0.6rem;
-    padding: 0;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-  }
-
-  .btn-group--primary .ghost-btn {
-    flex: 1;
-    min-height: 56px;
-    background: rgba(var(--rgb-card), 0.9);
-    border: 1px solid rgba(var(--rgb-primary), 0.2);
-    font-size: 0.9rem;
-  }
-
-  .primary-btn {
-    flex: 1.8;
-    min-height: 56px;
-    padding: 0.9rem 1.2rem;
-    font-size: 1rem;
-    font-weight: 800;
-    border-radius: 0.9rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: box-shadow 0.15s ease, transform 0.1s ease;
-  }
-
-  .primary-btn:active:not(:disabled) {
-    transform: scale(0.97);
-    box-shadow: 0 4px 10px rgba(var(--rgb-danger), 0.18);
-  }
-
-  /* ── Summary panel ── */
-  .summary-panel__header,
-  .panel-heading {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stats-grid,
-  .schedule-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.65rem;
-  }
-
-  .stat-card {
-    padding: 0.85rem 0.9rem;
-  }
-
-  .stat-card strong {
-    font-size: 1.6rem;
-  }
-
-  /* ── Toast & unsaved bar ── */
-  .feedback-toast {
-    left: 0.65rem;
-    right: 0.65rem;
-    bottom: 0.65rem;
-    min-width: 0;
-    max-width: none;
-  }
-
-  .unsaved-bar {
-    left: 0.65rem;
-    right: 0.65rem;
-    bottom: 0.65rem;
-    transform: none;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .unsaved-bar__actions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-  }
-
-  .unsaved-bar__discard,
-  .unsaved-bar__save {
-    min-height: 44px;
-    padding: 0.65rem 1.1rem;
-    font-size: 0.88rem;
-  }
-}
-
-/* ── Floating unsaved-changes bar ── */
+/* ── Unsaved-changes floating bar ── */
 .unsaved-bar {
   position: fixed;
   bottom: 1.5rem;
@@ -1513,18 +1234,10 @@ export default {
   border-color: rgba(var(--rgb-text-strong), 0.14);
 }
 
-.unsaved-bar__discard:hover:not(:disabled) {
-  background: rgba(var(--rgb-text-strong), 0.06);
-}
-
 .unsaved-bar__save {
   background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   color: var(--color-button-fg-soft);
   box-shadow: 0 6px 14px rgba(var(--rgb-danger), 0.24);
-}
-
-.unsaved-bar__save:hover:not(:disabled) {
-  box-shadow: 0 8px 18px rgba(var(--rgb-danger), 0.32);
 }
 
 .unsaved-bar__discard:disabled,
@@ -1546,5 +1259,172 @@ export default {
 .save-bar-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(10px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1080px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .toolbar-buttons {
+    justify-content: stretch;
+  }
+
+  .ghost-btn,
+  .primary-btn {
+    flex: 1 1 160px;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-view {
+    padding-inline: 0.4rem;
+    gap: 0.85rem;
+  }
+
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+
+  .toolbar-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .source-switch {
+    width: 100%;
+    padding: 0.25rem;
+    border-radius: 1rem;
+    background: rgba(var(--rgb-primary), 0.1);
+  }
+
+  .source-switch__item {
+    flex: 1 1 0;
+    min-height: 48px;
+    font-size: 0.92rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .source-switch__item--active {
+    background: var(--color-primary);
+    color: var(--color-button-fg-soft);
+    box-shadow: 0 4px 12px rgba(var(--rgb-primary), 0.28);
+  }
+
+  .toolbar-buttons {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 0.55rem;
+    border-radius: 1rem;
+  }
+
+  .ghost-btn {
+    min-height: 48px;
+    padding: 0.75rem;
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .btn-group--primary {
+    display: flex;
+    gap: 0.55rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  .btn-group--primary .ghost-btn {
+    flex: 1;
+    min-height: 52px;
+    font-size: 0.88rem;
+  }
+
+  .primary-btn {
+    flex: 1.8;
+    min-height: 52px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.96rem;
+    font-weight: 800;
+  }
+
+  .stat-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+
+  .stat-card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-toast {
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: 0.65rem;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .unsaved-bar {
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: 0.65rem;
+    transform: none;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .unsaved-bar__actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .unsaved-bar__discard,
+  .unsaved-bar__save {
+    min-height: 42px;
+    padding: 0.6rem 1rem;
+  }
 }
 </style>

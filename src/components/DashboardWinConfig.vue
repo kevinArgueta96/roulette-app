@@ -29,190 +29,129 @@
         </div>
       </div>
 
-      <div class="outcome-grid">
-        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :class="{ 'outcome-card--full': outcome.hasSlots }" :style="{ borderLeftColor: outcome.color }">
-          <div class="outcome-card__header">
-            <div class="outcome-card__title">
-              <span class="outcome-dot" :style="{ background: outcome.color }" aria-hidden="true"></span>
-              <div>
-                <p class="outcome-eyebrow">{{ outcome.eyebrow }}</p>
-                <h5 class="outcome-name">{{ outcome.label }}</h5>
+      <!-- Outcome accordion -->
+      <ul class="win-row-list">
+        <li
+          v-for="outcome in outcomes"
+          :key="outcome.key"
+          class="win-row"
+          :class="{ 'win-row--expanded': expandedOutcome === outcome.key }"
+        >
+          <button
+            type="button"
+            class="win-row__head"
+            :style="{ borderLeftColor: outcome.color }"
+            @click="toggleOutcome(outcome.key)"
+            :aria-expanded="expandedOutcome === outcome.key ? 'true' : 'false'"
+          >
+            <span class="win-row__swatch" :style="{ background: outcome.color }" aria-hidden="true"></span>
+            <span class="win-row__label">{{ outcome.label }}</span>
+            <div class="win-row__badges">
+              <span class="win-row__badge">{{ localConfig[outcome.key].sectorCount }} sectors</span>
+              <span class="win-row__badge win-row__badge--type">{{ outcome.isAmountPerTime ? 'Amount' : 'Probability' }}</span>
+              <span v-if="outcome.hasDailyLimit" class="win-row__badge">Limit: {{ localConfig[outcome.key].dailyLimit }}</span>
+              <span v-if="outcome.hasSlots" class="win-row__badge">{{ localConfig[outcome.key].slots.length }} window{{ localConfig[outcome.key].slots.length !== 1 ? 's' : '' }}</span>
+            </div>
+            <span class="win-row__chevron" aria-hidden="true">{{ expandedOutcome === outcome.key ? '▼' : '▶' }}</span>
+          </button>
+
+          <div v-if="expandedOutcome === outcome.key" class="win-row__body">
+            <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
+
+            <div class="win-row__fields">
+              <div class="field-group field-group--readonly">
+                <span class="field-label">Sector count</span>
+                <strong class="field-readonly">{{ localConfig[outcome.key].sectorCount }}</strong>
               </div>
-            </div>
-            <span class="outcome-preview">{{ localConfig[outcome.key].sectorCount }} sectors</span>
-          </div>
 
-          <p class="outcome-description">{{ outcome.description }}</p>
-
-          <div class="outcome-fields">
-            <div class="field-group field-group--readonly">
-              <span class="field-label">Sector count</span>
-              <strong class="field-readonly">{{ localConfig[outcome.key].sectorCount }}</strong>
-            </div>
-
-            <div v-if="!outcome.hasSlots" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-weight`">Probability share (%)</label>
-              <input
-                :id="`${outcome.key}-weight`"
-                class="number-input"
-                type="text"
-                inputmode="decimal"
-                :value="percentDisplayValue(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
-                @focus="startEditing(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
-                @input="updateEditing(`${outcome.key}-baseWeight`, $event.target.value)"
-                @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
-              />
-              <p class="effective-range">
-                <template v-if="effectiveFallbackRanges[outcome.key]">
-                  <span v-if="effectiveFallbackRanges[outcome.key].min === effectiveFallbackRanges[outcome.key].max">
-                    Effective: {{ effectiveFallbackRanges[outcome.key].max }}%
-                  </span>
-                  <span v-else>
-                    Effective: {{ effectiveFallbackRanges[outcome.key].min }}% – {{ effectiveFallbackRanges[outcome.key].max }}%
-                  </span>
-                </template>
-              </p>
-            </div>
-
-            <div v-else class="field-group field-group--readonly">
-              <span class="field-label">Win logic</span>
-              <strong class="field-readonly">{{ outcome.isAmountPerTime ? "Amount per time slot" : "Set by time slots ↓" }}</strong>
-            </div>
-
-            <div v-if="outcome.hasDailyLimit" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-daily`">Daily limit</label>
-              <input
-                :id="`${outcome.key}-daily`"
-                class="number-input"
-                type="number"
-                min="0"
-                :value="localConfig[outcome.key].dailyLimit"
-                @input="onOutcomeChange(outcome.key, 'dailyLimit', $event.target.value)"
-                @blur="applyConfigChange"
-              />
-            </div>
-
-            <div v-if="outcome.hasDailyLimit" class="field-group field-group--given">
-              <span class="field-label">Given today</span>
-              <div class="given-today">
-                <span class="given-today__count">{{ localConfig[outcome.key].givenToday }} <span class="given-today__limit">/ {{ localConfig[outcome.key].dailyLimit }}</span></span>
-                <div class="given-bar">
-                  <div
-                    class="given-bar__fill"
-                    :style="{ width: getGivenPercent(outcome.key) + '%' }"
-                    :class="{ 'given-bar__fill--full': getGivenPercent(outcome.key) >= 100 }"
-                  ></div>
-                </div>
+              <div class="field-group field-group--readonly">
+                <span class="field-label">Win logic</span>
+                <strong class="field-readonly">{{ outcome.isAmountPerTime ? 'Amount per time slot' : 'Probability %' }}</strong>
               </div>
-            </div>
-          </div>
 
-          <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
-
-          <div v-if="outcome.hasSlots" class="slots-block">
-            <p class="slots-help">
-              <template v-if="outcome.isAmountPerTime">
-                Configure the time window and how many wins can be delivered in that window.
-              </template>
-              <template v-else>
-                Probability per spin during this time window (100% = always appears).
-              </template>
-            </p>
-
-            <div class="slots-header" v-if="localConfig[outcome.key].slots.length">
-              <span>Start</span>
-              <span>End</span>
-              <span>{{ outcome.isAmountPerTime ? "Logic" : "Probability" }}</span>
-              <span>Limit</span>
-              <span>Progress</span>
-              <span>Actions</span>
-            </div>
-
-            <div
-              v-for="(slot, slotIndex) in localConfig[outcome.key].slots"
-              :key="slot._editorId"
-              class="slot-row"
-              :class="{ 'slot-row--active': slotIndex === activeSlotMap[outcome.key] }"
-            >
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-start-${slotIndex}`">Start</label>
+              <div v-if="!outcome.hasSlots" class="field-group">
+                <label class="field-label" :for="`${outcome.key}-weight`">Probability share (%)</label>
                 <input
-                  :id="`${outcome.key}-start-${slotIndex}`"
-                  class="slot-input"
-                  type="time"
-                  :value="slot.startTime"
-                  @input="onSlotChange(outcome.key, slotIndex, 'startTime', $event.target.value)"
-                  @change="applyConfigChange"
-                />
-              </div>
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-end-${slotIndex}`">End</label>
-                <input
-                  :id="`${outcome.key}-end-${slotIndex}`"
-                  class="slot-input"
-                  type="time"
-                  :value="slot.endTime"
-                  @input="onSlotChange(outcome.key, slotIndex, 'endTime', $event.target.value)"
-                  @change="applyConfigChange"
-                />
-              </div>
-              <div v-if="!outcome.isAmountPerTime" class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-weight-${slotIndex}`">Probability (%)</label>
-                <input
-                  :id="`${outcome.key}-weight-${slotIndex}`"
-                  class="slot-input"
+                  :id="`${outcome.key}-weight`"
+                  class="number-input"
                   type="text"
                   inputmode="decimal"
-                  :value="percentDisplayValue(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
-                  @focus="startEditing(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
-                  @input="updateEditing(`${outcome.key}-slot-${slotIndex}-weight`, $event.target.value)"
-                  @blur="commitSlotEditing(`${outcome.key}-slot-${slotIndex}-weight`, outcome.key, slotIndex, 'weight')"
+                  :value="percentDisplayValue(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                  @focus="startEditing(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                  @input="updateEditing(`${outcome.key}-baseWeight`, $event.target.value)"
+                  @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
                 />
+                <p class="effective-range">
+                  <template v-if="effectiveFallbackRanges[outcome.key]">
+                    <span v-if="effectiveFallbackRanges[outcome.key].min === effectiveFallbackRanges[outcome.key].max">
+                      Effective: {{ effectiveFallbackRanges[outcome.key].max }}%
+                    </span>
+                    <span v-else>
+                      Effective: {{ effectiveFallbackRanges[outcome.key].min }}% – {{ effectiveFallbackRanges[outcome.key].max }}%
+                    </span>
+                  </template>
+                </p>
               </div>
-              <div v-else class="slot-field field-group--readonly">
-                <span class="slot-label">Logic</span>
-                <strong class="field-readonly">Amount</strong>
-              </div>
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-limit-${slotIndex}`">Limit</label>
+
+              <div v-if="outcome.hasDailyLimit" class="field-group">
+                <label class="field-label" :for="`${outcome.key}-daily`">Daily limit</label>
                 <input
-                  :id="`${outcome.key}-limit-${slotIndex}`"
-                  class="slot-input"
+                  :id="`${outcome.key}-daily`"
+                  class="number-input"
                   type="number"
                   min="0"
-                  :value="slot.limit"
-                  @input="onSlotChange(outcome.key, slotIndex, 'limit', $event.target.value)"
+                  :value="localConfig[outcome.key].dailyLimit"
+                  @input="onOutcomeChange(outcome.key, 'dailyLimit', $event.target.value)"
                   @blur="applyConfigChange"
                 />
               </div>
-              <div class="slot-given">
-                <span class="slot-label slot-label--mobile">Progress</span>
-                <strong>{{ slot.given }} / {{ slot.limit }}</strong>
+
+              <div v-if="outcome.hasDailyLimit" class="field-group field-group--given">
+                <span class="field-label">Given today</span>
+                <div class="given-today">
+                  <span class="given-today__count">{{ localConfig[outcome.key].givenToday }} <span class="given-today__limit">/ {{ localConfig[outcome.key].dailyLimit }}</span></span>
+                  <div class="given-bar">
+                    <div
+                      class="given-bar__fill"
+                      :style="{ width: getGivenPercent(outcome.key) + '%' }"
+                      :class="{ 'given-bar__fill--full': getGivenPercent(outcome.key) >= 100 }"
+                    ></div>
+                  </div>
+                </div>
               </div>
-              <div class="slot-actions">
-                <span v-if="slotIndex === activeSlotMap[outcome.key]" class="slot-active-badge">ACTIVE</span>
-                <button
-                  class="slot-reset"
-                  type="button"
-                  :disabled="!slot.given"
-                  @click="resetSlotGiven(outcome.key, slotIndex)"
-                >
-                  Reset
+            </div>
+
+            <div v-if="outcome.hasSlots" class="win-row__slots">
+              <div class="win-row__slots-head">
+                <p class="win-row__slots-label">Time windows</p>
+                <button type="button" class="edit-slots-btn" @click.stop="openSlotModal(outcome.key)">
+                  Edit time slots
                 </button>
-                <button class="slot-remove" type="button" @click="removeSlot(outcome.key, slotIndex)">×</button>
               </div>
-            </div>
 
-            <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
-              No time windows configured — this outcome never appears. Add a time range to enable it.
-            </div>
+              <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
+                No time windows configured — this outcome never appears.
+              </div>
 
-            <button class="add-slot-btn" type="button" @click="addSlot(outcome.key)">
-              + Add time range
-            </button>
+              <ul v-else class="win-row__slot-list">
+                <li
+                  v-for="(slot, si) in localConfig[outcome.key].slots"
+                  :key="slot._editorId"
+                  class="win-row__slot-item"
+                  :class="{ 'win-row__slot-item--active': si === activeSlotMap[outcome.key] }"
+                >
+                  <span class="win-row__slot-time">{{ slot.startTime }}–{{ slot.endTime }}</span>
+                  <span class="win-row__slot-progress">
+                    {{ slot.given }}<span class="win-row__slot-sep">/</span>{{ slot.limit }}
+                    <template v-if="!outcome.isAmountPerTime"> · {{ slot.weight }}%</template>
+                  </span>
+                  <span v-if="si === activeSlotMap[outcome.key]" class="slot-active-badge">ACTIVE</span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </article>
-      </div>
+        </li>
+      </ul>
 
       <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
         <div class="fallback-split__header">
@@ -268,6 +207,15 @@
         </div>
       </div>
     </section>
+
+    <SlotModal
+      v-if="activeSlotOutcome && slotModalOutcome"
+      :open="true"
+      :outcome="slotModalOutcome"
+      :slots="localConfig[activeSlotOutcome].slots || []"
+      @close="closeSlotModal"
+      @save="onSlotModalSave"
+    />
   </div>
 </template>
 
@@ -275,11 +223,13 @@
 import { mapGetters } from "vuex";
 import { OUTCOME_THEME } from "@/themes";
 import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_LOGIC, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
+import SlotModal from "@/components/SlotModal.vue";
 
 const CATEGORY_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export default {
   name: "DashboardWinConfig",
+  components: { SlotModal },
   data() {
     return {
       localConfig: DEFAULT_WIN_DISTRIBUTION(),
@@ -291,7 +241,9 @@ export default {
         ...OUTCOME_KEYS.reduce((acc, key) => ({ ...acc, [key]: "" }), {})
       },
       editingValues: {},
-      currentTime: formatTime24h(new Date())
+      currentTime: formatTime24h(new Date()),
+      expandedOutcome: null,
+      activeSlotOutcome: null
     };
   },
   mounted() {
@@ -435,6 +387,11 @@ export default {
     },
     effectiveNoWinRange() {
       return this.effectiveFallbackRanges.noWin || { min: 0, max: 0 };
+    },
+    slotModalOutcome() {
+      if (!this.activeSlotOutcome) return null;
+      const idx = this.activeOutcomeKeys.indexOf(this.activeSlotOutcome);
+      return idx >= 0 ? this.createOutcomeDescriptor(this.activeSlotOutcome, idx) : null;
     }
   },
   watch: {
@@ -658,6 +615,35 @@ export default {
         givenToday: Math.max(0, (Number(currentOutcome.givenToday) || 0) - givenToReset),
         slots
       });
+
+      this.$nextTick(() => {
+        this.applyConfigChange();
+      });
+    },
+    toggleOutcome(key) {
+      this.expandedOutcome = this.expandedOutcome === key ? null : key;
+    },
+    openSlotModal(outcomeKey) {
+      this.activeSlotOutcome = outcomeKey;
+    },
+    closeSlotModal() {
+      this.activeSlotOutcome = null;
+    },
+    onSlotModalSave(slots) {
+      const key = this.activeSlotOutcome;
+      if (!key) return;
+
+      const currentOutcome = this.localConfig[key];
+      const oldSlotGivenTotal = (currentOutcome.slots || []).reduce((sum, s) => sum + (Number(s.given) || 0), 0);
+      const newSlotGivenTotal = slots.reduce((sum, s) => sum + (Number(s.given) || 0), 0);
+      const givenDiff = newSlotGivenTotal - oldSlotGivenTotal;
+
+      this.replaceOutcomeConfig(key, {
+        givenToday: Math.max(0, (Number(currentOutcome.givenToday) || 0) + givenDiff),
+        slots
+      });
+
+      this.activeSlotOutcome = null;
 
       this.$nextTick(() => {
         this.applyConfigChange();
@@ -888,10 +874,6 @@ export default {
   color: rgba(var(--rgb-muted), 0.6);
 }
 
-.slot-label {
-  display: none;
-}
-
 .number-input,
 .slot-input {
   width: 100%;
@@ -921,122 +903,6 @@ export default {
   color: var(--color-accent-dark);
   font-size: 0.78rem;
   font-weight: 600;
-}
-
-.probability-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: 1rem;
-  background: rgba(var(--rgb-card), 0.92);
-  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
-}
-
-.probability-summary--error {
-  border-color: rgba(var(--rgb-danger), 0.28);
-  background: rgba(var(--rgb-card), 0.96);
-}
-
-.probability-summary__eyebrow {
-  margin: 0 0 0.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-weight: 800;
-  font-size: 0.62rem;
-  color: var(--color-primary);
-}
-
-.probability-summary h5 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: var(--color-text);
-}
-
-.probability-summary strong {
-  font-size: 1.1rem;
-  color: var(--color-accent-dark);
-  font-variant-numeric: tabular-nums;
-}
-
-.probability-summary__total--ok {
-  color: var(--color-primary);
-}
-
-.probability-summary__copy {
-  margin: -0.35rem 0 0;
-  color: rgba(var(--rgb-text), 0.66);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.outcome-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.outcome-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.95rem;
-  padding: 1rem 1rem 1rem 1.1rem;
-  border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.78) 0%, rgba(var(--rgb-panel-soft), 0.94) 100%);
-  border: 1px solid rgba(var(--rgb-border), 0.14);
-  border-left-width: 3px;
-  min-width: 0;
-}
-
-.outcome-card--full {
-  grid-column: 1 / -1;
-}
-
-.outcome-card__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.outcome-card__title {
-  display: flex;
-  gap: 0.7rem;
-  min-width: 0;
-}
-
-.outcome-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 999px;
-  margin-top: 0.45rem;
-  flex-shrink: 0;
-}
-
-.outcome-name {
-  margin: 0;
-  font-size: 1rem;
-  color: var(--color-text);
-}
-
-.outcome-preview {
-  white-space: nowrap;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.outcome-description {
-  margin: 0;
-  color: rgba(var(--rgb-text), 0.62);
-  line-height: 1.45;
-  font-size: 0.84rem;
-}
-
-.outcome-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
 }
 
 .logic-summary {
@@ -1222,6 +1088,13 @@ export default {
   color: rgba(var(--rgb-text), 0.55);
 }
 
+.probability-summary__copy {
+  margin: 0;
+  color: rgba(var(--rgb-text), 0.66);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 /* Probability timeline table */
 .probability-timeline {
   display: flex;
@@ -1291,12 +1164,7 @@ export default {
   color: rgba(var(--rgb-text), 0.35);
 }
 
-/* Slot active badge and row highlight */
-.slot-row--active {
-  border-color: rgba(var(--rgb-primary), 0.35);
-  background: rgba(var(--rgb-primary), 0.04);
-}
-
+/* Slot active badge */
 .slot-active-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -1317,109 +1185,6 @@ export default {
   font-variant-numeric: tabular-nums;
 }
 
-.slots-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.slots-help {
-  margin: -0.2rem 0 0;
-  color: rgba(var(--rgb-text), 0.62);
-  font-size: 0.8rem;
-  line-height: 1.45;
-}
-
-.slots-help--warn {
-  color: var(--color-accent-dark);
-  font-weight: 600;
-}
-
-.slots-header,
-.slot-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(7.5rem, 0.85fr) minmax(6.5rem, 0.75fr) minmax(5.5rem, 0.85fr) minmax(7.25rem, 0.9fr);
-  gap: 0.7rem;
-  align-items: end;
-}
-
-.slots-header {
-  padding: 0 0.25rem;
-  color: rgba(var(--rgb-muted), 0.58);
-  font-size: 0.58rem;
-}
-
-.slot-row {
-  padding: 0.85rem;
-  border-radius: 0.95rem;
-  background: rgba(var(--rgb-panel), 0.92);
-  border: 1px solid rgba(var(--rgb-border), 0.14);
-}
-
-.slot-field {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.slot-given {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem;
-  padding-bottom: 0.4rem;
-}
-
-.slot-given strong {
-  color: var(--color-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.slot-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.slot-reset,
-.slot-remove {
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.slot-reset {
-  min-height: 2rem;
-  padding: 0.45rem 0.8rem;
-  background: rgba(var(--rgb-primary), 0.08);
-  color: var(--color-primary);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.slot-reset:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.slot-remove {
-  align-self: center;
-  width: 2rem;
-  height: 2rem;
-  background: rgba(var(--rgb-danger), 0.08);
-  color: var(--color-accent-dark);
-  font-size: 1.15rem;
-  cursor: pointer;
-}
-
-.slot-label--mobile {
-  display: none;
-}
-
 .empty-slots {
   padding: 0.85rem 0.95rem;
   border-radius: 0.85rem;
@@ -1429,21 +1194,191 @@ export default {
   font-size: 0.82rem;
 }
 
-.add-slot-btn {
-  align-self: flex-start;
-  border: 1px dashed rgba(var(--rgb-border), 0.35);
-  background: rgba(var(--rgb-panel), 0.92);
-  color: var(--color-primary);
-  border-radius: 0.7rem;
-  padding: 0.6rem 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
+/* ── Accordion win-row-list ── */
+.win-row-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-@media (max-width: 1100px) {
-  .outcome-grid {
-    grid-template-columns: 1fr;
-  }
+.win-row {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--rgb-border), 0.16);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.82) 0%, rgba(var(--rgb-panel-soft), 0.94) 100%);
+}
+
+.win-row--expanded {
+  border-color: rgba(var(--rgb-gold-line), 0.3);
+}
+
+.win-row__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: background 0.15s ease;
+}
+
+.win-row__head:hover {
+  background: rgba(var(--rgb-card), 0.5);
+}
+
+.win-row--expanded .win-row__head {
+  background: rgba(var(--rgb-card), 0.6);
+  border-bottom: 1px solid rgba(var(--rgb-border), 0.12);
+}
+
+.win-row__swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.win-row__label {
+  flex: 1;
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 0.96rem;
+  min-width: 0;
+}
+
+.win-row__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.win-row__badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(var(--rgb-primary), 0.08);
+  color: rgba(var(--rgb-primary), 0.85);
+  border: 1px solid rgba(var(--rgb-primary), 0.12);
+}
+
+.win-row__badge--type {
+  background: rgba(var(--rgb-gold-line), 0.12);
+  color: rgba(var(--rgb-text-strong), 0.72);
+  border-color: rgba(var(--rgb-gold-line), 0.2);
+}
+
+.win-row__chevron {
+  font-size: 0.7rem;
+  color: rgba(var(--rgb-text-strong), 0.5);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.win-row__body {
+  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.win-row__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+/* ── Slots summary inside accordion ── */
+.win-row__slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(var(--rgb-border), 0.12);
+}
+
+.win-row__slots-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.win-row__slots-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  font-size: 0.64rem;
+  color: var(--color-primary);
+}
+
+.edit-slots-btn {
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(var(--rgb-primary), 0.18);
+  background: rgba(var(--rgb-card), 0.92);
+  color: var(--color-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.win-row__slot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.win-row__slot-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.65rem;
+  background: rgba(var(--rgb-panel), 0.8);
+  border: 1px solid rgba(var(--rgb-border), 0.12);
+  font-size: 0.88rem;
+}
+
+.win-row__slot-item--active {
+  border-color: rgba(var(--rgb-primary), 0.28);
+  background: rgba(var(--rgb-primary), 0.04);
+}
+
+.win-row__slot-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  min-width: 9rem;
+}
+
+.win-row__slot-progress {
+  color: rgba(var(--rgb-text-strong), 0.65);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+}
+
+.win-row__slot-sep {
+  color: rgba(var(--rgb-text-strong), 0.35);
+  margin: 0 0.1rem;
 }
 
 @media (max-width: 760px) {
@@ -1451,31 +1386,12 @@ export default {
     grid-template-columns: 1fr;
   }
 
-  .outcome-fields {
+  .win-row__fields {
     grid-template-columns: 1fr;
   }
 
-  .slots-header {
+  .win-row__badges {
     display: none;
-  }
-
-  .slot-label {
-    display: inline;
-  }
-
-  .slot-row {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .slot-label--mobile {
-    display: inline;
-  }
-
-  .slot-given,
-  .slot-actions {
-    align-self: start;
-    justify-self: start;
   }
 }
 </style>
