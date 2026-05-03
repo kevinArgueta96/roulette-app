@@ -749,6 +749,11 @@ export default {
 .roulette-shell--storytel.roulette-shell--hero {
   --hero-factor: 1;
   transform: none;
+  justify-content: flex-start;
+}
+
+.roulette-shell--storytel.roulette-shell--hero .pointer-wrap {
+  display: none;
 }
 
 .roulette-shell--storytel .pointer-wrap {

@@ -655,7 +655,7 @@ export default {
 .app-shell--storytel-hero {
   --storytel-logo-top: clamp(1rem, 3vh, 2.5rem);
   --storytel-logo-height: clamp(5rem, 11.6vh, 7rem);
-  --storytel-logo-gap: 20px;
+  --storytel-logo-gap: 10px;
   --storytel-wheel-top-offset: calc(
     var(--storytel-logo-top) +
     var(--storytel-logo-height) +
@@ -672,7 +672,8 @@ export default {
 .app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
   position: fixed;
   left: calc(25vw + ((clamp(2rem, 9vw, 6.5rem) - clamp(0.4rem, 1.2vw, 1rem)) / 2));
-  top: var(--storytel-logo-top);
+  top: auto;
+  bottom: calc(var(--app-height, 100vh) - var(--storytel-wheel-top-offset) + 10px);
   transform: translateX(-50%);
   animation: storytel-logo-enter 1.08s cubic-bezier(0.19, 1, 0.22, 1) both;
   --brand-hero-shift: 0px;

@@ -108,7 +108,7 @@ export default {
 .result-stage {
   position: relative;
   display: inline-block;
-  width: min(100%, 40vw, 600px);
+  width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * 1), 48vw, min(86vh, 980px));
   animation: result-float 3.8s ease-in-out 1s infinite;
 }
 
@@ -161,7 +161,7 @@ export default {
 
 @media (orientation: landscape) {
   .result-stage {
-    width: min(100%, 40vw, 600px);
+    width: min(100%, calc((var(--app-height, 100vh) - var(--storytel-wheel-top-offset, 9rem) - 2rem) * 1), 48vw, min(86vh, 980px));
   }
 }
 </style>

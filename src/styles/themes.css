@@ -1,4 +1,5 @@
 :root[data-theme="parrano"] {
+  font-size: 112.5%; /* 18px base — system-ui needs more room than the compressed font */
   --color-bg: #265135;
   --color-app-bg: #f5efdd;
   --color-fg: #fffbe5;
@@ -46,7 +47,7 @@
   --rgb-black: 0, 0, 0;
   --rgb-shadow: 37, 46, 34;
   --font-display: "Lumios Marker", system-ui;
-  --font-body: "agenda-one-compressed", system-ui;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 :root[data-theme="storytel"] {
