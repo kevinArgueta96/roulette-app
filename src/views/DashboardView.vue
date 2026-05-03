@@ -116,23 +116,29 @@
         <section class="panel side-panel panel--status">
           <div class="panel-heading">
             <div>
-              <p class="panel-eyebrow">Status</p>
-              <h3>Source and pending items</h3>
+              <p class="panel-eyebrow">Live</p>
+              <h3>Active windows now</h3>
             </div>
+            <span class="status-clock">{{ nowLabel }}</span>
           </div>
 
           <div class="status-list">
-            <div class="status-item">
-              <span>Current mode</span>
-              <strong>{{ dataSource === "local" ? "Local" : "Online" }}</strong>
+            <div v-if="activeWindows.length === 0" class="status-item status-item--empty">
+              <span>No outcomes have configured time windows.</span>
             </div>
-            <div v-for="row in statusRows" :key="row.key" class="status-item">
-              <span>{{ row.label }}</span>
-              <strong>{{ row.value }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Last daily reset</span>
-              <strong>{{ winDistribution && winDistribution.lastResetDate ? winDistribution.lastResetDate : "—" }}</strong>
+            <div
+              v-for="row in activeWindows"
+              :key="row.key"
+              class="status-item status-item--window"
+            >
+              <div class="status-item__row">
+                <strong>{{ row.label }}</strong>
+                <span class="status-pill" :class="`status-pill--${row.status}`">{{ row.statusLabel }}</span>
+              </div>
+              <div class="status-item__detail">
+                <span class="status-item__window-label">{{ row.slotLabel || "—" }}</span>
+                <span v-if="row.remainingLabel" class="status-item__remaining">{{ row.remainingLabel }}</span>
+              </div>
             </div>
           </div>
         </section>
@@ -150,14 +156,14 @@
               <span class="mode-item__dot mode-item__dot--main"></span>
               <div>
                 <strong>{{ slotOutcomeLabel }}</strong>
-                <p>Each time window sets its own per-spin probability (100% = always, lower = less frequent).</p>
+                <p>Delivered by amount limits inside configured time windows.</p>
               </div>
             </li>
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--repeat"></span>
               <div>
                 <strong>{{ fallbackOutcomeLabel }}</strong>
-                <p>Always available. This fills whatever probability timed outcomes don't use.</p>
+                <p>Configured by probability percentage. These outcomes split the wheel when timed prizes are inactive or exhausted.</p>
               </div>
             </li>
             <li class="mode-item">
@@ -177,7 +183,7 @@
             <p class="panel-eyebrow">Win Rules</p>
             <h3>Distribution by category</h3>
           </div>
-          <p class="panel-copy">Set daily limits per category and distribute wins across hourly slots.</p>
+          <p class="panel-copy">Set time-window amounts for Pääpalkinto and 3kk lahjakortti, plus probability percentages for Yllätyspalkinto and Kokeile uudestaan.</p>
         </div>
         <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
       </section>
@@ -288,7 +294,9 @@ export default {
       showResetLocalModal: false,
       showRestoreDefaultsModal: false,
       hasUnsavedChanges: false,
-      toast: { visible: false, type: "success", message: "" }
+      toast: { visible: false, type: "success", message: "" },
+      nowMinutes: 0,
+      nowTickTimer: null
     };
   },
   computed: {
@@ -321,7 +329,7 @@ export default {
         .map((key) => OUTCOME_THEME[key]?.label || key)
         .join(" & ");
 
-      return labels || "Fallback outcome";
+      return labels || "Probability outcomes";
     },
     dashboardStats() {
       const tracked = this.visibleOutcomeKeys
@@ -347,24 +355,73 @@ export default {
       return [
         ...tracked,
         { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: true },
-        { key: "fallbackSectors", label: "Fallback sectors", value: fallbackSectorTotal, limit: null, progress: null, highlight: false },
+        { key: "fallbackSectors", label: "Percentage sectors", value: fallbackSectorTotal, limit: null, progress: null, highlight: false },
         { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false }
       ];
     },
-    statusRows() {
-      const sectorRows = this.visibleOutcomeKeys.map((key) => ({
-        key: `${key}-sectors`,
-        label: `${OUTCOME_THEME[key]?.label || key} sectors`,
-        value: Number(this.winDistribution?.[key]?.sectorCount) || 0
-      }));
-      const remainingRows = this.visibleOutcomeKeys
-        .filter((key) => OUTCOME_LOGIC[key]?.hasDailyLimit)
-        .map((key) => ({
-          key: `${key}-remaining`,
-          label: `${OUTCOME_THEME[key]?.label || key} remaining`,
-          value: Math.max(0, (Number(this.winDistribution?.[key]?.dailyLimit) || 0) - (Number(this.winDistribution?.[key]?.givenToday) || 0))
-        }));
-      return [...sectorRows, ...remainingRows];
+    nowLabel() {
+      const h = String(Math.floor(this.nowMinutes / 60)).padStart(2, "0");
+      const m = String(this.nowMinutes % 60).padStart(2, "0");
+      return `${h}:${m}`;
+    },
+    activeWindows() {
+      const toMin = (t) => {
+        if (!t || typeof t !== "string" || !t.includes(":")) return 0;
+        const [h, m] = t.split(":").map((p) => Number(p) || 0);
+        return h * 60 + m;
+      };
+
+      return OUTCOME_KEYS
+        .filter((key) => OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => {
+          const cat = this.winDistribution?.[key];
+          const slots = Array.isArray(cat?.slots) ? cat.slots : [];
+          const label = OUTCOME_THEME[key]?.label || key;
+
+          if (slots.length === 0) {
+            return { key, label, status: "idle", statusLabel: "Not scheduled", slotLabel: "", remainingLabel: "" };
+          }
+
+          const enriched = slots.map((s) => ({
+            ...s,
+            _start: toMin(s.startTime),
+            _end: toMin(s.endTime),
+            _remaining: Math.max(0, (Number(s.limit) || 0) - (Number(s.given) || 0))
+          }));
+
+          const active = enriched.find((s) => this.nowMinutes >= s._start && this.nowMinutes < s._end);
+          if (active) {
+            const depleted = active._remaining === 0;
+            return {
+              key,
+              label,
+              status: depleted ? "depleted" : "active",
+              statusLabel: depleted ? "Depleted" : "Active",
+              slotLabel: `${active.startTime}–${active.endTime}`,
+              remainingLabel: depleted ? "0 left" : `${active._remaining} of ${active.limit} left`
+            };
+          }
+
+          const upcoming = enriched
+            .filter((s) => s._start > this.nowMinutes && s._remaining > 0)
+            .sort((a, b) => a._start - b._start)[0];
+          if (upcoming) {
+            return {
+              key,
+              label,
+              status: "upcoming",
+              statusLabel: "Upcoming",
+              slotLabel: `next at ${upcoming.startTime}`,
+              remainingLabel: ""
+            };
+          }
+
+          const totalRemaining = enriched.reduce((sum, s) => sum + s._remaining, 0);
+          if (totalRemaining === 0) {
+            return { key, label, status: "done", statusLabel: "Done for today", slotLabel: "", remainingLabel: "" };
+          }
+          return { key, label, status: "idle", statusLabel: "Idle", slotLabel: "", remainingLabel: "" };
+        });
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -375,9 +432,15 @@ export default {
   },
   mounted() {
     this.dataSource = service.getDataSourceMode();
+    this.tickNow();
+    this.nowTickTimer = window.setInterval(() => this.tickNow(), 60000);
   },
   methods: {
     ...mapActions(["hydrateBootstrapData"]),
+    tickNow() {
+      const d = new Date();
+      this.nowMinutes = d.getHours() * 60 + d.getMinutes();
+    },
     buildFirebaseTotalsPayload() {
       const state = {
         totalReplay: this.totalReplay,
@@ -619,6 +682,10 @@ export default {
   beforeDestroy() {
     if (this._toastTimer) {
       clearTimeout(this._toastTimer);
+    }
+    if (this.nowTickTimer) {
+      window.clearInterval(this.nowTickTimer);
+      this.nowTickTimer = null;
     }
   }
 };
@@ -1008,6 +1075,68 @@ export default {
 .status-item strong {
   color: var(--color-text);
 }
+
+.status-clock {
+  font-variant-numeric: tabular-nums;
+  color: rgba(var(--rgb-text-strong), 0.7);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.status-item--window {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.status-item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.status-item__detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: rgba(var(--rgb-text-strong), 0.62);
+  font-size: 0.92rem;
+}
+
+.status-item__remaining {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pill::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-pill--active   { color: #1f8a4c; background: rgba(31, 138, 76, 0.14); }
+.status-pill--upcoming { color: #b3700c; background: rgba(179, 112, 12, 0.14); }
+.status-pill--depleted { color: #b34646; background: rgba(179, 70, 70, 0.14); }
+.status-pill--done     { color: #555f66; background: rgba(85, 95, 102, 0.14); }
+.status-pill--idle     { color: #6a737a; background: rgba(106, 115, 122, 0.14); }
 
 .mode-list {
   margin: 0.75rem 0 0;

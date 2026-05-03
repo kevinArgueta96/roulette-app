@@ -30,6 +30,7 @@ export const RANDOM_START_ANGLES = THEME_NAME === "storytel"
   : [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
 
 const slotAwareKeys = () => OUTCOME_KEYS.filter((key) => OUTCOME_LOGIC[key].hasSlots);
+const isAmountPerTimeOutcome = (key) => OUTCOME_LOGIC[key]?.selectionMode === "amountPerTime";
 
 export const createDefaultSlot = () => ({
   startTime: "09:00",
@@ -329,8 +330,9 @@ export const buildSectorsFromDistribution = (distribution) => {
 export const getFallbackIndexForDistribution = (distribution) => {
   const sectors = buildSectorsFromDistribution(distribution);
   const noLimitKeys = OUTCOME_KEYS.filter((key) => !OUTCOME_LOGIC[key].hasDailyLimit);
+  const preferredKeys = ["repeat", "noWin", ...noLimitKeys];
   let preferred;
-  for (const key of noLimitKeys) {
+  for (const key of preferredKeys) {
     preferred = sectors.find((sector) => sector.outcomeKey === key);
     if (preferred) break;
   }
@@ -422,7 +424,9 @@ export const buildOutcomeWeights = (distribution, currentTime) => {
     const activeSlot = activeSlotIndex >= 0 ? category.slots[activeSlotIndex] : null;
     const dailyOk = !OUTCOME_LOGIC[key].hasDailyLimit || (category.givenToday < category.dailyLimit);
     const available = dailyOk && activeSlot && activeSlot.given < activeSlot.limit;
-    slotWeights[key] = available ? Math.max(0, Number(activeSlot.weight) || 0) : 0;
+    slotWeights[key] = available
+      ? (isAmountPerTimeOutcome(key) ? 1 : Math.max(0, Number(activeSlot.weight) || 0))
+      : 0;
   });
 
   const reservedRaw = slotKeys.reduce((sum, key) => sum + slotWeights[key], 0);
@@ -477,7 +481,10 @@ export const buildDynamicProbabilities = (distribution, currentTime) => {
 
 export const getSectorResultType = (sector) => {
   if (!sector) {
-    const fallbackKey = OUTCOME_KEYS.find((key) => !OUTCOME_LOGIC[key].hasDailyLimit) || OUTCOME_KEYS[0];
+    const fallbackKey = OUTCOME_KEYS.find((key) => key === "repeat") ||
+      OUTCOME_KEYS.find((key) => key === "noWin") ||
+      OUTCOME_KEYS.find((key) => !OUTCOME_LOGIC[key].hasDailyLimit) ||
+      OUTCOME_KEYS[0];
     return OUTCOME_LOGIC[fallbackKey].resultType;
   }
   return OUTCOME_LOGIC[sector.outcomeKey]?.resultType || OUTCOME_KEYS[0];

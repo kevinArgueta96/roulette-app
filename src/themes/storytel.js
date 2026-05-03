@@ -15,15 +15,16 @@ export const OUTCOME_LOGIC = {
     defaultBaseWeight: 0,
     hasDailyLimit: true,
     hasSlots: true,
-    defaultDailyLimit: 2
+    defaultDailyLimit: 2,
+    selectionMode: "amountPerTime"
   },
   surpriseWin: {
     resultType: "surpriseWin",
     defaultSectorCount: 3,
-    defaultBaseWeight: 0,
-    hasDailyLimit: true,
-    hasSlots: true,
-    defaultDailyLimit: 30
+    defaultBaseWeight: 0.5,
+    hasDailyLimit: false,
+    hasSlots: false,
+    selectionMode: "percentage"
   },
   giftCard3m: {
     resultType: "giftCard3m",
@@ -31,21 +32,24 @@ export const OUTCOME_LOGIC = {
     defaultBaseWeight: 0,
     hasDailyLimit: true,
     hasSlots: true,
-    defaultDailyLimit: 4
+    defaultDailyLimit: 4,
+    selectionMode: "amountPerTime"
   },
   giftCard1m: {
     resultType: "giftCard1m",
     defaultSectorCount: 0,
     defaultBaseWeight: 0,
     hasDailyLimit: false,
-    hasSlots: false
+    hasSlots: false,
+    selectionMode: "disabled"
   },
   repeat: {
     resultType: "repeat",
     defaultSectorCount: 3,
-    defaultBaseWeight: 1,
+    defaultBaseWeight: 0.5,
     hasDailyLimit: false,
-    hasSlots: false
+    hasSlots: false,
+    selectionMode: "percentage"
   }
 };
 

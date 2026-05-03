@@ -16,6 +16,19 @@
         {{ errors.totalSectors || errors.sectorCounts }}
       </p>
 
+      <div class="logic-summary" aria-label="Prize logic summary">
+        <div class="logic-summary__item logic-summary__item--amount">
+          <span class="logic-summary__label">Amount per time</span>
+          <strong>{{ amountOutcomeLabel }}</strong>
+          <p>Use time windows and available win amounts. These prizes can only appear while their window is active and still has wins left.</p>
+        </div>
+        <div class="logic-summary__item logic-summary__item--probability">
+          <span class="logic-summary__label">Probability</span>
+          <strong>{{ percentageOutcomeLabel }}</strong>
+          <p>Use percentage shares. These outcomes stay configurable by probability and must add up to 100%.</p>
+        </div>
+      </div>
+
       <div class="outcome-grid">
         <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :class="{ 'outcome-card--full': outcome.hasSlots }" :style="{ borderLeftColor: outcome.color }">
           <div class="outcome-card__header">
@@ -38,7 +51,7 @@
             </div>
 
             <div v-if="!outcome.hasSlots" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-weight`">Non-win share (%)</label>
+              <label class="field-label" :for="`${outcome.key}-weight`">Probability share (%)</label>
               <input
                 :id="`${outcome.key}-weight`"
                 class="number-input"
@@ -62,8 +75,8 @@
             </div>
 
             <div v-else class="field-group field-group--readonly">
-              <span class="field-label">Probability source</span>
-              <strong class="field-readonly">Set by time slots ↓</strong>
+              <span class="field-label">Win logic</span>
+              <strong class="field-readonly">{{ outcome.isAmountPerTime ? "Amount per time slot" : "Set by time slots ↓" }}</strong>
             </div>
 
             <div v-if="outcome.hasDailyLimit" class="field-group">
@@ -98,16 +111,18 @@
 
           <div v-if="outcome.hasSlots" class="slots-block">
             <p class="slots-help">
-              Probability per spin during this time window (100% = always appears).
-              <template v-if="fallbackRemainingAtPeak === 0">
-                <br/><span class="slots-help--warn">Warning: active windows consume 100% — {{ fallbackLabel }} will not trigger during these hours.</span>
+              <template v-if="outcome.isAmountPerTime">
+                Configure the time window and how many wins can be delivered in that window.
+              </template>
+              <template v-else>
+                Probability per spin during this time window (100% = always appears).
               </template>
             </p>
 
             <div class="slots-header" v-if="localConfig[outcome.key].slots.length">
               <span>Start</span>
               <span>End</span>
-              <span>Probability</span>
+              <span>{{ outcome.isAmountPerTime ? "Logic" : "Probability" }}</span>
               <span>Limit</span>
               <span>Progress</span>
               <span>Actions</span>
@@ -141,7 +156,7 @@
                   @change="applyConfigChange"
                 />
               </div>
-              <div class="slot-field">
+              <div v-if="!outcome.isAmountPerTime" class="slot-field">
                 <label class="slot-label" :for="`${outcome.key}-weight-${slotIndex}`">Probability (%)</label>
                 <input
                   :id="`${outcome.key}-weight-${slotIndex}`"
@@ -153,6 +168,10 @@
                   @input="updateEditing(`${outcome.key}-slot-${slotIndex}-weight`, $event.target.value)"
                   @blur="commitSlotEditing(`${outcome.key}-slot-${slotIndex}-weight`, outcome.key, slotIndex, 'weight')"
                 />
+              </div>
+              <div v-else class="slot-field field-group--readonly">
+                <span class="slot-label">Logic</span>
+                <strong class="field-readonly">Amount</strong>
               </div>
               <div class="slot-field">
                 <label class="slot-label" :for="`${outcome.key}-limit-${slotIndex}`">Limit</label>
@@ -198,8 +217,8 @@
       <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
         <div class="fallback-split__header">
           <div>
-            <p class="block-eyebrow">Non-win split</p>
-            <h4 class="block-title">{{ fallbackLabel }}</h4>
+            <p class="block-eyebrow">Probability logic</p>
+            <h4 class="block-title">{{ percentageOutcomeLabel }}</h4>
           </div>
           <div class="fallback-split__total">
             <span class="fallback-split__total-label">Total</span>
@@ -300,12 +319,23 @@ export default {
     fallbackLabel() {
       return this.fallbackKeys.map((key) => OUTCOME_THEME[key]?.label || key).join(" & ");
     },
+    amountOutcomeLabel() {
+      const labels = this.outcomes
+        .filter((outcome) => outcome.isAmountPerTime)
+        .map((outcome) => outcome.label)
+        .join(" & ");
+
+      return labels || "No amount-per-time prizes";
+    },
+    percentageOutcomeLabel() {
+      return this.fallbackLabel || "No probability outcomes";
+    },
     fallbackCopy() {
-      const timed = this.slotKeys.map((key) => OUTCOME_THEME[key]?.label || key).join(", ");
-      if (this.fallbackKeys.length <= 1) {
-        return `When ${timed || "timed outcomes"} don't use 100%, the remaining probability goes to ${this.fallbackLabel}.`;
+      if (!this.fallbackKeys.length) {
+        return "No active outcomes are currently using probability logic.";
       }
-      return `When ${timed || "timed outcomes"} don't use 100%, the remainder is split between ${this.fallbackLabel}. These ratios must total 100%.`;
+
+      return `Configure the probability split for ${this.percentageOutcomeLabel}. These percentages must total 100%. Amount-per-time prizes can interrupt this split only while an active time window still has available wins.`;
     },
     timelineGridStyle() {
       return {
@@ -320,11 +350,11 @@ export default {
     },
     maxWinProbability() {
       const allSlotWeights = this.slotKeys.flatMap(
-        (key) => (this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0)
+        (key) => this.isAmountPerTime(key) ? [] : (this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0)
       );
       if (!allSlotWeights.length) return 0;
       const perKeyMax = this.slotKeys.map(
-        (key) => Math.max(0, ...(this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0))
+        (key) => this.isAmountPerTime(key) ? 0 : Math.max(0, ...(this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0))
       );
       return Math.min(100, perKeyMax.reduce((sum, v) => sum + v, 0));
     },
@@ -425,17 +455,22 @@ export default {
   methods: {
     createOutcomeDescriptor(key, index) {
       const label = OUTCOME_THEME[key]?.label || key;
+      const isAmountPerTime = this.isAmountPerTime(key);
       return {
         key,
         eyebrow: `Category ${CATEGORY_LETTERS[index]}`,
         label,
-        description: OUTCOME_LOGIC[key].hasSlots
-          ? `${label} sectors with daily limit and time-based probability.`
-          : `${label} sectors with configurable base probability.`,
+        description: isAmountPerTime
+          ? `${label} sectors with time windows and delivery amounts.`
+          : `${label} sectors with configurable probability percentage.`,
         color: OUTCOME_THEME[key]?.color || "#888",
         hasDailyLimit: OUTCOME_LOGIC[key].hasDailyLimit,
-        hasSlots: OUTCOME_LOGIC[key].hasSlots
+        hasSlots: OUTCOME_LOGIC[key].hasSlots,
+        isAmountPerTime
       };
+    },
+    isAmountPerTime(outcomeKey) {
+      return OUTCOME_LOGIC[outcomeKey]?.selectionMode === "amountPerTime";
     },
     replaceOutcomeConfig(outcomeKey, patch) {
       this.localConfig = {
@@ -673,11 +708,13 @@ export default {
         const invalidSlot = outcome.slots.find((slot) => {
           const start = this.timeToMinutes(slot.startTime);
           const end = this.timeToMinutes(slot.endTime);
-          return !slot.startTime || !slot.endTime || start >= end || Number(slot.weight) > 100;
+          return !slot.startTime || !slot.endTime || start >= end || (!this.isAmountPerTime(outcomeKey) && Number(slot.weight) > 100);
         });
 
         if (invalidSlot) {
-          this.errors[outcomeKey] = "Each time range needs a valid start/end and probability between 0% and 100%.";
+          this.errors[outcomeKey] = this.isAmountPerTime(outcomeKey)
+            ? "Each time range needs a valid start/end."
+            : "Each time range needs a valid start/end and probability between 0% and 100%.";
           return false;
         }
 
@@ -713,7 +750,8 @@ export default {
       return true;
     },
     validateTimelinePrizeCap() {
-      const ranges = this.slotKeys.flatMap((key) =>
+      const percentageSlotKeys = this.slotKeys.filter((key) => !this.isAmountPerTime(key));
+      const ranges = percentageSlotKeys.flatMap((key) =>
         (this.localConfig[key]?.slots || []).map((slot) => ({
           start: this.timeToMinutes(slot.startTime),
           end: this.timeToMinutes(slot.endTime),
@@ -735,7 +773,7 @@ export default {
 
       for (let index = 0; index < boundaries.length - 1; index += 1) {
         const sample = boundaries[index] + ((boundaries[index + 1] - boundaries[index]) / 2);
-        const total = this.slotKeys.reduce((sum, key) => sum + this.findSlotWeightAt(key, sample), 0);
+        const total = percentageSlotKeys.reduce((sum, key) => sum + this.findSlotWeightAt(key, sample), 0);
 
         if (total > 100.001) {
           return `Slot probabilities exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
@@ -999,6 +1037,52 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
+}
+
+.logic-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.logic-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(var(--rgb-border), 0.14);
+  background: rgba(var(--rgb-card), 0.86);
+}
+
+.logic-summary__item--amount {
+  border-color: rgba(var(--rgb-gold-line), 0.24);
+}
+
+.logic-summary__item--probability {
+  border-color: rgba(var(--rgb-primary), 0.18);
+}
+
+.logic-summary__label {
+  color: rgba(var(--rgb-muted), 0.62);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.logic-summary__item strong {
+  color: var(--color-primary);
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.logic-summary__item p {
+  margin: 0;
+  color: rgba(var(--rgb-text), 0.64);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .field-group--readonly {
@@ -1363,6 +1447,10 @@ export default {
 }
 
 @media (max-width: 760px) {
+  .logic-summary {
+    grid-template-columns: 1fr;
+  }
+
   .outcome-fields {
     grid-template-columns: 1fr;
   }
