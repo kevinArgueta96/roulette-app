@@ -530,6 +530,18 @@ export default {
   }
 }
 
+@keyframes storytel-logo-enter {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-50% - 2.5rem)) translateY(-2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
 .app-shell--storytel {
   background: var(--color-bg);
 }
@@ -651,6 +663,9 @@ export default {
   left: calc(25vw + ((clamp(2rem, 9vw, 6.5rem) - clamp(0.4rem, 1.2vw, 1rem)) / 2));
   top: clamp(1.5rem, 5vh, 3.5rem);
   transform: translateX(-50%);
+  animation: storytel-logo-enter 1.08s cubic-bezier(0.19, 1, 0.22, 1) both;
+  --brand-hero-shift: 0px;
+  --brand-hero-scale: 1;
 }
 
 .app-shell--storytel-hero .brand-logo {

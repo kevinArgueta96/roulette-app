@@ -3,15 +3,15 @@
     <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" :variant="confettiVariant" :origin="confettiOrigin" />
 
     <!-- Storytel: structured two-column hero layout -->
-    <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': hasResult }">
+    <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': isHeroLayoutActive }">
       <div class="storytel-stage__left">
         <RouletteCompoment ref="storytelRoulette" @showImg="onShowImg" />
       </div>
-      <transition name="win-reveal">
-        <div v-if="hasResult" class="storytel-stage__right">
-          <WinRowComponent :win-type="winType" :visible="hasResult" />
-        </div>
-      </transition>
+      <div class="storytel-stage__right">
+        <transition name="win-reveal">
+          <WinRowComponent v-if="showWinResult" :win-type="winType" :visible="showWinResult" />
+        </transition>
+      </div>
     </div>
 
     <!-- Parrano: original layout -->
@@ -93,8 +93,11 @@ export default {
       confettiVariant: "",
       confettiOrigin: null,
       isVisibleConfetti: false,
+      isHeroLayoutActive: false,
+      showWinResult: false,
       resultTimer: null,
       heroDelayTimer: null,
+      resultRevealTimer: null,
       confettiDelayTimer: null
     };
   },
@@ -186,12 +189,27 @@ export default {
       this.updateState({ mutationType: "setMainPrizeActive", payload: Boolean(RESULT_CONFIG[type]) });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: type });
 
+      if (this.isStorytel) {
+        this.isHeroLayoutActive = true;
+        this.$nextTick(() => {
+          this.$refs.storytelRoulette?.handleResize?.();
+        });
+        this.resultRevealTimer = window.setTimeout(() => {
+          this.showWinResult = true;
+          this.$refs.storytelRoulette?.handleResize?.();
+        }, 1140);
+      } else {
+        this.showWinResult = true;
+      }
+
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
       }, result.duration);
     },
     resetResultState() {
       this.clearTimers();
+      this.showWinResult = false;
+      this.isHeroLayoutActive = false;
       this.winType = "";
       this.confettiVariant = "";
       this.confettiOrigin = null;
@@ -213,6 +231,10 @@ export default {
       if (this.heroDelayTimer) {
         window.clearTimeout(this.heroDelayTimer);
         this.heroDelayTimer = null;
+      }
+      if (this.resultRevealTimer) {
+        window.clearTimeout(this.resultRevealTimer);
+        this.resultRevealTimer = null;
       }
       if (this.confettiDelayTimer) {
         window.clearTimeout(this.confettiDelayTimer);
@@ -244,54 +266,61 @@ export default {
   position: relative;
   align-self: stretch;
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
+  display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 0;
-}
-
-.storytel-stage--hero {
-  grid-template-columns: 1fr 1fr;
 }
 
 .storytel-stage--hero .storytel-stage__left {
   padding: clamp(2rem, 8vh, 5.7rem) clamp(0.4rem, 1.2vw, 1rem) 0 clamp(2rem, 9vw, 6.5rem);
-}
-
-.storytel-stage--hero .storytel-stage__right {
-  padding: clamp(1.2rem, 5vh, 3.4rem) clamp(2rem, 6vw, 4.5rem) 0 clamp(0.4rem, 1.2vw, 1rem);
+  flex-basis: 50%;
+  max-width: 50%;
 }
 
 .storytel-stage__left {
-  grid-column: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+  flex: 0 1 100%;
+  max-width: 100%;
   min-width: 0;
   padding: 0 clamp(0.5rem, 1.5vw, 1.5rem) 0 clamp(0.75rem, 2.5vw, 2.5rem);
   transform: translateX(0);
   transition:
-    padding 0.86s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.86s cubic-bezier(0.22, 1, 0.36, 1);
+    flex-basis 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    max-width 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    padding 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 1.08s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .storytel-stage__right {
-  grid-column: 2;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+  flex: 0 0 0%;
+  max-width: 0;
   min-width: 0;
-  padding: 0 clamp(0.75rem, 2.5vw, 2.5rem) 0 clamp(0.5rem, 1.5vw, 1.5rem);
+  overflow: hidden;
+  transition:
+    flex-basis 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    max-width 1.08s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.storytel-stage--hero .storytel-stage__right {
+  flex: 0 0 50%;
+  max-width: 50%;
+  overflow: visible;
+  padding: clamp(1.2rem, 5vh, 3.4rem) clamp(2rem, 6vw, 4.5rem) 0 clamp(0.4rem, 1.2vw, 1rem);
 }
 
 .win-reveal-enter-active,
 .win-reveal-leave-active {
   transition:
-    opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .win-reveal-leave-active {
@@ -306,7 +335,7 @@ export default {
 .win-reveal-enter,
 .win-reveal-leave-to {
   opacity: 0;
-  transform: translateX(18px) scale(0.985);
+  transform: translateX(34px) scale(0.975);
 }
 
 .result-label {

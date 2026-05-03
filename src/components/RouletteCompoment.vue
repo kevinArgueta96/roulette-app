@@ -757,6 +757,7 @@ export default {
   padding-top: 0;
   gap: 0.25rem;
   transform: translateY(clamp(1.65rem, 4.6vh, 2rem));
+  transition: transform 1.08s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 .roulette-shell--storytel.roulette-shell--hero {
