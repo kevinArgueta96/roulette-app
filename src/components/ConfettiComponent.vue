@@ -62,6 +62,7 @@ export default {
       confetti: null,
       burstParticles: [],
       burstTimers: [],
+      burstRaf: null,
       confettiSettings: {
         target: "confetti-container",
         respawn: true,
@@ -124,6 +125,42 @@ export default {
       this.burstTimers.forEach((timer) => window.clearTimeout(timer));
       this.burstTimers = [];
       this.burstParticles = [];
+
+      if (this.burstRaf) {
+        window.cancelAnimationFrame(this.burstRaf);
+        this.burstRaf = null;
+      }
+
+      this.clearCanvas();
+    },
+    prepareCanvas() {
+      const canvas = this.$refs.confettiCanvas;
+      if (!canvas) return null;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      canvas.style.width = `${window.innerWidth}px`;
+      canvas.style.height = `${window.innerHeight}px`;
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      return ctx;
+    },
+    clearCanvas() {
+      const canvas = this.$refs.confettiCanvas;
+      const ctx = canvas?.getContext("2d");
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    },
+    easeOutCubic(value) {
+      return 1 - Math.pow(1 - value, 3);
+    },
+    smoothStep(value) {
+      const clamped = Math.max(0, Math.min(1, value));
+      return clamped * clamped * (3 - (2 * clamped));
     },
     getWheelOrigin() {
       const wheel = document.querySelector(".wheel-stage");
@@ -143,39 +180,106 @@ export default {
     },
     playWheelExplosion() {
       this.stopBurst();
+      const ctx = this.prepareCanvas();
+      if (!ctx) return;
+
       const origin = this.origin || this.getWheelOrigin();
       const colors = (CONFETTI_COLORS.storytel || CONFETTI_COLORS.parrano)
         .map(([r, g, b]) => `rgb(${r}, ${g}, ${b})`);
       const mobile = isMobile();
-      const particleCount = mobile ? 260 : 720;
-      const spreadPadding = Math.max(window.innerWidth, window.innerHeight) * 0.16;
+      const particleCount = mobile ? 1500 : 4200;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const spreadPadding = Math.max(viewportWidth, viewportHeight) * 0.18;
+      const maxDuration = mobile ? 2300 : 2600;
 
       this.burstParticles = Array.from({ length: particleCount }, (_, index) => {
-        const targetX = Math.random() * (window.innerWidth + spreadPadding * 2) - spreadPadding;
-        const targetY = Math.random() * (window.innerHeight + spreadPadding * 2) - spreadPadding;
-        const size = mobile ? 3.5 + Math.random() * 5.5 : 3 + Math.random() * 6;
-        const duration = 1500 + Math.random() * 400;
-        const delay = Math.random() * 80;
+        const angle = Math.random() * Math.PI * 2;
+        const startRadius = Math.random() * (mobile ? 34 : 58);
+        const targetX = (Math.random() * (viewportWidth + spreadPadding * 2)) - spreadPadding;
+        const targetY = (Math.random() * (viewportHeight + spreadPadding * 1.4)) - spreadPadding * 0.7;
+        const size = mobile ? 1.8 + Math.random() * 3.4 : 1.6 + Math.random() * 4.2;
 
         return {
-          id: `${Date.now()}-${index}`,
-          style: {
-            left: `${origin.x}px`,
-            top: `${origin.y}px`,
-            width: `${size}px`,
-            height: `${size}px`,
-            backgroundColor: colors[index % colors.length],
-            "--burst-x": `${targetX - origin.x}px`,
-            "--burst-y": `${targetY - origin.y}px`,
-            animationDuration: `${duration}ms`,
-            animationDelay: `${delay}ms`
-          }
+          x: origin.x + Math.cos(angle) * startRadius,
+          y: origin.y + Math.sin(angle) * startRadius,
+          targetX,
+          targetY,
+          size,
+          color: colors[index % colors.length],
+          delay: Math.random() * 240,
+          duration: 1650 + Math.random() * (maxDuration - 1650),
+          wobble: 12 + Math.random() * 34,
+          wobbleSpeed: 5 + Math.random() * 9,
+          airLift: (mobile ? 90 : 150) + Math.random() * (mobile ? 190 : 330),
+          airDrift: (Math.random() - 0.5) * (mobile ? 120 : 260),
+          fanDelay: 0.52 + Math.random() * 0.14,
+          rotation: Math.random() * Math.PI,
+          spin: (Math.random() - 0.5) * 9,
+          shape: Math.random() > 0.62 ? "square" : "circle"
         };
       });
 
-      this.burstTimers.push(window.setTimeout(() => {
+      const startedAt = performance.now();
+      const render = (now) => {
+        ctx.clearRect(0, 0, viewportWidth, viewportHeight);
+
+        let active = false;
+        this.burstParticles.forEach((particle) => {
+          const elapsed = now - startedAt - particle.delay;
+          if (elapsed < 0) {
+            active = true;
+            return;
+          }
+
+          const progress = Math.min(1, elapsed / particle.duration);
+          if (progress < 1) active = true;
+
+          const eased = this.easeOutCubic(progress);
+          const fan = this.smoothStep((progress - particle.fanDelay) / (1 - particle.fanDelay));
+          const fall = 34 * progress * progress * (1 - fan * 0.75);
+          const wobble = Math.sin((progress * particle.wobbleSpeed * Math.PI) + particle.rotation) * particle.wobble;
+          const fanWave = Math.sin((progress * 5.8 * Math.PI) + particle.rotation) * particle.wobble * 1.45;
+          const x = particle.x +
+            (particle.targetX - particle.x) * eased +
+            wobble * (1 - progress * 0.45) +
+            (particle.airDrift + fanWave) * fan;
+          const y = particle.y +
+            (particle.targetY - particle.y) * eased +
+            fall -
+            (particle.airLift * fan);
+          const fadeIn = Math.min(1, progress / 0.08);
+          const fadeOut = progress > 0.86 ? Math.max(0, 1 - ((progress - 0.86) / 0.14)) : 1;
+          const opacity = fadeIn * fadeOut;
+
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = particle.color;
+          ctx.translate(x, y);
+          ctx.rotate(particle.rotation + particle.spin * progress);
+
+          if (particle.shape === "square") {
+            ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, particle.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.restore();
+        });
+
+        if (active) {
+          this.burstRaf = window.requestAnimationFrame(render);
+          return;
+        }
+
+        this.clearCanvas();
         this.burstParticles = [];
-      }, 2100));
+        this.burstRaf = null;
+      };
+
+      this.burstRaf = window.requestAnimationFrame(render);
     }
   }
 };

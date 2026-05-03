@@ -48,7 +48,7 @@ const RESULT_CONFIG = {
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    duration: 12000,
+    duration: 9000,
     confetti: true,
     kicker: "Main prize",
     title: "Olet voittanut!",
