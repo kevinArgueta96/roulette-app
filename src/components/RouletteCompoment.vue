@@ -374,6 +374,8 @@ export default {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      this.ctx.imageSmoothingEnabled = true;
+      this.ctx.imageSmoothingQuality = "high";
     },
     spinRoulleteByEnter(event) {
       const isSpace = event.key === " " || event.code === "Space";
@@ -472,16 +474,22 @@ export default {
       const centerRadius = this.canvasSize * 0.155;
 
       if (this._centerLogoImg && this._centerLogoImg.complete) {
-        const logoSize = centerRadius * 2.02;
+        const img = this._centerLogoImg;
+        const naturalW = img.naturalWidth || 1;
+        const naturalH = img.naturalHeight || 1;
+        const aspect = naturalW / naturalH;
+        const targetMax = Math.round(centerRadius * 2.02);
+        const drawW = aspect >= 1 ? targetMax : Math.round(targetMax * aspect);
+        const drawH = aspect >= 1 ? Math.round(targetMax / aspect) : targetMax;
         this.ctx.save();
         this.ctx.translate(this.center, this.center);
         this.ctx.rotate(this.startAngle);
         this.ctx.drawImage(
-          this._centerLogoImg,
-          -logoSize / 2,
-          -logoSize / 2,
-          logoSize,
-          logoSize
+          img,
+          -drawW / 2,
+          -drawH / 2,
+          drawW,
+          drawH
         );
         this.ctx.restore();
         return;

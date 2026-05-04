@@ -163,15 +163,13 @@ export default {
 
       if (this.isStorytel && type === "mainPrize") {
         this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
-        this.confettiDelayTimer = window.setTimeout(() => {
-          this.confettiOrigin = this.captureWheelCenter();
-          this.confettiVariant = type;
-          this.isVisibleConfetti = result.confetti;
+        this.confettiOrigin = this.captureWheelCenter();
+        this.confettiVariant = type;
+        this.isVisibleConfetti = result.confetti;
 
-          this.heroDelayTimer = window.setTimeout(() => {
-            this.showResult(type, result);
-          }, 1200);
-        }, 280);
+        this.heroDelayTimer = window.setTimeout(() => {
+          this.showResult(type, result);
+        }, 1200);
         return;
       }
 
@@ -194,7 +192,7 @@ export default {
         this.resultRevealTimer = window.setTimeout(() => {
           this.showWinResult = true;
           this.$refs.storytelRoulette?.handleResize?.();
-        }, 1140);
+        }, 320);
       } else {
         this.showWinResult = true;
       }

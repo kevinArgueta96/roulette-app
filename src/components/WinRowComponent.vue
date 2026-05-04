@@ -98,7 +98,7 @@ export default {
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
+  transition: opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .result-shell--visible {

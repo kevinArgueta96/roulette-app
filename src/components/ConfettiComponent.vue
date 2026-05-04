@@ -180,7 +180,7 @@ export default {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       const spreadPadding = Math.max(viewportWidth, viewportHeight) * 0.18;
-      const maxDuration = mobile ? 2300 : 2600;
+      const maxDuration = mobile ? 4300 : 4600;
 
       this.burstParticles = Array.from({ length: particleCount }, (_, index) => {
         const angle = Math.random() * Math.PI * 2;
@@ -197,7 +197,7 @@ export default {
           size,
           color: colors[index % colors.length],
           delay: Math.random() * 240,
-          duration: 1650 + Math.random() * (maxDuration - 1650),
+          duration: 3650 + Math.random() * (maxDuration - 3650),
           wobble: 12 + Math.random() * 34,
           wobbleSpeed: 5 + Math.random() * 9,
           airLift: (mobile ? 90 : 150) + Math.random() * (mobile ? 190 : 330),
@@ -237,6 +237,7 @@ export default {
             (particle.targetY - particle.y) * eased +
             fall -
             (particle.airLift * fan);
+
           const fadeIn = Math.min(1, progress / 0.08);
           const fadeOut = progress > 0.86 ? Math.max(0, 1 - ((progress - 0.86) / 0.14)) : 1;
           const opacity = fadeIn * fadeOut;
