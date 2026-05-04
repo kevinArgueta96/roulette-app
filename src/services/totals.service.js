@@ -2,12 +2,24 @@ import { CONFIG } from "../../env.config";
 import {
   normalizeOptions,
   normalizeTotals,
-  normalizeWinDistribution
+  normalizeWinDistribution,
+  OUTCOME_KEYS,
+  OUTCOME_LOGIC
 } from "@/utils";
+import { resolveThemeId } from "@/themes/resolveTheme";
+import { REGISTRY } from "@/themes";
+
+const THEME = resolveThemeId();
+const PATH_SUFFIX = REGISTRY[THEME]?.meta?.totalsPathSuffix ?? (THEME === "parrano" ? "" : `-${THEME}`);
+const PATHS = {
+  options: `roulette${PATH_SUFFIX}.json`,
+  totals: `total-prices${PATH_SUFFIX}.json`,
+  winDistribution: `win-distribution${PATH_SUFFIX}.json`
+};
 
 const REQUEST_TIMEOUT_MS = 8000;
-const LOCAL_MODE_KEY = "roulette-data-mode";
-const LOCAL_SNAPSHOT_KEY = "roulette-local-snapshot";
+const LOCAL_MODE_KEY = `roulette-data-mode-${THEME}`;
+const LOCAL_SNAPSHOT_KEY = `roulette-local-snapshot-${THEME}`;
 const LOCAL_SNAPSHOT_VERSION = 4;
 
 function canUseStorage() {
@@ -88,21 +100,23 @@ function updateStoredSnapshot(updater) {
 
 function resetWinDistributionCounters(distribution) {
   const normalized = normalizeWinDistribution(distribution);
+  const next = { ...normalized, lastResetDate: "" };
 
-  return {
-    ...normalized,
-    lastResetDate: "",
-    mainWin: {
-      ...normalized.mainWin,
-      givenToday: 0,
-      slots: normalized.mainWin.slots.map((slot) => ({ ...slot, given: 0 }))
-    },
-    smallWin: {
-      ...normalized.smallWin,
-      givenToday: 0,
-      slots: normalized.smallWin.slots.map((slot) => ({ ...slot, given: 0 }))
+  OUTCOME_KEYS.forEach((key) => {
+    const category = normalized[key];
+    if (!category) return;
+    const meta = OUTCOME_LOGIC[key];
+    const updated = { ...category };
+    if (meta.hasDailyLimit) {
+      updated.givenToday = 0;
     }
-  };
+    if (meta.hasSlots && Array.isArray(category.slots)) {
+      updated.slots = category.slots.map((slot) => ({ ...slot, given: 0 }));
+    }
+    next[key] = updated;
+  });
+
+  return next;
 }
 
 function getDataSourceMode() {
@@ -168,7 +182,7 @@ async function getOptions() {
     return getStoredSnapshot()?.options || [];
   }
 
-  const response = await requestJson("roulette.json");
+  const response = await requestJson(PATHS.options);
   return response === null ? null : normalizeOptions(response);
 }
 
@@ -177,7 +191,7 @@ async function getTotals() {
     return getStoredSnapshot()?.totals || normalizeTotals({});
   }
 
-  const response = await requestJson("total-prices.json");
+  const response = await requestJson(PATHS.totals);
   return response === null ? null : normalizeTotals(response);
 }
 
@@ -186,7 +200,7 @@ async function getWinDistribution() {
     return getStoredSnapshot()?.winDistribution || null;
   }
 
-  const response = await requestJson("win-distribution.json");
+  const response = await requestJson(PATHS.winDistribution);
   return response === null ? null : normalizeWinDistribution(response);
 }
 
@@ -231,7 +245,7 @@ async function saveTotals(data) {
     return true;
   }
 
-  return Boolean(await putJson("total-prices.json", data));
+  return Boolean(await putJson(PATHS.totals, data));
 }
 
 async function saveWinDistribution(data) {
@@ -243,7 +257,7 @@ async function saveWinDistribution(data) {
     return true;
   }
 
-  return Boolean(await putJson("win-distribution.json", data));
+  return Boolean(await putJson(PATHS.winDistribution, data));
 }
 
 export default {

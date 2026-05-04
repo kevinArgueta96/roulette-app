@@ -16,190 +16,166 @@
         {{ errors.totalSectors || errors.sectorCounts }}
       </p>
 
-      <div class="outcome-grid">
-        <article v-for="outcome in outcomes" :key="outcome.key" class="outcome-card" :class="{ 'outcome-card--full': outcome.hasSlots }" :style="{ borderLeftColor: outcome.color }">
-          <div class="outcome-card__header">
-            <div class="outcome-card__title">
-              <span class="outcome-dot" :style="{ background: outcome.color }" aria-hidden="true"></span>
-              <div>
-                <p class="outcome-eyebrow">{{ outcome.eyebrow }}</p>
-                <h5 class="outcome-name">{{ outcome.label }}</h5>
+      <div class="logic-summary" aria-label="Prize logic summary">
+        <div class="logic-summary__item logic-summary__item--amount">
+          <span class="logic-summary__label">Amount per time</span>
+          <strong>{{ amountOutcomeLabel }}</strong>
+          <p>Use time windows and available win amounts. These prizes can only appear while their window is active and still has wins left.</p>
+        </div>
+        <div class="logic-summary__item logic-summary__item--probability">
+          <span class="logic-summary__label">Probability</span>
+          <strong>{{ percentageOutcomeLabel }}</strong>
+          <p>Use percentage shares. These outcomes stay configurable by probability and must add up to 100%.</p>
+        </div>
+      </div>
+
+      <!-- Outcome accordion -->
+      <ul class="win-row-list">
+        <template v-for="(outcome, index) in outcomes">
+          <li
+            v-if="index === 0 && outcome.hasSlots && fallbackOutcomesGroup.length > 0"
+            :key="`grp-timed-${index}`"
+            class="win-group-label"
+          >
+            <span class="win-group-label__icon">⏱</span>
+            <span class="win-group-label__text">By time window</span>
+          </li>
+          <li
+            v-if="!outcome.hasSlots && (index === 0 || outcomes[index - 1].hasSlots)"
+            :key="`grp-prob-${index}`"
+            class="win-group-label"
+            :class="{ 'win-group-label--sep': slotOutcomesGroup.length > 0 }"
+          >
+            <span class="win-group-label__icon">%</span>
+            <span class="win-group-label__text">By probability</span>
+          </li>
+          <li
+            :key="outcome.key"
+            class="win-row"
+            :class="{ 'win-row--expanded': expandedOutcome === outcome.key }"
+          >
+          <button
+            type="button"
+            class="win-row__head"
+            :style="{ borderLeftColor: outcome.color }"
+            @click="toggleOutcome(outcome.key)"
+            :aria-expanded="expandedOutcome === outcome.key ? 'true' : 'false'"
+          >
+            <span class="win-row__swatch" :style="{ background: outcome.color }" aria-hidden="true"></span>
+            <span class="win-row__label">{{ outcome.label }}</span>
+            <div class="win-row__badges">
+              <span class="win-row__badge">{{ localConfig[outcome.key].sectorCount }} sectors</span>
+              <span class="win-row__badge win-row__badge--type">{{ outcome.isAmountPerTime ? 'Amount' : 'Probability' }}</span>
+              <span v-if="outcome.hasDailyLimit" class="win-row__badge">Limit: {{ localConfig[outcome.key].dailyLimit }}</span>
+              <span v-if="outcome.hasSlots" class="win-row__badge">{{ localConfig[outcome.key].slots.length }} window{{ localConfig[outcome.key].slots.length !== 1 ? 's' : '' }}</span>
+            </div>
+            <span class="win-row__chevron" aria-hidden="true">{{ expandedOutcome === outcome.key ? '▼' : '▶' }}</span>
+          </button>
+
+          <div v-if="expandedOutcome === outcome.key" class="win-row__body">
+            <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
+
+            <div class="win-row__fields">
+              <div class="field-group field-group--readonly">
+                <span class="field-label">Sector count</span>
+                <strong class="field-readonly">{{ localConfig[outcome.key].sectorCount }}</strong>
               </div>
-            </div>
-            <span class="outcome-preview">{{ localConfig[outcome.key].sectorCount }} sectors</span>
-          </div>
 
-          <p class="outcome-description">{{ outcome.description }}</p>
-
-          <div class="outcome-fields">
-            <div class="field-group field-group--readonly">
-              <span class="field-label">Sector count</span>
-              <strong class="field-readonly">{{ localConfig[outcome.key].sectorCount }}</strong>
-            </div>
-
-            <div v-if="!outcome.hasSlots" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-weight`">Non-win share (%)</label>
-              <input
-                :id="`${outcome.key}-weight`"
-                class="number-input"
-                type="text"
-                inputmode="decimal"
-                :value="percentDisplayValue(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
-                @focus="startEditing(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
-                @input="updateEditing(`${outcome.key}-baseWeight`, $event.target.value)"
-                @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
-              />
-              <p class="effective-range">
-                <template v-if="outcome.key === 'repeat'">
-                  <span v-if="effectiveRepeatRange.min === effectiveRepeatRange.max">Effective: {{ effectiveRepeatRange.max }}%</span>
-                  <span v-else>Effective: {{ effectiveRepeatRange.min }}% – {{ effectiveRepeatRange.max }}%</span>
-                </template>
-                <template v-else-if="outcome.key === 'noWin'">
-                  <span v-if="effectiveNoWinRange.min === effectiveNoWinRange.max">Effective: {{ effectiveNoWinRange.max }}%</span>
-                  <span v-else>Effective: {{ effectiveNoWinRange.min }}% – {{ effectiveNoWinRange.max }}%</span>
-                </template>
-              </p>
-            </div>
-
-            <div v-else class="field-group field-group--readonly">
-              <span class="field-label">Probability source</span>
-              <strong class="field-readonly">Set by time slots ↓</strong>
-            </div>
-
-            <div v-if="outcome.hasDailyLimit" class="field-group">
-              <label class="field-label" :for="`${outcome.key}-daily`">Daily limit</label>
-              <input
-                :id="`${outcome.key}-daily`"
-                class="number-input"
-                type="number"
-                min="0"
-                :value="localConfig[outcome.key].dailyLimit"
-                @input="onOutcomeChange(outcome.key, 'dailyLimit', $event.target.value)"
-                @blur="applyConfigChange"
-              />
-            </div>
-
-            <div v-if="outcome.hasDailyLimit" class="field-group field-group--given">
-              <span class="field-label">Given today</span>
-              <div class="given-today">
-                <span class="given-today__count">{{ localConfig[outcome.key].givenToday }} <span class="given-today__limit">/ {{ localConfig[outcome.key].dailyLimit }}</span></span>
-                <div class="given-bar">
-                  <div
-                    class="given-bar__fill"
-                    :style="{ width: getGivenPercent(outcome.key) + '%' }"
-                    :class="{ 'given-bar__fill--full': getGivenPercent(outcome.key) >= 100 }"
-                  ></div>
-                </div>
+              <div class="field-group field-group--readonly">
+                <span class="field-label">Win logic</span>
+                <strong class="field-readonly">{{ outcome.isAmountPerTime ? 'Amount per time slot' : 'Probability %' }}</strong>
               </div>
-            </div>
-          </div>
 
-          <p v-if="errors[outcome.key]" class="config-error">{{ errors[outcome.key] }}</p>
-
-          <div v-if="outcome.hasSlots" class="slots-block">
-            <p class="slots-help">
-              Probability per spin during this time window (100% = always appears).
-              <template v-if="fallbackRemainingAtPeak === 0">
-                <br/><span class="slots-help--warn">Warning: active windows consume 100% — Repeat and No win will never trigger during these hours.</span>
-              </template>
-            </p>
-
-            <div class="slots-header" v-if="localConfig[outcome.key].slots.length">
-              <span>Start</span>
-              <span>End</span>
-              <span>Probability</span>
-              <span>Limit</span>
-              <span>Progress</span>
-              <span>Actions</span>
-            </div>
-
-            <div
-              v-for="(slot, slotIndex) in localConfig[outcome.key].slots"
-              :key="slot._editorId"
-              class="slot-row"
-              :class="{ 'slot-row--active': slotIndex === activeSlotMap[outcome.key] }"
-            >
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-start-${slotIndex}`">Start</label>
+              <div v-if="!outcome.hasSlots" class="field-group">
+                <label class="field-label" :for="`${outcome.key}-weight`">Probability share (%)</label>
                 <input
-                  :id="`${outcome.key}-start-${slotIndex}`"
-                  class="slot-input"
-                  type="time"
-                  :value="slot.startTime"
-                  @input="onSlotChange(outcome.key, slotIndex, 'startTime', $event.target.value)"
-                  @change="applyConfigChange"
-                />
-              </div>
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-end-${slotIndex}`">End</label>
-                <input
-                  :id="`${outcome.key}-end-${slotIndex}`"
-                  class="slot-input"
-                  type="time"
-                  :value="slot.endTime"
-                  @input="onSlotChange(outcome.key, slotIndex, 'endTime', $event.target.value)"
-                  @change="applyConfigChange"
-                />
-              </div>
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-weight-${slotIndex}`">Probability (%)</label>
-                <input
-                  :id="`${outcome.key}-weight-${slotIndex}`"
-                  class="slot-input"
+                  :id="`${outcome.key}-weight`"
+                  class="number-input"
                   type="text"
                   inputmode="decimal"
-                  :value="percentDisplayValue(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
-                  @focus="startEditing(`${outcome.key}-slot-${slotIndex}-weight`, slot.weight)"
-                  @input="updateEditing(`${outcome.key}-slot-${slotIndex}-weight`, $event.target.value)"
-                  @blur="commitSlotEditing(`${outcome.key}-slot-${slotIndex}-weight`, outcome.key, slotIndex, 'weight')"
+                  :value="percentDisplayValue(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                  @focus="startEditing(`${outcome.key}-baseWeight`, localConfig[outcome.key].baseWeight)"
+                  @input="updateEditing(`${outcome.key}-baseWeight`, $event.target.value)"
+                  @blur="commitOutcomeEditing(`${outcome.key}-baseWeight`, outcome.key, 'baseWeight')"
                 />
+                <p class="effective-range">
+                  <template v-if="effectiveFallbackRanges[outcome.key]">
+                    <span v-if="effectiveFallbackRanges[outcome.key].min === effectiveFallbackRanges[outcome.key].max">
+                      Effective: {{ effectiveFallbackRanges[outcome.key].max }}%
+                    </span>
+                    <span v-else>
+                      Effective: {{ effectiveFallbackRanges[outcome.key].min }}% – {{ effectiveFallbackRanges[outcome.key].max }}%
+                    </span>
+                  </template>
+                </p>
               </div>
-              <div class="slot-field">
-                <label class="slot-label" :for="`${outcome.key}-limit-${slotIndex}`">Limit</label>
+
+              <div v-if="outcome.hasDailyLimit" class="field-group">
+                <label class="field-label" :for="`${outcome.key}-daily`">Daily limit</label>
                 <input
-                  :id="`${outcome.key}-limit-${slotIndex}`"
-                  class="slot-input"
+                  :id="`${outcome.key}-daily`"
+                  class="number-input"
                   type="number"
                   min="0"
-                  :value="slot.limit"
-                  @input="onSlotChange(outcome.key, slotIndex, 'limit', $event.target.value)"
+                  :value="localConfig[outcome.key].dailyLimit"
+                  @input="onOutcomeChange(outcome.key, 'dailyLimit', $event.target.value)"
                   @blur="applyConfigChange"
                 />
               </div>
-              <div class="slot-given">
-                <span class="slot-label slot-label--mobile">Progress</span>
-                <strong>{{ slot.given }} / {{ slot.limit }}</strong>
+
+              <div v-if="outcome.hasDailyLimit" class="field-group field-group--given">
+                <span class="field-label">Given today</span>
+                <div class="given-today">
+                  <span class="given-today__count">{{ localConfig[outcome.key].givenToday }} <span class="given-today__limit">/ {{ localConfig[outcome.key].dailyLimit }}</span></span>
+                  <div class="given-bar">
+                    <div
+                      class="given-bar__fill"
+                      :style="{ width: getGivenPercent(outcome.key) + '%' }"
+                      :class="{ 'given-bar__fill--full': getGivenPercent(outcome.key) >= 100 }"
+                    ></div>
+                  </div>
+                </div>
               </div>
-              <div class="slot-actions">
-                <span v-if="slotIndex === activeSlotMap[outcome.key]" class="slot-active-badge">ACTIVE</span>
-                <button
-                  class="slot-reset"
-                  type="button"
-                  :disabled="!slot.given"
-                  @click="resetSlotGiven(outcome.key, slotIndex)"
-                >
-                  Reset
+            </div>
+
+            <div v-if="outcome.hasSlots" class="win-row__slots">
+              <div class="win-row__slots-head">
+                <p class="win-row__slots-label">Time windows</p>
+                <button type="button" class="edit-slots-btn" @click.stop="openSlotModal(outcome.key)">
+                  Edit time slots
                 </button>
-                <button class="slot-remove" type="button" @click="removeSlot(outcome.key, slotIndex)">×</button>
               </div>
-            </div>
 
-            <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
-              No time windows configured — this outcome never appears. Add a time range to enable it.
-            </div>
+              <div v-if="!localConfig[outcome.key].slots.length" class="empty-slots">
+                No time windows configured — this outcome never appears.
+              </div>
 
-            <button class="add-slot-btn" type="button" @click="addSlot(outcome.key)">
-              + Add time range
-            </button>
+              <ul v-else class="win-row__slot-list">
+                <li
+                  v-for="(slot, si) in localConfig[outcome.key].slots"
+                  :key="slot._editorId"
+                  class="win-row__slot-item"
+                  :class="{ 'win-row__slot-item--active': si === activeSlotMap[outcome.key] }"
+                >
+                  <span class="win-row__slot-time">{{ slot.startTime }}–{{ slot.endTime }}</span>
+                  <span class="win-row__slot-progress">
+                    {{ slot.given }}<span class="win-row__slot-sep">/</span>{{ slot.limit }}
+                    <template v-if="!outcome.isAmountPerTime"> · {{ slot.weight }}%</template>
+                  </span>
+                  <span v-if="si === activeSlotMap[outcome.key]" class="slot-active-badge">ACTIVE</span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </article>
-      </div>
+          </li>
+        </template>
+      </ul>
 
       <div class="fallback-split" :class="{ 'fallback-split--error': fallbackSplitTotal !== 100 }">
         <div class="fallback-split__header">
           <div>
-            <p class="block-eyebrow">Non-win split</p>
-            <h4 class="block-title">Repeat &amp; No win</h4>
+            <p class="block-eyebrow">Probability logic</p>
+            <h4 class="block-title">{{ percentageOutcomeLabel }}</h4>
           </div>
           <div class="fallback-split__total">
             <span class="fallback-split__total-label">Total</span>
@@ -207,7 +183,7 @@
           </div>
         </div>
         <p class="fallback-split__copy">
-          When Main win and Small win don't use 100%, the remainder is split between Repeat and No win using the ratios below. These two must total 100%.
+          {{ fallbackCopy }}
         </p>
         <p v-if="errors.timelineBudget" class="config-error">{{ errors.timelineBudget }}</p>
       </div>
@@ -225,95 +201,67 @@
         </p>
 
         <div class="probability-timeline">
-          <div class="timeline-header">
+          <div class="timeline-header" :style="timelineGridStyle">
             <span>Time window</span>
-            <span>Main win</span>
-            <span>Small win</span>
-            <span>Repeat</span>
-            <span>No win</span>
+            <span v-for="outcome in outcomes" :key="outcome.key">{{ outcome.label }}</span>
           </div>
           <div
             v-for="(row, i) in probabilityTimeline"
             :key="i"
             class="timeline-row"
             :class="{ 'timeline-row--active': row.isActive }"
+            :style="timelineGridStyle"
           >
             <span class="timeline-label">
               {{ row.label }}
               <span v-if="row.isActive" class="timeline-now-badge">NOW</span>
             </span>
-            <span :class="Number(row.mainWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.mainWin }}%</span>
-            <span :class="Number(row.smallWin) > 0 ? 'timeline-val--win' : 'timeline-val--zero'">{{ row.smallWin }}%</span>
-            <span>{{ row.repeat }}%</span>
-            <span>{{ row.noWin }}%</span>
+            <span
+              v-for="outcome in outcomes"
+              :key="outcome.key"
+              :class="Number(row[outcome.key]) > 0 ? 'timeline-val--win' : 'timeline-val--zero'"
+            >{{ row[outcome.key] }}%</span>
           </div>
         </div>
       </div>
     </section>
+
+    <SlotModal
+      v-if="activeSlotOutcome && slotModalOutcome"
+      :open="true"
+      :outcome="slotModalOutcome"
+      :slots="localConfig[activeSlotOutcome].slots || []"
+      @close="closeSlotModal"
+      @save="onSlotModalSave"
+    />
   </div>
 </template>
 
 <script>
 import { mapGetters } from "vuex";
-import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_META, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
+import { OUTCOME_THEME } from "@/themes";
+import { DEFAULT_WIN_DISTRIBUTION, OUTCOME_LOGIC, OUTCOME_KEYS, normalizeWinDistribution, buildOutcomeWeights, findActiveSlotIndex, formatTime24h } from "@/utils";
+import SlotModal from "@/components/SlotModal.vue";
 
-const OUTCOMES = [
-  {
-    key: "mainWin",
-    eyebrow: "Category A",
-    label: "Main win",
-    description: "Lahjakassi sectors, daily limit, and time-based probability.",
-    color: OUTCOME_META.mainWin.color,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  {
-    key: "smallWin",
-    eyebrow: "Category B",
-    label: "Small win",
-    description: "Yllatyspalkinto sectors, daily limit, and time-based probability.",
-    color: OUTCOME_META.smallWin.color,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  {
-    key: "repeat",
-    eyebrow: "Category C",
-    label: "Repeat",
-    description: "Kokeile uudestaan sectors with configurable base probability.",
-    color: OUTCOME_META.repeat.color,
-    hasDailyLimit: false,
-    hasSlots: false
-  },
-  {
-    key: "noWin",
-    eyebrow: "Category D",
-    label: "No win",
-    description: "Blank green sectors that absorb the remaining non-winning outcomes.",
-    color: OUTCOME_META.noWin.color,
-    hasDailyLimit: false,
-    hasSlots: false
-  }
-];
+const CATEGORY_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 export default {
   name: "DashboardWinConfig",
+  components: { SlotModal },
   data() {
     return {
-      outcomes: OUTCOMES,
       localConfig: DEFAULT_WIN_DISTRIBUTION(),
       nextSlotId: 0,
       errors: {
         totalSectors: "",
         sectorCounts: "",
-        mainWin: "",
-        smallWin: "",
         timelineBudget: "",
-        repeat: "",
-        noWin: ""
+        ...OUTCOME_KEYS.reduce((acc, key) => ({ ...acc, [key]: "" }), {})
       },
       editingValues: {},
-      currentTime: formatTime24h(new Date())
+      currentTime: formatTime24h(new Date()),
+      expandedOutcome: null,
+      activeSlotOutcome: null
     };
   },
   mounted() {
@@ -326,18 +274,64 @@ export default {
   },
   computed: {
     ...mapGetters(["winDistribution"]),
+    activeOutcomeKeys() {
+      return OUTCOME_KEYS.filter((key) => (Number(this.localConfig?.[key]?.sectorCount) || 0) > 0);
+    },
+    outcomes() {
+      const sorted = [...this.activeOutcomeKeys].sort((a, b) => {
+        const aSlot = OUTCOME_LOGIC[a]?.hasSlots ? 0 : 1;
+        const bSlot = OUTCOME_LOGIC[b]?.hasSlots ? 0 : 1;
+        return aSlot - bSlot;
+      });
+      return sorted.map((key, index) => this.createOutcomeDescriptor(key, index));
+    },
+    fallbackKeys() {
+      return this.outcomes.filter((outcome) => !outcome.hasSlots).map((outcome) => outcome.key);
+    },
+    slotKeys() {
+      return this.outcomes.filter((outcome) => outcome.hasSlots).map((outcome) => outcome.key);
+    },
+    fallbackLabel() {
+      return this.fallbackKeys.map((key) => OUTCOME_THEME[key]?.label || key).join(" & ");
+    },
+    amountOutcomeLabel() {
+      const labels = this.outcomes
+        .filter((outcome) => outcome.isAmountPerTime)
+        .map((outcome) => outcome.label)
+        .join(" & ");
+
+      return labels || "No amount-per-time prizes";
+    },
+    percentageOutcomeLabel() {
+      return this.fallbackLabel || "No probability outcomes";
+    },
+    fallbackCopy() {
+      if (!this.fallbackKeys.length) {
+        return "No active outcomes are currently using probability logic.";
+      }
+
+      return `Configure the probability split for ${this.percentageOutcomeLabel}. These percentages must total 100%. Amount-per-time prizes can interrupt this split only while an active time window still has available wins.`;
+    },
+    timelineGridStyle() {
+      return {
+        gridTemplateColumns: `minmax(0, 1.8fr) repeat(${this.outcomes.length}, minmax(0, 1fr))`
+      };
+    },
     fallbackSplitTotal() {
-      return this.clampPercent(this.localConfig.repeat?.baseWeight) + this.clampPercent(this.localConfig.noWin?.baseWeight);
+      return this.fallbackKeys.reduce(
+        (sum, key) => sum + this.clampPercent(this.localConfig[key]?.baseWeight),
+        0
+      );
     },
     maxWinProbability() {
-      const allSlots = [
-        ...(this.localConfig.mainWin?.slots || []),
-        ...(this.localConfig.smallWin?.slots || [])
-      ];
-      if (!allSlots.length) return 0;
-      const maxMain = Math.max(0, ...(this.localConfig.mainWin?.slots || []).map((s) => Number(s.weight) || 0));
-      const maxSmall = Math.max(0, ...(this.localConfig.smallWin?.slots || []).map((s) => Number(s.weight) || 0));
-      return Math.min(100, maxMain + maxSmall);
+      const allSlotWeights = this.slotKeys.flatMap(
+        (key) => this.isAmountPerTime(key) ? [] : (this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0)
+      );
+      if (!allSlotWeights.length) return 0;
+      const perKeyMax = this.slotKeys.map(
+        (key) => this.isAmountPerTime(key) ? 0 : Math.max(0, ...(this.localConfig[key]?.slots || []).map((s) => Number(s.weight) || 0))
+      );
+      return Math.min(100, perKeyMax.reduce((sum, v) => sum + v, 0));
     },
     fallbackRemainingAtPeak() {
       return Math.max(0, 100 - this.maxWinProbability);
@@ -347,10 +341,10 @@ export default {
     },
     activeSlotMap() {
       const cfg = this.persistedConfigSnapshot;
-      return {
-        mainWin: findActiveSlotIndex(cfg.mainWin.slots, this.currentTime),
-        smallWin: findActiveSlotIndex(cfg.smallWin.slots, this.currentTime)
-      };
+      return this.slotKeys.reduce((acc, key) => {
+        acc[key] = findActiveSlotIndex(cfg[key]?.slots || [], this.currentTime);
+        return acc;
+      }, {});
     },
     probabilityTimeline() {
       const cfg = this.persistedConfigSnapshot;
@@ -365,36 +359,31 @@ export default {
         return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
       };
 
-      const slotRanges = [
-        ...(cfg.mainWin.slots || []),
-        ...(cfg.smallWin.slots || [])
-      ]
+      const slotRanges = this.slotKeys
+        .flatMap((key) => (cfg[key]?.slots || []))
         .filter((s) => s.startTime && s.endTime && toMin(s.startTime) < toMin(s.endTime))
         .map((s) => ({ start: toMin(s.startTime), end: toMin(s.endTime) }));
 
+      const buildRow = (sampleTime, label, isActive) => {
+        const w = buildOutcomeWeights(cfg, sampleTime);
+        const row = { label, isActive };
+        this.activeOutcomeKeys.forEach((key) => {
+          row[key] = ((w[key] || 0) * 100).toFixed(1);
+        });
+        return row;
+      };
+
       if (!slotRanges.length) {
-        const w = buildOutcomeWeights(cfg, this.currentTime);
-        return [{
-          label: "All day",
-          mainWin: (w.mainWin * 100).toFixed(1),
-          smallWin: (w.smallWin * 100).toFixed(1),
-          repeat: (w.repeat * 100).toFixed(1),
-          noWin: (w.noWin * 100).toFixed(1),
-          isActive: true
-        }];
+        return [buildRow(this.currentTime, "All day", true)];
       }
 
       const boundaries = [...new Set(slotRanges.flatMap((r) => [r.start, r.end]))].sort((a, b) => a - b);
       const intervals = [];
 
-      if (boundaries[0] > 0) {
-        intervals.push({ start: 0, end: boundaries[0] });
-      }
-
+      if (boundaries[0] > 0) intervals.push({ start: 0, end: boundaries[0] });
       for (let i = 0; i < boundaries.length - 1; i++) {
         intervals.push({ start: boundaries[i], end: boundaries[i + 1] });
       }
-
       if (boundaries[boundaries.length - 1] < 23 * 60 + 59) {
         intervals.push({ start: boundaries[boundaries.length - 1], end: 23 * 60 + 59 });
       }
@@ -402,31 +391,36 @@ export default {
       const currentMin = toMin(this.currentTime);
 
       return intervals.map(({ start, end }) => {
-        const mid = Math.floor((start + end) / 2);
-        const sampleTime = toLabel(mid);
-        const w = buildOutcomeWeights(cfg, sampleTime);
-        const isActive = currentMin >= start && currentMin < end;
-        return {
-          label: `${toLabel(start)} – ${toLabel(end)}`,
-          mainWin: (w.mainWin * 100).toFixed(1),
-          smallWin: (w.smallWin * 100).toFixed(1),
-          repeat: (w.repeat * 100).toFixed(1),
-          noWin: (w.noWin * 100).toFixed(1),
-          isActive
-        };
+        const sampleTime = toLabel(Math.floor((start + end) / 2));
+        return buildRow(sampleTime, `${toLabel(start)} – ${toLabel(end)}`, currentMin >= start && currentMin < end);
       });
     },
+    effectiveFallbackRanges() {
+      const ranges = {};
+      this.fallbackKeys.forEach((key) => {
+        const ratio = this.clampPercent(this.localConfig[key]?.baseWeight);
+        const max = ratio;
+        const min = (ratio / 100) * this.fallbackRemainingAtPeak;
+        ranges[key] = { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      });
+      return ranges;
+    },
     effectiveRepeatRange() {
-      const ratio = this.clampPercent(this.localConfig.repeat?.baseWeight);
-      const max = ratio;
-      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
-      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      return this.effectiveFallbackRanges.repeat || { min: 0, max: 0 };
     },
     effectiveNoWinRange() {
-      const ratio = this.clampPercent(this.localConfig.noWin?.baseWeight);
-      const max = ratio;
-      const min = (ratio / 100) * this.fallbackRemainingAtPeak;
-      return { min: Math.round(min * 10) / 10, max: Math.round(max * 10) / 10 };
+      return this.effectiveFallbackRanges.noWin || { min: 0, max: 0 };
+    },
+    slotOutcomesGroup() {
+      return this.outcomes.filter((o) => o.hasSlots);
+    },
+    fallbackOutcomesGroup() {
+      return this.outcomes.filter((o) => !o.hasSlots);
+    },
+    slotModalOutcome() {
+      if (!this.activeSlotOutcome) return null;
+      const idx = this.activeOutcomeKeys.indexOf(this.activeSlotOutcome);
+      return idx >= 0 ? this.createOutcomeDescriptor(this.activeSlotOutcome, idx) : null;
     }
   },
   watch: {
@@ -445,6 +439,25 @@ export default {
     }
   },
   methods: {
+    createOutcomeDescriptor(key, index) {
+      const label = OUTCOME_THEME[key]?.label || key;
+      const isAmountPerTime = this.isAmountPerTime(key);
+      return {
+        key,
+        eyebrow: `Category ${CATEGORY_LETTERS[index]}`,
+        label,
+        description: isAmountPerTime
+          ? `${label} sectors with time windows and delivery amounts.`
+          : `${label} sectors with configurable probability percentage.`,
+        color: OUTCOME_THEME[key]?.color || "#888",
+        hasDailyLimit: OUTCOME_LOGIC[key].hasDailyLimit,
+        hasSlots: OUTCOME_LOGIC[key].hasSlots,
+        isAmountPerTime
+      };
+    },
+    isAmountPerTime(outcomeKey) {
+      return OUTCOME_LOGIC[outcomeKey]?.selectionMode === "amountPerTime";
+    },
     replaceOutcomeConfig(outcomeKey, patch) {
       this.localConfig = {
         ...this.localConfig,
@@ -510,66 +523,45 @@ export default {
     },
     toEditorConfig(value) {
       const normalized = normalizeWinDistribution(value);
+      const config = { totalSectors: normalized.totalSectors, lastResetDate: normalized.lastResetDate };
 
-      return {
-        totalSectors: normalized.totalSectors,
-        mainWin: {
-          ...normalized.mainWin,
-          baseWeight: this.clampPercent(normalized.mainWin.baseWeight * 100),
-          slots: normalized.mainWin.slots.map((slot) => this.createEditorSlot(slot))
-        },
-        smallWin: {
-          ...normalized.smallWin,
-          baseWeight: this.clampPercent(normalized.smallWin.baseWeight * 100),
-          slots: normalized.smallWin.slots.map((slot) => this.createEditorSlot(slot))
-        },
-        repeat: {
-          ...normalized.repeat,
-          baseWeight: this.clampPercent(normalized.repeat.baseWeight * 100)
-        },
-        noWin: {
-          ...normalized.noWin,
-          baseWeight: this.clampPercent(normalized.noWin.baseWeight * 100)
-        },
-        lastResetDate: normalized.lastResetDate
-      };
+      OUTCOME_KEYS.forEach((key) => {
+        const meta = OUTCOME_LOGIC[key];
+        const src = normalized[key] || {};
+        config[key] = {
+          ...src,
+          baseWeight: this.clampPercent((Number(src.baseWeight) || 0) * 100)
+        };
+        if (meta.hasSlots) {
+          config[key].slots = (src.slots || []).map((slot) => this.createEditorSlot(slot));
+        }
+      });
+
+      return config;
     },
     toPersistedConfig(value) {
       const source = value && typeof value === "object" ? value : DEFAULT_WIN_DISTRIBUTION();
-      return normalizeWinDistribution({
-        totalSectors: source.totalSectors,
-        mainWin: {
-          ...source.mainWin,
-          baseWeight: this.clampPercent(source.mainWin?.baseWeight) / 100,
-          slots: (source.mainWin?.slots || []).map((slot) => ({
+      const payload = { totalSectors: source.totalSectors, lastResetDate: source.lastResetDate || "" };
+
+      OUTCOME_KEYS.forEach((key) => {
+        const meta = OUTCOME_LOGIC[key];
+        const src = source[key] || {};
+        payload[key] = {
+          ...src,
+          baseWeight: this.clampPercent(src.baseWeight) / 100
+        };
+        if (meta.hasSlots) {
+          payload[key].slots = (src.slots || []).map((slot) => ({
             startTime: slot.startTime,
             endTime: slot.endTime,
             limit: Math.max(0, Number(slot.limit) || 0),
             given: Math.max(0, Number(slot.given) || 0),
             weight: this.clampPercent(slot.weight) / 100
-          }))
-        },
-        smallWin: {
-          ...source.smallWin,
-          baseWeight: this.clampPercent(source.smallWin?.baseWeight) / 100,
-          slots: (source.smallWin?.slots || []).map((slot) => ({
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            limit: Math.max(0, Number(slot.limit) || 0),
-            given: Math.max(0, Number(slot.given) || 0),
-            weight: this.clampPercent(slot.weight) / 100
-          }))
-        },
-        repeat: {
-          ...source.repeat,
-          baseWeight: this.clampPercent(source.repeat?.baseWeight) / 100
-        },
-        noWin: {
-          ...source.noWin,
-          baseWeight: this.clampPercent(source.noWin?.baseWeight) / 100
-        },
-        lastResetDate: source.lastResetDate || ""
+          }));
+        }
       });
+
+      return normalizeWinDistribution(payload);
     },
     applyConfigChange() {
       if (!this.validate()) {
@@ -657,6 +649,35 @@ export default {
         this.applyConfigChange();
       });
     },
+    toggleOutcome(key) {
+      this.expandedOutcome = this.expandedOutcome === key ? null : key;
+    },
+    openSlotModal(outcomeKey) {
+      this.activeSlotOutcome = outcomeKey;
+    },
+    closeSlotModal() {
+      this.activeSlotOutcome = null;
+    },
+    onSlotModalSave(slots) {
+      const key = this.activeSlotOutcome;
+      if (!key) return;
+
+      const currentOutcome = this.localConfig[key];
+      const oldSlotGivenTotal = (currentOutcome.slots || []).reduce((sum, s) => sum + (Number(s.given) || 0), 0);
+      const newSlotGivenTotal = slots.reduce((sum, s) => sum + (Number(s.given) || 0), 0);
+      const givenDiff = newSlotGivenTotal - oldSlotGivenTotal;
+
+      this.replaceOutcomeConfig(key, {
+        givenToday: Math.max(0, (Number(currentOutcome.givenToday) || 0) + givenDiff),
+        slots
+      });
+
+      this.activeSlotOutcome = null;
+
+      this.$nextTick(() => {
+        this.applyConfigChange();
+      });
+    },
     validateSectorCounts() {
       if (this.localConfig.totalSectors < 1) {
         this.errors.totalSectors = "Total sectors must be at least 1.";
@@ -664,7 +685,7 @@ export default {
       }
 
       this.errors.totalSectors = "";
-      const assigned = OUTCOME_KEYS.reduce((sum, key) => sum + (Number(this.localConfig[key].sectorCount) || 0), 0);
+      const assigned = this.activeOutcomeKeys.reduce((sum, key) => sum + (Number(this.localConfig[key].sectorCount) || 0), 0);
 
       if (assigned !== this.localConfig.totalSectors) {
         this.errors.sectorCounts = `Sector counts must add up to ${this.localConfig.totalSectors}. Current total: ${assigned}.`;
@@ -678,30 +699,37 @@ export default {
       const outcome = this.localConfig[outcomeKey];
       this.errors.timelineBudget = "";
 
+      if (!outcome || !this.activeOutcomeKeys.includes(outcomeKey)) {
+        this.errors[outcomeKey] = "";
+        return true;
+      }
+
       if (Number(outcome.baseWeight) < 0 || Number(outcome.baseWeight) > 100) {
-        this.errors[outcomeKey] = `${OUTCOME_META[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
+        this.errors[outcomeKey] = `${OUTCOME_LOGIC[outcomeKey].hasSlots ? "Slot" : "Global"} probability must stay between 0% and 100%.`;
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasDailyLimit && Number(outcome.dailyLimit) < 0) {
+      if (OUTCOME_LOGIC[outcomeKey].hasDailyLimit && Number(outcome.dailyLimit) < 0) {
         this.errors[outcomeKey] = "Daily limit cannot be negative.";
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasDailyLimit && Number(outcome.givenToday) > Number(outcome.dailyLimit)) {
+      if (OUTCOME_LOGIC[outcomeKey].hasDailyLimit && Number(outcome.givenToday) > Number(outcome.dailyLimit)) {
         this.errors[outcomeKey] = "Given today cannot be greater than the daily limit.";
         return false;
       }
 
-      if (OUTCOME_META[outcomeKey].hasSlots) {
+      if (OUTCOME_LOGIC[outcomeKey].hasSlots) {
         const invalidSlot = outcome.slots.find((slot) => {
           const start = this.timeToMinutes(slot.startTime);
           const end = this.timeToMinutes(slot.endTime);
-          return !slot.startTime || !slot.endTime || start >= end || Number(slot.weight) > 100;
+          return !slot.startTime || !slot.endTime || start >= end || (!this.isAmountPerTime(outcomeKey) && Number(slot.weight) > 100);
         });
 
         if (invalidSlot) {
-          this.errors[outcomeKey] = "Each time range needs a valid start/end and probability between 0% and 100%.";
+          this.errors[outcomeKey] = this.isAmountPerTime(outcomeKey)
+            ? "Each time range needs a valid start/end."
+            : "Each time range needs a valid start/end and probability between 0% and 100%.";
           return false;
         }
 
@@ -737,23 +765,19 @@ export default {
       return true;
     },
     validateTimelinePrizeCap() {
-      const ranges = [
-        ...this.localConfig.mainWin.slots.map((slot) => ({
+      const percentageSlotKeys = this.slotKeys.filter((key) => !this.isAmountPerTime(key));
+      const ranges = percentageSlotKeys.flatMap((key) =>
+        (this.localConfig[key]?.slots || []).map((slot) => ({
           start: this.timeToMinutes(slot.startTime),
           end: this.timeToMinutes(slot.endTime),
           weight: Number(slot.weight) || 0,
-          key: "mainWin"
-        })),
-        ...this.localConfig.smallWin.slots.map((slot) => ({
-          start: this.timeToMinutes(slot.startTime),
-          end: this.timeToMinutes(slot.endTime),
-          weight: Number(slot.weight) || 0,
-          key: "smallWin"
+          key
         }))
-      ];
+      );
 
-      if (this.fallbackSplitTotal !== 100) {
-        return `Repeat and No win must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
+      if (Math.abs(this.fallbackSplitTotal - 100) > 0.01) {
+        const fallbackLabel = this.fallbackKeys.map((k) => OUTCOME_THEME[k]?.label || k).join(" + ");
+        return `${fallbackLabel} must total exactly 100% (current: ${this.fallbackSplitTotal.toFixed(2)}%).`;
       }
 
       if (!ranges.length) {
@@ -764,12 +788,10 @@ export default {
 
       for (let index = 0; index < boundaries.length - 1; index += 1) {
         const sample = boundaries[index] + ((boundaries[index + 1] - boundaries[index]) / 2);
-        const mainWeight = this.findSlotWeightAt("mainWin", sample);
-        const smallWeight = this.findSlotWeightAt("smallWin", sample);
-        const total = mainWeight + smallWeight;
+        const total = percentageSlotKeys.reduce((sum, key) => sum + this.findSlotWeightAt(key, sample), 0);
 
         if (total > 100.001) {
-          return `Main win + Small win exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
+          return `Slot probabilities exceed 100% combined (${total.toFixed(2)}%) in the same time range. Reduce one of them.`;
         }
       }
 
@@ -786,7 +808,7 @@ export default {
     },
     validate() {
       const sectorsOk = this.validateSectorCounts();
-      const outcomesOk = OUTCOME_KEYS.every((key) => this.validateOutcome(key));
+      const outcomesOk = this.activeOutcomeKeys.every((key) => this.validateOutcome(key));
       return sectorsOk && outcomesOk;
     },
     getConfig() {
@@ -859,13 +881,13 @@ export default {
 .outcome-eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.66rem;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .block-title {
   margin: 0;
   font-size: 1.15rem;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .total-field,
@@ -878,25 +900,21 @@ export default {
 .field-label,
 .slot-label {
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.6);
-}
-
-.slot-label {
-  display: none;
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .number-input,
 .slot-input {
   width: 100%;
   min-width: 0;
-  border: 1px solid rgba(122, 151, 131, 0.18);
+  border: 1px solid rgba(var(--rgb-border), 0.18);
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(var(--rgb-panel), 0.94);
   padding: 0.7rem 0.8rem;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1d2b22;
+  color: var(--color-text);
   font-variant-numeric: tabular-nums;
   outline: none;
 }
@@ -906,130 +924,60 @@ export default {
 }
 
 .total-field--error .number-input {
-  border-color: #b92d22;
+  border-color: var(--color-accent-dark);
 }
 
 .config-error {
   margin: 0;
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-size: 0.78rem;
   font-weight: 600;
 }
 
-.probability-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 251, 243, 0.92);
-  border: 1px solid rgba(205, 174, 104, 0.24);
-}
-
-.probability-summary--error {
-  border-color: rgba(185, 45, 34, 0.28);
-  background: rgba(255, 243, 241, 0.96);
-}
-
-.probability-summary__eyebrow {
-  margin: 0 0 0.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-weight: 800;
-  font-size: 0.62rem;
-  color: #1f5a3f;
-}
-
-.probability-summary h5 {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #1d2b22;
-}
-
-.probability-summary strong {
-  font-size: 1.1rem;
-  color: #b92d22;
-  font-variant-numeric: tabular-nums;
-}
-
-.probability-summary__total--ok {
-  color: #1f5a3f;
-}
-
-.probability-summary__copy {
-  margin: -0.35rem 0 0;
-  color: rgba(29, 43, 34, 0.66);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.outcome-grid {
+.logic-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
-.outcome-card {
+.logic-summary__item {
   display: flex;
   flex-direction: column;
-  gap: 0.95rem;
-  padding: 1rem 1rem 1rem 1.1rem;
-  border-radius: 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(247, 250, 245, 0.94) 100%);
-  border: 1px solid rgba(122, 151, 131, 0.14);
-  border-left-width: 3px;
+  gap: 0.35rem;
   min-width: 0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(var(--rgb-border), 0.14);
+  background: rgba(var(--rgb-card), 0.86);
 }
 
-.outcome-card--full {
-  grid-column: 1 / -1;
+.logic-summary__item--amount {
+  border-color: rgba(var(--rgb-gold-line), 0.24);
 }
 
-.outcome-card__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+.logic-summary__item--probability {
+  border-color: rgba(var(--rgb-primary), 0.18);
 }
 
-.outcome-card__title {
-  display: flex;
-  gap: 0.7rem;
-  min-width: 0;
+.logic-summary__label {
+  color: rgba(var(--rgb-muted), 0.62);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.outcome-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 999px;
-  margin-top: 0.45rem;
-  flex-shrink: 0;
+.logic-summary__item strong {
+  color: var(--color-primary);
+  font-size: 0.96rem;
+  line-height: 1.25;
 }
 
-.outcome-name {
+.logic-summary__item p {
   margin: 0;
-  font-size: 1rem;
-  color: #1d2b22;
-}
-
-.outcome-preview {
-  white-space: nowrap;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #1f5a3f;
-}
-
-.outcome-description {
-  margin: 0;
-  color: rgba(29, 43, 34, 0.62);
+  color: rgba(var(--rgb-text), 0.64);
+  font-size: 0.8rem;
   line-height: 1.45;
-  font-size: 0.84rem;
-}
-
-.outcome-fields {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
 }
 
 .field-group--readonly {
@@ -1040,8 +988,8 @@ export default {
   display: block;
   padding: 0.7rem 0.8rem;
   border-radius: 0.75rem;
-  background: rgba(255, 251, 243, 0.92);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-card), 0.92);
+  color: var(--color-primary);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1056,38 +1004,38 @@ export default {
   gap: 0.4rem;
   padding: 0.65rem 0.8rem;
   border-radius: 0.75rem;
-  background: rgba(255, 251, 243, 0.92);
+  background: rgba(var(--rgb-card), 0.92);
 }
 
 .given-today__count {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .given-today__limit {
   font-size: 0.8em;
   font-weight: 400;
-  color: rgba(29, 43, 34, 0.45);
+  color: rgba(var(--rgb-text), 0.45);
 }
 
 .given-bar {
   height: 4px;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.12);
+  background: rgba(var(--rgb-primary), 0.12);
   overflow: hidden;
 }
 
 .given-bar__fill {
   height: 100%;
   border-radius: 999px;
-  background: #1f5a3f;
+  background: var(--color-primary);
   transition: width 0.35s ease;
 }
 
 .given-bar__fill--full {
-  background: #b92d22;
+  background: var(--color-accent-dark);
 }
 
 .fallback-split {
@@ -1096,13 +1044,13 @@ export default {
   gap: 0.6rem;
   padding: 1rem 1.1rem;
   border-radius: 1rem;
-  background: rgba(255, 251, 243, 0.92);
-  border: 1px solid rgba(205, 174, 104, 0.24);
+  background: rgba(var(--rgb-card), 0.92);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
 }
 
 .fallback-split--error {
-  border-color: rgba(185, 45, 34, 0.32);
-  background: rgba(255, 243, 241, 0.96);
+  border-color: rgba(var(--rgb-danger), 0.32);
+  background: rgba(var(--rgb-card), 0.96);
 }
 
 .fallback-split__header {
@@ -1125,24 +1073,24 @@ export default {
   letter-spacing: 0.14em;
   font-weight: 800;
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.6);
+  color: rgba(var(--rgb-muted), 0.6);
 }
 
 .fallback-split__total-value--ok {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
 .fallback-split__total-value--error {
-  color: #b92d22;
+  color: var(--color-accent-dark);
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
 .fallback-split__copy {
   margin: 0;
-  color: rgba(29, 43, 34, 0.7);
+  color: rgba(var(--rgb-text), 0.7);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -1152,7 +1100,7 @@ export default {
   flex-direction: column;
   gap: 0.85rem;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(122, 151, 131, 0.12);
+  border-top: 1px solid rgba(var(--rgb-border), 0.12);
 }
 
 .timeline-section__header {
@@ -1166,7 +1114,14 @@ export default {
 .probability-summary__sub {
   margin: 0;
   font-size: 0.75rem;
-  color: rgba(29, 43, 34, 0.55);
+  color: rgba(var(--rgb-text), 0.55);
+}
+
+.probability-summary__copy {
+  margin: 0;
+  color: rgba(var(--rgb-text), 0.66);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 /* Probability timeline table */
@@ -1175,7 +1130,7 @@ export default {
   flex-direction: column;
   border-radius: 1rem;
   overflow: hidden;
-  border: 1px solid rgba(122, 151, 131, 0.16);
+  border: 1px solid rgba(var(--rgb-border), 0.16);
 }
 
 .timeline-header,
@@ -1188,26 +1143,26 @@ export default {
 }
 
 .timeline-header {
-  background: rgba(31, 90, 63, 0.07);
+  background: rgba(var(--rgb-primary), 0.07);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 800;
   font-size: 0.58rem;
-  color: rgba(49, 88, 70, 0.65);
+  color: rgba(var(--rgb-muted), 0.65);
 }
 
 .timeline-row {
-  background: rgba(255, 255, 255, 0.72);
-  border-top: 1px solid rgba(122, 151, 131, 0.1);
+  background: rgba(var(--rgb-panel), 0.72);
+  border-top: 1px solid rgba(var(--rgb-border), 0.1);
   font-size: 0.85rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .timeline-row--active {
-  background: rgba(31, 90, 63, 0.06);
-  border-left: 3px solid #1f5a3f;
+  background: rgba(var(--rgb-primary), 0.06);
+  border-left: 3px solid var(--color-primary);
 }
 
 .timeline-label {
@@ -1221,8 +1176,8 @@ export default {
   display: inline-block;
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  background: #1f5a3f;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-white);
   font-size: 0.52rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1230,26 +1185,21 @@ export default {
 }
 
 .timeline-val--win {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .timeline-val--zero {
-  color: rgba(29, 43, 34, 0.35);
+  color: rgba(var(--rgb-text), 0.35);
 }
 
-/* Slot active badge and row highlight */
-.slot-row--active {
-  border-color: rgba(31, 90, 63, 0.35);
-  background: rgba(31, 90, 63, 0.04);
-}
-
+/* Slot active badge */
 .slot-active-badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.12);
-  color: #1f5a3f;
+  background: rgba(var(--rgb-primary), 0.12);
+  color: var(--color-primary);
   font-size: 0.55rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -1260,165 +1210,245 @@ export default {
 .effective-range {
   margin: 0.15rem 0 0;
   font-size: 0.75rem;
-  color: rgba(29, 43, 34, 0.58);
+  color: rgba(var(--rgb-text), 0.58);
   font-variant-numeric: tabular-nums;
-}
-
-.slots-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.7rem;
-}
-
-.slots-help {
-  margin: -0.2rem 0 0;
-  color: rgba(29, 43, 34, 0.62);
-  font-size: 0.8rem;
-  line-height: 1.45;
-}
-
-.slots-help--warn {
-  color: #b92d22;
-  font-weight: 600;
-}
-
-.slots-header,
-.slot-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(7.5rem, 0.85fr) minmax(6.5rem, 0.75fr) minmax(5.5rem, 0.85fr) minmax(7.25rem, 0.9fr);
-  gap: 0.7rem;
-  align-items: end;
-}
-
-.slots-header {
-  padding: 0 0.25rem;
-  color: rgba(49, 88, 70, 0.58);
-  font-size: 0.58rem;
-}
-
-.slot-row {
-  padding: 0.85rem;
-  border-radius: 0.95rem;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(122, 151, 131, 0.14);
-}
-
-.slot-field {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.slot-given {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem;
-  padding-bottom: 0.4rem;
-}
-
-.slot-given strong {
-  color: #1f5a3f;
-  font-variant-numeric: tabular-nums;
-}
-
-.slot-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.slot-reset,
-.slot-remove {
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.slot-reset {
-  min-height: 2rem;
-  padding: 0.45rem 0.8rem;
-  background: rgba(31, 90, 63, 0.08);
-  color: #1f5a3f;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.slot-reset:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.slot-remove {
-  align-self: center;
-  width: 2rem;
-  height: 2rem;
-  background: rgba(185, 45, 34, 0.08);
-  color: #b92d22;
-  font-size: 1.15rem;
-  cursor: pointer;
-}
-
-.slot-label--mobile {
-  display: none;
 }
 
 .empty-slots {
   padding: 0.85rem 0.95rem;
   border-radius: 0.85rem;
-  background: rgba(255, 251, 243, 0.8);
-  border: 1px dashed rgba(122, 151, 131, 0.2);
-  color: rgba(29, 43, 34, 0.58);
+  background: rgba(var(--rgb-card), 0.8);
+  border: 1px dashed rgba(var(--rgb-border), 0.2);
+  color: rgba(var(--rgb-text), 0.58);
   font-size: 0.82rem;
 }
 
-.add-slot-btn {
-  align-self: flex-start;
-  border: 1px dashed rgba(122, 151, 131, 0.35);
-  background: rgba(255, 255, 255, 0.92);
-  color: #1f5a3f;
-  border-radius: 0.7rem;
-  padding: 0.6rem 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
+/* ── Accordion win-row-list ── */
+.win-row-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-@media (max-width: 1100px) {
-  .outcome-grid {
-    grid-template-columns: 1fr;
-  }
+.win-row {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--rgb-border), 0.16);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.82) 0%, rgba(var(--rgb-panel-soft), 0.94) 100%);
+}
+
+.win-row--expanded {
+  border-color: rgba(var(--rgb-gold-line), 0.3);
+}
+
+.win-row__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: background 0.15s ease;
+}
+
+.win-row__head:hover {
+  background: rgba(var(--rgb-card), 0.5);
+}
+
+.win-row--expanded .win-row__head {
+  background: rgba(var(--rgb-card), 0.6);
+  border-bottom: 1px solid rgba(var(--rgb-border), 0.12);
+}
+
+.win-row__swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.win-row__label {
+  flex: 1;
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: 0.96rem;
+  min-width: 0;
+}
+
+.win-row__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.win-row__badge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(var(--rgb-primary), 0.08);
+  color: rgba(var(--rgb-primary), 0.85);
+  border: 1px solid rgba(var(--rgb-primary), 0.12);
+}
+
+.win-row__badge--type {
+  background: rgba(var(--rgb-gold-line), 0.12);
+  color: rgba(var(--rgb-text-strong), 0.72);
+  border-color: rgba(var(--rgb-gold-line), 0.2);
+}
+
+.win-row__chevron {
+  font-size: 0.7rem;
+  color: rgba(var(--rgb-text-strong), 0.5);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+}
+
+.win-row__body {
+  padding: 1rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.win-row__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+/* ── Slots summary inside accordion ── */
+.win-row__slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(var(--rgb-border), 0.12);
+}
+
+.win-row__slots-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.win-row__slots-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+  font-size: 0.64rem;
+  color: var(--color-primary);
+}
+
+.edit-slots-btn {
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(var(--rgb-primary), 0.18);
+  background: rgba(var(--rgb-card), 0.92);
+  color: var(--color-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.win-row__slot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.win-row__slot-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.65rem;
+  background: rgba(var(--rgb-panel), 0.8);
+  border: 1px solid rgba(var(--rgb-border), 0.12);
+  font-size: 0.88rem;
+}
+
+.win-row__slot-item--active {
+  border-color: rgba(var(--rgb-primary), 0.28);
+  background: rgba(var(--rgb-primary), 0.04);
+}
+
+.win-row__slot-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  min-width: 9rem;
+}
+
+.win-row__slot-progress {
+  color: rgba(var(--rgb-text-strong), 0.65);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+}
+
+.win-row__slot-sep {
+  color: rgba(var(--rgb-text-strong), 0.35);
+  margin: 0 0.1rem;
+}
+
+/* ── Group labels ── */
+.win-group-label {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.25rem 0.2rem;
+}
+
+.win-group-label--sep {
+  margin-top: 0.35rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(var(--rgb-border), 0.14);
+}
+
+.win-group-label__icon {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+
+.win-group-label__text {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: rgba(var(--rgb-muted), 0.65);
 }
 
 @media (max-width: 760px) {
-  .outcome-fields {
+  .logic-summary {
     grid-template-columns: 1fr;
   }
 
-  .slots-header {
+  .win-row__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .win-row__badges {
     display: none;
-  }
-
-  .slot-label {
-    display: inline;
-  }
-
-  .slot-row {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .slot-label--mobile {
-    display: inline;
-  }
-
-  .slot-given,
-  .slot-actions {
-    align-self: start;
-    justify-self: start;
   }
 }
 </style>

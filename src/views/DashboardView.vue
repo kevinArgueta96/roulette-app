@@ -8,11 +8,10 @@
       @change="onImportFile"
     />
 
-    <section class="dashboard-toolbar panel">
+    <header class="dashboard-toolbar panel">
       <div class="toolbar-copy">
         <p class="toolbar-eyebrow">Control panel</p>
         <h2>Dashboard</h2>
-        <p>Manage daily limits, hourly distribution, and the active data source for the roulette.</p>
       </div>
 
       <div class="toolbar-actions">
@@ -73,87 +72,72 @@
           </div>
         </div>
       </div>
+    </header>
+
+    <section class="stat-row">
+      <article
+        v-for="stat in dashboardStats"
+        :key="stat.key"
+        class="stat-card"
+        :class="{ 'stat-card--highlight': stat.highlight, 'stat-card--track': stat.progress !== null }"
+      >
+        <p class="stat-card__label">{{ stat.label }}</p>
+        <strong>
+          {{ stat.value }}
+          <span v-if="stat.limit !== null" class="stat-limit">/ {{ stat.limit }}</span>
+        </strong>
+        <div
+          v-if="stat.progress !== null"
+          class="stat-bar"
+          role="progressbar"
+          :aria-valuenow="stat.value"
+          :aria-valuemax="stat.limit"
+        >
+          <div class="stat-bar__fill" :style="{ width: stat.progress + '%' }" :class="stat.progress >= 100 ? 'stat-bar__fill--full' : ''"></div>
+        </div>
+      </article>
     </section>
 
-    <section class="dashboard-layout">
-      <div class="dashboard-top-grid">
-        <section class="panel summary-panel panel--overview">
-          <div class="summary-panel__header">
+    <section class="dashboard-main-grid">
+      <div class="dashboard-main-left">
+        <div class="panel panel--rules">
+          <div class="panel-heading">
             <div>
-              <p class="panel-eyebrow">Overview</p>
-              <h3>Current status</h3>
+              <p class="panel-eyebrow">Win Rules</p>
+              <h3>Distribution by category</h3>
             </div>
-            <span class="source-badge" :class="`source-badge--${dataSource}`">
-              {{ dataSource === "local" ? "Local JSON" : "Firebase" }}
-            </span>
           </div>
+          <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
+        </div>
+      </div>
 
-          <div class="stats-grid">
-            <article class="stat-card stat-card--track">
-              <p class="stat-card__label">Main wins today</p>
-              <strong>{{ mainWinsToday }} <span class="stat-limit">/ {{ mainWinsLimit }}</span></strong>
-              <div class="stat-bar" role="progressbar" :aria-valuenow="mainWinsToday" :aria-valuemax="mainWinsLimit">
-                <div class="stat-bar__fill" :style="{ width: mainWinsProgress + '%' }" :class="mainWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
-              </div>
-            </article>
-            <article class="stat-card stat-card--highlight stat-card--track">
-              <p class="stat-card__label">Small wins today</p>
-              <strong>{{ smallWinsToday }} <span class="stat-limit">/ {{ smallWinsLimit }}</span></strong>
-              <div class="stat-bar" role="progressbar" :aria-valuenow="smallWinsToday" :aria-valuemax="smallWinsLimit">
-                <div class="stat-bar__fill" :style="{ width: smallWinsProgress + '%' }" :class="smallWinsProgress >= 100 ? 'stat-bar__fill--full' : ''"></div>
-              </div>
-            </article>
-            <article class="stat-card stat-card--highlight">
-              <p class="stat-card__label">Total sectors</p>
-              <strong>{{ totalSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">No win sectors</p>
-              <strong>{{ noWinSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Repeat sectors</p>
-              <strong>{{ repeatSectors }}</strong>
-            </article>
-            <article class="stat-card">
-              <p class="stat-card__label">Total spins</p>
-              <strong>{{ totalSpin }}</strong>
-            </article>
-          </div>
-        </section>
-
+      <aside class="dashboard-sidebar">
         <section class="panel side-panel panel--status">
           <div class="panel-heading">
             <div>
-              <p class="panel-eyebrow">Status</p>
-              <h3>Source and pending items</h3>
+              <p class="panel-eyebrow">Live</p>
+              <h3>Active windows now</h3>
             </div>
+            <span class="status-clock">{{ nowLabel }}</span>
           </div>
 
           <div class="status-list">
-            <div class="status-item">
-              <span>Current mode</span>
-              <strong>{{ dataSource === "local" ? "Local" : "Online" }}</strong>
+            <div v-if="activeWindows.length === 0" class="status-item status-item--empty">
+              <span>No outcomes have configured time windows.</span>
             </div>
-            <div class="status-item">
-              <span>Main win sectors</span>
-              <strong>{{ mainWinSectors }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Small win sectors</span>
-              <strong>{{ smallWinSectors }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Main wins remaining</span>
-              <strong>{{ Math.max(0, mainWinsLimit - mainWinsToday) }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Small wins remaining</span>
-              <strong>{{ Math.max(0, smallWinsLimit - smallWinsToday) }}</strong>
-            </div>
-            <div class="status-item">
-              <span>Last daily reset</span>
-              <strong>{{ winDistribution && winDistribution.lastResetDate ? winDistribution.lastResetDate : "—" }}</strong>
+            <div
+              v-for="row in activeWindows"
+              :key="row.key"
+              class="status-item status-item--window"
+            >
+              <div class="status-item__row">
+                <strong>{{ row.label }}</strong>
+                <span class="status-pill" :class="`status-pill--${row.status}`">{{ row.statusLabel }}</span>
+              </div>
+              <div class="status-item__detail">
+                <span class="status-item__window-label">{{ row.slotLabel || "—" }}</span>
+                <span v-if="row.remainingLabel" class="status-item__remaining">{{ row.remainingLabel }}</span>
+              </div>
             </div>
           </div>
         </section>
@@ -170,15 +154,15 @@
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--main"></span>
               <div>
-                <strong>Main win &amp; Small win</strong>
-                <p>Each time window sets its own per-spin probability (100% = always, lower = less frequent).</p>
+                <strong>{{ slotOutcomeLabel }}</strong>
+                <p>Delivered by amount limits inside configured time windows.</p>
               </div>
             </li>
             <li class="mode-item">
               <span class="mode-item__dot mode-item__dot--repeat"></span>
               <div>
-                <strong>Repeat &amp; No win</strong>
-                <p>Always available. Their split automatically fills whatever probability wins don't use — and must total 100% between the two.</p>
+                <strong>{{ fallbackOutcomeLabel }}</strong>
+                <p>Configured by probability percentage. These outcomes split the wheel when timed prizes are inactive or exhausted.</p>
               </div>
             </li>
             <li class="mode-item">
@@ -190,18 +174,7 @@
             </li>
           </ul>
         </section>
-      </div>
-
-      <section class="panel totals-panel panel--totals">
-        <div class="panel-heading">
-          <div>
-            <p class="panel-eyebrow">Win Rules</p>
-            <h3>Distribution by category</h3>
-          </div>
-          <p class="panel-copy">Set daily limits per category and distribute wins across hourly slots.</p>
-        </div>
-        <DashboardWinConfig ref="winConfig" @config-change="onWinConfigChange" />
-      </section>
+      </aside>
     </section>
 
     <transition name="save-bar">
@@ -227,54 +200,48 @@
     </transition>
 
     <div v-if="showResetLocalModal" class="modal-overlay" @click.self="closeResetLocalModal">
-        <section
-          class="modal-card"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-counters-title"
-          aria-describedby="reset-counters-copy"
-        >
-          <p class="panel-eyebrow">Confirm action</p>
-          <h3 id="reset-counters-title">Reset counters?</h3>
-          <p id="reset-counters-copy" class="modal-copy">
-            This will reset all daily and slot delivery counts to 0. The configured hourly slots and limits will be kept.
-          </p>
-
-          <div class="modal-actions">
-            <button class="ghost-btn" type="button" @click="closeResetLocalModal">
-              Cancel
-            </button>
-            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetCounters">
-              {{ isRefreshing ? "Resetting..." : "Reset counters" }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <section
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-counters-title"
+        aria-describedby="reset-counters-copy"
+      >
+        <p class="panel-eyebrow">Confirm action</p>
+        <h3 id="reset-counters-title">Reset counters?</h3>
+        <p id="reset-counters-copy" class="modal-copy">
+          This will reset all daily and slot delivery counts to 0. The configured hourly slots and limits will be kept.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" @click="closeResetLocalModal">Cancel</button>
+          <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmResetCounters">
+            {{ isRefreshing ? "Resetting..." : "Reset counters" }}
+          </button>
+        </div>
+      </section>
+    </div>
 
     <div v-if="showRestoreDefaultsModal" class="modal-overlay" @click.self="closeRestoreDefaultsModal">
-        <section
-          class="modal-card"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="restore-defaults-title"
-          aria-describedby="restore-defaults-copy"
-        >
-          <p class="panel-eyebrow">Confirm action</p>
-          <h3 id="restore-defaults-title">Restore factory defaults?</h3>
-          <p id="restore-defaults-copy" class="modal-copy">
-            This will permanently erase ALL hourly slots, daily limits, and counters. The configured schedule (12:00–12:15, 13:00–13:15…) will be lost.
-          </p>
-
-          <div class="modal-actions">
-            <button class="ghost-btn" type="button" @click="closeRestoreDefaultsModal">
-              Cancel
-            </button>
-            <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmRestoreDefaults">
-              {{ isRefreshing ? "Restoring..." : "Yes, wipe everything" }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <section
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restore-defaults-title"
+        aria-describedby="restore-defaults-copy"
+      >
+        <p class="panel-eyebrow">Confirm action</p>
+        <h3 id="restore-defaults-title">Restore factory defaults?</h3>
+        <p id="restore-defaults-copy" class="modal-copy">
+          This will permanently erase ALL hourly slots, daily limits, and counters. The configured schedule (12:00–12:15, 13:00–13:15…) will be lost.
+        </p>
+        <div class="modal-actions">
+          <button class="ghost-btn" type="button" @click="closeRestoreDefaultsModal">Cancel</button>
+          <button class="ghost-btn ghost-btn--danger" type="button" :disabled="isRefreshing" @click="confirmRestoreDefaults">
+            {{ isRefreshing ? "Restoring..." : "Yes, wipe everything" }}
+          </button>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -282,6 +249,7 @@
 import { mapGetters, mapActions } from "vuex";
 import service from "@/services/totals.service";
 import DashboardWinConfig from "@/components/DashboardWinConfig.vue";
+import { OUTCOME_KEYS, OUTCOME_LOGIC, OUTCOME_THEME } from "@/themes";
 import { DEFAULT_WIN_DISTRIBUTION } from "@/utils";
 
 const FIREBASE_FIELD_MAP = {
@@ -290,6 +258,8 @@ const FIREBASE_FIELD_MAP = {
   totalSpecialSurprise: "totalSpecialSurprice",
   totalTopPrice: "totalTopPrice",
   totalGiftCard: "totalGitfCard",
+  totalGiftCard3m: "totalGiftCard3m",
+  totalGiftCard1m: "totalGiftCard1m",
   totalSpin: "totalSpin"
 };
 
@@ -306,7 +276,9 @@ export default {
       showResetLocalModal: false,
       showRestoreDefaultsModal: false,
       hasUnsavedChanges: false,
-      toast: { visible: false, type: "success", message: "" }
+      toast: { visible: false, type: "success", message: "" },
+      nowMinutes: 0,
+      nowTickTimer: null
     };
   },
   computed: {
@@ -318,42 +290,132 @@ export default {
       "totalSpecialSurprise",
       "totalTopPrice",
       "totalGiftCard",
+      "totalGiftCard3m",
+      "totalGiftCard1m",
       "totalSpin"
     ]),
-    mainWinsToday() {
-      return this.winDistribution?.mainWin?.givenToday ?? 0;
+    visibleOutcomeKeys() {
+      return OUTCOME_KEYS.filter((key) => (Number(this.winDistribution?.[key]?.sectorCount) || 0) > 0);
     },
-    mainWinsLimit() {
-      return this.winDistribution?.mainWin?.dailyLimit ?? 0;
+    slotOutcomeLabel() {
+      const labels = this.visibleOutcomeKeys
+        .filter((key) => OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => OUTCOME_THEME[key]?.label || key)
+        .join(" & ");
+
+      return labels || "Timed outcomes";
     },
-    smallWinsToday() {
-      return this.winDistribution?.smallWin?.givenToday ?? 0;
+    fallbackOutcomeLabel() {
+      const labels = this.visibleOutcomeKeys
+        .filter((key) => !OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => OUTCOME_THEME[key]?.label || key)
+        .join(" & ");
+
+      return labels || "Probability outcomes";
     },
-    smallWinsLimit() {
-      return this.winDistribution?.smallWin?.dailyLimit ?? 0;
+    dashboardStats() {
+      const tracked = this.visibleOutcomeKeys
+        .filter((key) => OUTCOME_LOGIC[key]?.hasDailyLimit)
+        .slice(0, 2)
+        .map((key, index) => {
+          const current = Number(this.winDistribution?.[key]?.givenToday) || 0;
+          const limit = Number(this.winDistribution?.[key]?.dailyLimit) || 0;
+          return {
+            key,
+            label: `${OUTCOME_THEME[key]?.label || key} today`,
+            value: current,
+            limit,
+            progress: limit ? Math.min(100, (current / limit) * 100) : 0,
+            highlight: index === 0
+          };
+        });
+
+      const probabilityTotalsMap = {
+        surpriseWin: this.totalSpecialSurprise,
+        repeat: this.totalReplay
+      };
+
+      const probabilityCards = this.visibleOutcomeKeys
+        .filter((key) => !OUTCOME_LOGIC[key]?.hasDailyLimit && probabilityTotalsMap[key] !== undefined)
+        .map((key) => ({
+          key,
+          label: `${OUTCOME_THEME[key]?.label || key} total`,
+          value: probabilityTotalsMap[key] || 0,
+          limit: null,
+          progress: null,
+          highlight: false
+        }));
+
+      return [
+        ...tracked,
+        ...probabilityCards,
+        { key: "totalSpin", label: "Total spins", value: this.totalSpin, limit: null, progress: null, highlight: false },
+        { key: "totalSectors", label: "Total sectors", value: this.winDistribution?.totalSectors ?? 0, limit: null, progress: null, highlight: false }
+      ];
     },
-    totalSectors() {
-      return this.winDistribution?.totalSectors ?? 0;
+    nowLabel() {
+      const h = String(Math.floor(this.nowMinutes / 60)).padStart(2, "0");
+      const m = String(this.nowMinutes % 60).padStart(2, "0");
+      return `${h}:${m}`;
     },
-    mainWinSectors() {
-      return this.winDistribution?.mainWin?.sectorCount ?? 0;
-    },
-    smallWinSectors() {
-      return this.winDistribution?.smallWin?.sectorCount ?? 0;
-    },
-    repeatSectors() {
-      return this.winDistribution?.repeat?.sectorCount ?? 0;
-    },
-    noWinSectors() {
-      return this.winDistribution?.noWin?.sectorCount ?? 0;
-    },
-    mainWinsProgress() {
-      if (!this.mainWinsLimit) return 0;
-      return Math.min(100, (this.mainWinsToday / this.mainWinsLimit) * 100);
-    },
-    smallWinsProgress() {
-      if (!this.smallWinsLimit) return 0;
-      return Math.min(100, (this.smallWinsToday / this.smallWinsLimit) * 100);
+    activeWindows() {
+      const toMin = (t) => {
+        if (!t || typeof t !== "string" || !t.includes(":")) return 0;
+        const [h, m] = t.split(":").map((p) => Number(p) || 0);
+        return h * 60 + m;
+      };
+
+      return OUTCOME_KEYS
+        .filter((key) => OUTCOME_LOGIC[key]?.hasSlots)
+        .map((key) => {
+          const cat = this.winDistribution?.[key];
+          const slots = Array.isArray(cat?.slots) ? cat.slots : [];
+          const label = OUTCOME_THEME[key]?.label || key;
+
+          if (slots.length === 0) {
+            return { key, label, status: "idle", statusLabel: "Not scheduled", slotLabel: "", remainingLabel: "" };
+          }
+
+          const enriched = slots.map((s) => ({
+            ...s,
+            _start: toMin(s.startTime),
+            _end: toMin(s.endTime),
+            _remaining: Math.max(0, (Number(s.limit) || 0) - (Number(s.given) || 0))
+          }));
+
+          const active = enriched.find((s) => this.nowMinutes >= s._start && this.nowMinutes < s._end);
+          if (active) {
+            const depleted = active._remaining === 0;
+            return {
+              key,
+              label,
+              status: depleted ? "depleted" : "active",
+              statusLabel: depleted ? "Depleted" : "Active",
+              slotLabel: `${active.startTime}–${active.endTime}`,
+              remainingLabel: depleted ? "0 left" : `${active._remaining} of ${active.limit} left`
+            };
+          }
+
+          const upcoming = enriched
+            .filter((s) => s._start > this.nowMinutes && s._remaining > 0)
+            .sort((a, b) => a._start - b._start)[0];
+          if (upcoming) {
+            return {
+              key,
+              label,
+              status: "upcoming",
+              statusLabel: "Upcoming",
+              slotLabel: `next at ${upcoming.startTime}`,
+              remainingLabel: ""
+            };
+          }
+
+          const totalRemaining = enriched.reduce((sum, s) => sum + s._remaining, 0);
+          if (totalRemaining === 0) {
+            return { key, label, status: "done", statusLabel: "Done for today", slotLabel: "", remainingLabel: "" };
+          }
+          return { key, label, status: "idle", statusLabel: "Idle", slotLabel: "", remainingLabel: "" };
+        });
     },
     hasLocalSnapshot() {
       return service.hasLocalSnapshot();
@@ -364,9 +426,15 @@ export default {
   },
   mounted() {
     this.dataSource = service.getDataSourceMode();
+    this.tickNow();
+    this.nowTickTimer = window.setInterval(() => this.tickNow(), 60000);
   },
   methods: {
     ...mapActions(["hydrateBootstrapData"]),
+    tickNow() {
+      const d = new Date();
+      this.nowMinutes = d.getHours() * 60 + d.getMinutes();
+    },
     buildFirebaseTotalsPayload() {
       const state = {
         totalReplay: this.totalReplay,
@@ -374,6 +442,8 @@ export default {
         totalSpecialSurprise: this.totalSpecialSurprise,
         totalTopPrice: this.totalTopPrice,
         totalGiftCard: this.totalGiftCard,
+        totalGiftCard3m: this.totalGiftCard3m,
+        totalGiftCard1m: this.totalGiftCard1m,
         totalSpin: this.totalSpin
       };
 
@@ -391,6 +461,8 @@ export default {
           totalSpecialSurprise: this.totalSpecialSurprise,
           totalTopPrice: this.totalTopPrice,
           totalGiftCard: this.totalGiftCard,
+          totalGiftCard3m: this.totalGiftCard3m,
+          totalGiftCard1m: this.totalGiftCard1m,
           totalSpin: this.totalSpin
         },
         winDistribution: this.winDistribution
@@ -405,6 +477,8 @@ export default {
           totalSpecialSurprise: 0,
           totalTopPrice: 0,
           totalGiftCard: 0,
+          totalGiftCard3m: 0,
+          totalGiftCard1m: 0,
           totalSpin: 0
         },
         winDistribution: DEFAULT_WIN_DISTRIBUTION()
@@ -522,20 +596,17 @@ export default {
           this.hydrateBootstrapData({ ...snapshot, errors: [] });
         } else {
           const dist = this.winDistribution;
-          const zeroed = {
-            ...dist,
-            lastResetDate: "",
-            mainWin: {
-              ...dist.mainWin,
-              givenToday: 0,
-              slots: (dist.mainWin?.slots || []).map((s) => ({ ...s, given: 0 }))
-            },
-            smallWin: {
-              ...dist.smallWin,
-              givenToday: 0,
-              slots: (dist.smallWin?.slots || []).map((s) => ({ ...s, given: 0 }))
-            }
-          };
+          const zeroed = { ...dist, lastResetDate: "" };
+          OUTCOME_KEYS.forEach((key) => {
+            const meta = OUTCOME_LOGIC[key];
+            const current = dist[key];
+            if (!current) return;
+            zeroed[key] = {
+              ...current,
+              ...(meta.hasDailyLimit ? { givenToday: 0 } : {}),
+              ...(meta.hasSlots ? { slots: (current.slots || []).map((s) => ({ ...s, given: 0 })) } : {})
+            };
+          });
           const ok = await service.saveWinDistribution(zeroed);
           if (!ok) throw new Error("save-failed");
           this.hydrateBootstrapData({ ...this.buildBootstrapSnapshot(), winDistribution: zeroed, errors: [] });
@@ -591,7 +662,7 @@ export default {
       link.download = "roulette-win-rules-v4.json";
       link.click();
       window.URL.revokeObjectURL(url);
-        this.showToast("success", "Win rules JSON exported.");
+      this.showToast("success", "Win rules JSON exported.");
     },
     async discardChanges() {
       this.hasUnsavedChanges = false;
@@ -605,6 +676,10 @@ export default {
   beforeDestroy() {
     if (this._toastTimer) {
       clearTimeout(this._toastTimer);
+    }
+    if (this.nowTickTimer) {
+      window.clearInterval(this.nowTickTimer);
+      this.nowTickTimer = null;
     }
   }
 };
@@ -629,143 +704,78 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  padding: 1.2rem 0.65rem 1.6rem;
-  font-family: "Jost", sans-serif;
+  padding: 0 0.65rem 1.6rem;
+  font-family: var(--font-body), sans-serif;
   font-weight: 400;
   line-height: 1.35;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+/* ── Sticky toolbar ── */
+.dashboard-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: rgba(18, 23, 20, 0.48);
-  backdrop-filter: blur(6px);
-}
-
-.modal-card {
-  width: min(100%, 28rem);
-  border-radius: 1.25rem;
-  padding: 1.35rem;
-  background: rgba(255, 251, 244, 0.98);
-  border: 1px solid rgba(205, 174, 104, 0.24);
-  box-shadow: 0 22px 42px rgba(20, 25, 22, 0.2);
-}
-
-.modal-card h3 {
-  margin: 0;
-  color: #1f2b22;
-  font-size: 1.3rem;
-}
-
-.modal-copy {
-  margin: 0.65rem 0 0;
-  color: rgba(31, 43, 34, 0.72);
-  line-height: 1.5;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.2rem;
-}
-
-.ghost-btn--disabled {
-  opacity: 0.58;
-}
-
-.panel {
-  border-radius: 1.25rem;
-  background: rgba(255, 250, 240, 0.96);
-  border: 1px solid rgba(205, 174, 104, 0.22);
-  box-shadow: 0 16px 34px rgba(37, 46, 34, 0.08);
-}
-
-.panel--overview {
-  background: linear-gradient(180deg, rgba(255, 251, 244, 0.98) 0%, rgba(250, 243, 230, 0.96) 100%);
-}
-
-.panel--totals {
-  background: linear-gradient(180deg, rgba(252, 253, 250, 0.98) 0%, rgba(245, 248, 242, 0.96) 100%);
-}
-
-.panel--status {
-  background: linear-gradient(180deg, rgba(250, 252, 248, 0.98) 0%, rgba(241, 247, 239, 0.96) 100%);
-}
-
-.panel--workflow {
-  background: linear-gradient(180deg, rgba(251, 246, 233, 0.98) 0%, rgba(245, 236, 214, 0.96) 100%);
-}
-
-.panel--schedules {
-  background: linear-gradient(180deg, rgba(249, 252, 248, 0.98) 0%, rgba(238, 246, 241, 0.96) 100%);
-}
-
-.dashboard-toolbar {
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.15rem 1.2rem;
+  padding: 0.95rem 1.2rem;
+  backdrop-filter: blur(10px);
+  background: rgba(var(--rgb-card), 0.94);
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 1px solid rgba(var(--rgb-gold-line), 0.2);
 }
 
-.toolbar-copy h2,
-.panel-heading h3,
-.summary-panel__header h3 {
+.toolbar-copy h2 {
   margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.8rem);
-  color: #1f2b22;
-}
-
-.toolbar-copy p:last-child,
-.panel-copy {
-  margin: 0.35rem 0 0;
-  color: rgba(31, 43, 34, 0.68);
-  line-height: 1.45;
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  color: var(--color-text-strong);
+  line-height: 1.15;
 }
 
 .toolbar-eyebrow,
 .panel-eyebrow {
-  margin: 0 0 0.3rem;
+  margin: 0 0 0.2rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 .toolbar-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .source-switch {
   display: inline-flex;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.08);
+  background: rgba(var(--rgb-primary), 0.08);
   padding: 0.2rem;
 }
 
 .source-switch__item {
   border: 0;
   background: transparent;
-  min-width: 92px;
-  padding: 0.55rem 0.9rem;
+  min-width: 80px;
+  padding: 0.45rem 0.85rem;
   border-radius: 999px;
   font-weight: 700;
-  color: rgba(31, 43, 34, 0.7);
+  font-size: 0.84rem;
+  color: rgba(var(--rgb-text-strong), 0.7);
+  cursor: pointer;
 }
 
 .source-switch__item--active {
-  background: #1f5a3f;
-  color: #fff7e8;
+  background: var(--color-primary);
+  color: var(--color-button-fg-soft);
 }
 
 .toolbar-buttons {
@@ -782,8 +792,8 @@ export default {
   gap: 0.5rem;
   padding: 0.35rem 0.55rem;
   border-radius: 0.85rem;
-  background: rgba(31, 43, 34, 0.04);
-  border: 1px solid rgba(31, 43, 34, 0.07);
+  background: rgba(var(--rgb-text-strong), 0.04);
+  border: 1px solid rgba(var(--rgb-text-strong), 0.07);
 }
 
 .btn-group--primary {
@@ -796,98 +806,54 @@ export default {
 .ghost-btn,
 .primary-btn {
   border-radius: 0.8rem;
-  padding: 0.72rem 1rem;
+  padding: 0.62rem 0.9rem;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   letter-spacing: 0.05em;
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .ghost-btn {
-  background: rgba(255, 251, 243, 0.9);
-  color: #1f5a3f;
-  border-color: rgba(31, 90, 63, 0.16);
+  background: rgba(var(--rgb-card), 0.9);
+  color: var(--color-primary);
+  border-color: rgba(var(--rgb-primary), 0.16);
 }
 
 .ghost-btn--danger {
-  color: #b92d22;
-  border-color: rgba(185, 45, 34, 0.18);
-  background: rgba(255, 244, 242, 0.92);
+  color: var(--color-accent-dark);
+  border-color: rgba(var(--rgb-danger), 0.18);
+  background: rgba(var(--rgb-card), 0.92);
+}
+
+.ghost-btn--disabled {
+  opacity: 0.58;
 }
 
 .primary-btn {
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff8ec;
-  box-shadow: 0 10px 18px rgba(185, 45, 34, 0.2);
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg-soft);
+  box-shadow: 0 10px 18px rgba(var(--rgb-danger), 0.2);
 }
 
-.dashboard-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dashboard-top-grid {
+/* ── Stat row ── */
+.stat-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr) minmax(280px, 0.9fr);
-  gap: 1rem;
-  align-items: stretch;
-}
-
-.summary-panel {
-  padding: 1rem 1.1rem;
-}
-
-.totals-panel {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.summary-panel__header,
-.panel-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.8rem;
-  margin-bottom: 0.9rem;
-}
-
-.source-badge {
-  border-radius: 999px;
-  padding: 0.45rem 0.75rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.source-badge--remote {
-  background: rgba(47, 96, 57, 0.1);
-  color: #1f5a3f;
-}
-
-.source-badge--local {
-  background: rgba(185, 45, 34, 0.1);
-  color: #b92d22;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
+  padding-top: 0.5rem;
 }
 
 .stat-card {
   border-radius: 1rem;
   padding: 0.95rem 1rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(253, 248, 238, 0.96) 100%);
-  border: 1px solid rgba(214, 189, 132, 0.18);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.92) 0%, rgba(var(--rgb-card-alt), 0.96) 100%);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.18);
 }
 
 .stat-card--highlight {
-  border-color: rgba(205, 174, 104, 0.35);
-  background: linear-gradient(180deg, rgba(255, 252, 240, 0.98) 0%, rgba(252, 245, 220, 0.96) 100%);
+  border-color: rgba(var(--rgb-gold-line), 0.35);
+  background: linear-gradient(180deg, rgba(var(--rgb-card), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
 }
 
 .stat-card__label {
@@ -896,19 +862,19 @@ export default {
   letter-spacing: 0.14em;
   font-size: 0.66rem;
   font-weight: 800;
-  color: rgba(31, 90, 63, 0.76);
+  color: rgba(var(--rgb-primary), 0.76);
 }
 
 .stat-card strong {
   display: block;
-  font-size: clamp(1.45rem, 2.3vw, 2rem);
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
   line-height: 1;
-  color: #1d2b22;
+  color: var(--color-text);
 }
 
 .stat-limit {
   font-size: 0.85em;
-  color: rgba(29, 43, 34, 0.45);
+  color: rgba(var(--rgb-text), 0.45);
   font-weight: 400;
 }
 
@@ -921,50 +887,80 @@ export default {
   margin-top: 0.55rem;
   height: 5px;
   border-radius: 999px;
-  background: rgba(31, 90, 63, 0.1);
+  background: rgba(var(--rgb-primary), 0.1);
   overflow: hidden;
 }
 
 .stat-bar__fill {
   height: 100%;
   border-radius: 999px;
-  background: #1f5a3f;
+  background: var(--color-primary);
   transition: width 0.4s ease;
 }
 
 .stat-bar__fill--full {
-  background: #b92d22;
+  background: var(--color-accent-dark);
 }
 
-.totals-panel {
+/* ── Main 2-col grid ── */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.dashboard-main-left {
+  min-width: 0;
+}
+
+.dashboard-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Panels ── */
+.panel {
+  border-radius: 1.25rem;
+  background: rgba(var(--rgb-card), 0.96);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.22);
+  box-shadow: 0 16px 34px rgba(var(--rgb-shadow), 0.08);
+}
+
+.panel--rules {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-soft), 0.96) 100%);
   padding: 1rem 1.1rem;
 }
 
-.editors-panel,
+.panel--status {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.98) 0%, rgba(var(--rgb-panel-green-deep), 0.96) 100%);
+}
+
+.panel--workflow {
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.panel-heading h3 {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  color: var(--color-text-strong);
+}
+
 .side-panel {
   padding: 1rem 1.1rem;
 }
 
-.editors-panel--full {
-  width: 100%;
-}
-
-.schedule-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-.schedule-grid__item {
-  min-width: 0;
-}
-
-.schedule-grid__item--full {
-  grid-column: 1 / -1;
-}
-
 .side-panel--soft {
-  background: linear-gradient(180deg, rgba(251, 246, 233, 0.98) 0%, rgba(245, 236, 214, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-warm-2), 0.98) 0%, rgba(var(--rgb-panel-warm-3), 0.96) 100%);
 }
 
 .status-list {
@@ -979,7 +975,7 @@ export default {
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(205, 174, 104, 0.18);
+  border-bottom: 1px solid rgba(var(--rgb-gold-line), 0.18);
 }
 
 .status-item:last-child {
@@ -988,17 +984,81 @@ export default {
 }
 
 .status-item span {
-  color: rgba(31, 43, 34, 0.62);
+  color: rgba(var(--rgb-text-strong), 0.62);
 }
 
 .status-item strong {
-  color: #1d2b22;
+  color: var(--color-text);
+  font-size: 0.88rem;
 }
+
+.status-clock {
+  font-variant-numeric: tabular-nums;
+  color: rgba(var(--rgb-text-strong), 0.7);
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.status-item--window {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.status-item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.status-item__detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: rgba(var(--rgb-text-strong), 0.62);
+  font-size: 0.84rem;
+}
+
+.status-item__remaining {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pill::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-pill--active   { color: #1f8a4c; background: rgba(31, 138, 76, 0.14); }
+.status-pill--upcoming { color: #b3700c; background: rgba(179, 112, 12, 0.14); }
+.status-pill--depleted { color: #b34646; background: rgba(179, 70, 70, 0.14); }
+.status-pill--done     { color: #555f66; background: rgba(85, 95, 102, 0.14); }
+.status-pill--idle     { color: #6a737a; background: rgba(106, 115, 122, 0.14); }
 
 .mode-list {
   margin: 0.75rem 0 0;
   padding-left: 1.05rem;
-  color: rgba(31, 43, 34, 0.76);
+  color: rgba(var(--rgb-text-strong), 0.76);
   line-height: 1.5;
 }
 
@@ -1025,29 +1085,71 @@ export default {
   margin-top: 0.35rem;
 }
 
-.mode-item__dot--main  { background: #d9bf74; }
-.mode-item__dot--repeat { background: #a3bfa8; }
-.mode-item__dot--save  { background: #cf3b2d; }
+.mode-item__dot--main   { background: var(--color-gold); }
+.mode-item__dot--repeat { background: var(--color-primary-soft); }
+.mode-item__dot--save   { background: var(--color-accent); }
 
 .mode-item strong {
   display: block;
-  font-size: 0.84rem;
-  color: #1d2b22;
+  font-size: 0.83rem;
+  color: var(--color-text);
   margin-bottom: 0.2rem;
 }
 
 .mode-item p {
   margin: 0;
-  font-size: 0.79rem;
-  color: rgba(31, 43, 34, 0.65);
+  font-size: 0.78rem;
+  color: rgba(var(--rgb-text-strong), 0.65);
   line-height: 1.45;
 }
 
+/* ── Confirm modals ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(var(--rgb-black), 0.48);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(100%, 28rem);
+  border-radius: 1.25rem;
+  padding: 1.35rem;
+  background: rgba(var(--rgb-card-alt), 0.98);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.24);
+  box-shadow: 0 22px 42px rgba(var(--rgb-shadow), 0.2);
+}
+
+.modal-card h3 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 1.3rem;
+}
+
+.modal-copy {
+  margin: 0.65rem 0 0;
+  color: rgba(var(--rgb-text-strong), 0.72);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+/* ── Toast ── */
 .feedback-toast {
   position: fixed;
   right: 1.4rem;
   bottom: 1.4rem;
-  z-index: 20;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -1055,23 +1157,24 @@ export default {
   max-width: 340px;
   padding: 0.9rem 1rem;
   border-radius: 0.9rem;
-  box-shadow: 0 16px 28px rgba(37, 46, 34, 0.18);
+  box-shadow: 0 16px 28px rgba(var(--rgb-shadow), 0.18);
 }
 
 .feedback-toast--success {
-  background: rgba(255, 251, 243, 0.98);
-  border: 1px solid rgba(205, 174, 104, 0.42);
+  background: rgba(var(--rgb-card), 0.98);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.42);
 }
 
 .feedback-toast--error {
-  background: rgba(255, 243, 241, 0.98);
-  border: 1px solid rgba(185, 45, 34, 0.24);
+  background: rgba(var(--rgb-card), 0.98);
+  border: 1px solid rgba(var(--rgb-danger), 0.24);
 }
 
 .feedback-toast__msg {
   margin: 0;
-  color: #1d2b22;
+  color: var(--color-text);
   font-weight: 600;
+  font-size: 0.88rem;
 }
 
 .toast-in-enter-active,
@@ -1085,18 +1188,111 @@ export default {
   transform: translateY(8px);
 }
 
+/* ── Unsaved-changes floating bar ── */
+.unsaved-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  border-radius: 1rem;
+  background: rgba(var(--rgb-card-alt), 0.97);
+  border: 1px solid rgba(var(--rgb-gold-line), 0.38);
+  box-shadow: 0 8px 28px rgba(var(--rgb-shadow), 0.16), 0 2px 6px rgba(var(--rgb-shadow), 0.08);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.unsaved-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  flex-shrink: 0;
+  animation: dot-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.unsaved-bar__label {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.unsaved-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.unsaved-bar__discard,
+.unsaved-bar__save {
+  border-radius: 0.65rem;
+  padding: 0.52rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.unsaved-bar__discard {
+  background: transparent;
+  color: rgba(var(--rgb-text-strong), 0.7);
+  border-color: rgba(var(--rgb-text-strong), 0.14);
+}
+
+.unsaved-bar__save {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: var(--color-button-fg-soft);
+  box-shadow: 0 6px 14px rgba(var(--rgb-danger), 0.24);
+}
+
+.unsaved-bar__discard:disabled,
+.unsaved-bar__save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.save-bar-enter-active {
+  transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.save-bar-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.save-bar-enter {
+  opacity: 0;
+  transform: translateX(-50%) translateY(16px);
+}
+.save-bar-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+}
+
+/* ── Responsive ── */
 @media (max-width: 1080px) {
-  .dashboard-top-grid {
+  .dashboard-main-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
-  .dashboard-toolbar,
-  .summary-panel,
-  .editors-panel,
-  .side-panel {
-    padding: 0.95rem;
+  .stat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .toolbar-actions {
@@ -1110,120 +1306,83 @@ export default {
 
   .ghost-btn,
   .primary-btn {
-    flex: 1 1 180px;
-  }
-
-  .stats-grid,
-  .schedule-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 901px) {
-  .schedule-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    flex: 1 1 160px;
   }
 }
 
 @media (max-width: 640px) {
+  .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-view {
     padding-inline: 0.4rem;
     gap: 0.85rem;
   }
 
-  /* ── Toolbar ── */
   .dashboard-toolbar {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1.1rem 1rem 1.2rem;
-  }
-
-  .toolbar-copy h2 {
-    font-size: 1.35rem;
-  }
-
-  .toolbar-copy p:last-child {
-    font-size: 0.8rem;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
   }
 
   .toolbar-actions {
-    width: 100%;
-    align-items: stretch;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  /* ── Source switch — large pill toggle ── */
   .source-switch {
     width: 100%;
     padding: 0.25rem;
     border-radius: 1rem;
-    background: rgba(31, 90, 63, 0.1);
+    background: rgba(var(--rgb-primary), 0.1);
   }
 
   .source-switch__item {
     flex: 1 1 0;
-    min-height: 52px;
-    font-size: 0.95rem;
-    letter-spacing: 0.04em;
+    min-height: 48px;
+    font-size: 0.92rem;
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: background 0.18s ease, color 0.18s ease;
   }
 
   .source-switch__item--active {
-    background: #1f5a3f;
-    color: #fff7e8;
-    box-shadow: 0 4px 12px rgba(31, 90, 63, 0.28);
+    background: var(--color-primary);
+    color: var(--color-button-fg-soft);
+    box-shadow: 0 4px 12px rgba(var(--rgb-primary), 0.28);
   }
 
-  /* ── Action buttons — 2-column grid ── */
   .toolbar-buttons {
     width: 100%;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   .btn-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.55rem;
-    padding: 0.6rem;
+    gap: 0.5rem;
+    padding: 0.55rem;
     border-radius: 1rem;
-    background: rgba(31, 43, 34, 0.04);
-    border: 1px solid rgba(205, 174, 104, 0.2);
   }
 
   .ghost-btn {
-    min-height: 52px;
-    padding: 0.8rem 0.75rem;
-    font-size: 0.85rem;
-    font-weight: 700;
-    border-radius: 0.7rem;
+    min-height: 48px;
+    padding: 0.75rem;
+    font-size: 0.82rem;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     line-height: 1.2;
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.1s ease;
   }
 
-  .ghost-btn:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-
-  .ghost-btn:disabled {
-    opacity: 0.42;
-  }
-
-  /* ── Primary action row: Refresh + Save ── */
   .btn-group--primary {
     display: flex;
-    gap: 0.6rem;
+    gap: 0.55rem;
     padding: 0;
     background: transparent;
     border: none;
@@ -1232,40 +1391,21 @@ export default {
 
   .btn-group--primary .ghost-btn {
     flex: 1;
-    min-height: 56px;
-    background: rgba(255, 251, 243, 0.9);
-    border: 1px solid rgba(31, 90, 63, 0.2);
-    font-size: 0.9rem;
+    min-height: 52px;
+    font-size: 0.88rem;
   }
 
   .primary-btn {
     flex: 1.8;
-    min-height: 56px;
-    padding: 0.9rem 1.2rem;
-    font-size: 1rem;
+    min-height: 52px;
+    padding: 0.85rem 1.1rem;
+    font-size: 0.96rem;
     font-weight: 800;
-    border-radius: 0.9rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: box-shadow 0.15s ease, transform 0.1s ease;
   }
 
-  .primary-btn:active:not(:disabled) {
-    transform: scale(0.97);
-    box-shadow: 0 4px 10px rgba(185, 45, 34, 0.18);
-  }
-
-  /* ── Summary panel ── */
-  .summary-panel__header,
-  .panel-heading {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .stats-grid,
-  .schedule-grid {
+  .stat-row {
     grid-template-columns: 1fr 1fr;
-    gap: 0.65rem;
+    gap: 0.6rem;
   }
 
   .stat-card {
@@ -1273,10 +1413,13 @@ export default {
   }
 
   .stat-card strong {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 
-  /* ── Toast & unsaved bar ── */
+  .dashboard-sidebar {
+    grid-template-columns: 1fr;
+  }
+
   .feedback-toast {
     left: 0.65rem;
     right: 0.65rem;
@@ -1301,107 +1444,8 @@ export default {
 
   .unsaved-bar__discard,
   .unsaved-bar__save {
-    min-height: 44px;
-    padding: 0.65rem 1.1rem;
-    font-size: 0.88rem;
+    min-height: 42px;
+    padding: 0.6rem 1rem;
   }
-}
-
-/* ── Floating unsaved-changes bar ── */
-.unsaved-bar {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 0.85rem 0.7rem 1rem;
-  border-radius: 1rem;
-  background: rgba(255, 251, 244, 0.97);
-  border: 1px solid rgba(205, 174, 104, 0.38);
-  box-shadow: 0 8px 28px rgba(37, 46, 34, 0.16), 0 2px 6px rgba(37, 46, 34, 0.08);
-  backdrop-filter: blur(8px);
-  white-space: nowrap;
-}
-
-.unsaved-bar__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #cf3b2d;
-  flex-shrink: 0;
-  animation: dot-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
-}
-
-.unsaved-bar__label {
-  margin: 0;
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: #1d2b22;
-  flex: 1;
-}
-
-.unsaved-bar__actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.unsaved-bar__discard,
-.unsaved-bar__save {
-  border-radius: 0.65rem;
-  padding: 0.52rem 0.9rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.unsaved-bar__discard {
-  background: transparent;
-  color: rgba(31, 43, 34, 0.7);
-  border-color: rgba(31, 43, 34, 0.14);
-}
-
-.unsaved-bar__discard:hover:not(:disabled) {
-  background: rgba(31, 43, 34, 0.06);
-}
-
-.unsaved-bar__save {
-  background: linear-gradient(180deg, #cf3b2d 0%, #b92d22 100%);
-  color: #fff8ec;
-  box-shadow: 0 6px 14px rgba(185, 45, 34, 0.24);
-}
-
-.unsaved-bar__save:hover:not(:disabled) {
-  box-shadow: 0 8px 18px rgba(185, 45, 34, 0.32);
-}
-
-.unsaved-bar__discard:disabled,
-.unsaved-bar__save:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.save-bar-enter-active {
-  transition: opacity 0.28s ease, transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.save-bar-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-.save-bar-enter {
-  opacity: 0;
-  transform: translateX(-50%) translateY(16px);
-}
-.save-bar-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(10px);
 }
 </style>

@@ -128,21 +128,21 @@ export default {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #1f5a3f;
+  color: var(--color-primary);
   white-space: nowrap;
 }
 
 .section-heading__deco {
   flex: 1;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #cdae68 40%, #e8d5a3 60%, transparent);
+  background: linear-gradient(90deg, transparent, var(--color-gold-line) 40%, var(--color-gold-soft) 60%, transparent);
   border-radius: 1px;
 }
 
 .empty-state {
   text-align: center;
   padding: 1.4rem;
-  color: rgba(29, 43, 34, 0.4);
+  color: rgba(var(--rgb-text), 0.4);
   font-size: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -152,7 +152,7 @@ export default {
 
 .empty-state__icon {
   font-size: 1.4rem;
-  color: rgba(205, 174, 104, 0.5);
+  color: rgba(var(--rgb-gold-line), 0.5);
 }
 
 .schedule-rows {
@@ -168,15 +168,15 @@ export default {
   column-gap: 1rem;
   row-gap: 0.75rem;
   padding: 0.95rem 1rem;
-  border: 1px solid rgba(123, 153, 132, 0.16);
+  border: 1px solid rgba(var(--rgb-border), 0.16);
   border-radius: 0.95rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(244, 249, 246, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel), 0.92) 0%, rgba(var(--rgb-panel-green), 0.96) 100%);
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .schedule-row--given {
-  background: linear-gradient(180deg, rgba(246, 251, 247, 0.96) 0%, rgba(236, 246, 239, 0.98) 100%);
-  border-color: rgba(64, 117, 83, 0.18);
+  background: linear-gradient(180deg, rgba(var(--rgb-panel-green), 0.96) 0%, rgba(var(--rgb-panel-green-deep), 0.98) 100%);
+  border-color: rgba(var(--rgb-primary-soft), 0.18);
 }
 
 .row-index {
@@ -189,8 +189,8 @@ export default {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: #6f7f71;
-  background: rgba(122, 151, 131, 0.12);
+  color: var(--color-text-muted);
+  background: rgba(var(--rgb-border), 0.12);
   flex-shrink: 0;
 }
 
@@ -215,33 +215,33 @@ export default {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: rgba(49, 88, 70, 0.56);
+  color: rgba(var(--rgb-muted), 0.56);
 }
 
 .time-input {
   width: 100%;
   min-width: 0;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(123, 153, 132, 0.2);
+  background: rgba(var(--rgb-panel), 0.92);
+  border: 1px solid rgba(var(--rgb-border), 0.2);
   border-radius: 0.7rem;
   padding: 0.64rem 0.78rem;
   font-family: inherit;
   font-size: 0.95rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: #1d2b22;
+  color: var(--color-text);
   outline: none;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .time-input:focus {
-  border-color: #7a9783;
-  box-shadow: 0 0 0 3px rgba(122, 151, 131, 0.16);
+  border-color: var(--color-border);
+  box-shadow: 0 0 0 3px rgba(var(--rgb-border), 0.16);
 }
 
 .time-sep {
-  color: rgba(122, 151, 131, 0.45);
+  color: rgba(var(--rgb-border), 0.45);
   font-size: 0.82rem;
   margin-top: 1.2rem;
   flex-shrink: 0;
@@ -272,8 +272,8 @@ export default {
   width: 2.2rem;
   height: 1.15rem;
   border-radius: 999px;
-  background: rgba(122, 151, 131, 0.18);
-  border: 1.5px solid rgba(122, 151, 131, 0.32);
+  background: rgba(var(--rgb-border), 0.18);
+  border: 1.5px solid rgba(var(--rgb-border), 0.32);
   transition: background 0.22s, border-color 0.22s;
   flex-shrink: 0;
 }
@@ -286,18 +286,18 @@ export default {
   width: 0.75rem;
   height: 0.75rem;
   border-radius: 50%;
-  background: rgba(122, 151, 131, 0.52);
+  background: rgba(var(--rgb-border), 0.52);
   transition: transform 0.22s ease, background 0.22s;
 }
 
 .given-toggle__input:checked ~ .given-toggle__track {
-  background: #1f5a3f;
-  border-color: #1f5a3f;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .given-toggle__input:checked ~ .given-toggle__track .given-toggle__thumb {
   transform: translateY(-50%) translateX(1.05rem);
-  background: #cdae68;
+  background: var(--color-gold-line);
 }
 
 .given-toggle__label {
@@ -305,13 +305,13 @@ export default {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(49, 88, 70, 0.74);
+  color: rgba(var(--rgb-muted), 0.74);
   transition: color 0.2s;
   white-space: nowrap;
 }
 
 .given-toggle__input:checked ~ .given-toggle__label {
-  color: #1f5a3f;
+  color: var(--color-primary);
 }
 
 @media (max-width: 860px) {

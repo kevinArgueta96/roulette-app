@@ -1,20 +1,35 @@
 <template>
-  <div class="roulette-view">
-    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" />
+  <div class="roulette-view" :class="{ 'roulette-view--storytel': isStorytel }">
+    <ConfettiComponent :isVisibleConfetti="isVisibleConfetti" :variant="confettiVariant" :origin="confettiOrigin" />
 
-    <RouletteCompoment @showImg="onShowImg" />
-
-    <transition name="write-reveal">
-      <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
-        <template v-if="isPrizeHeroResult">
-          <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
-        </template>
-        <template v-else>
-        <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
-        <p class="result-label__title">{{ resultCopy.title }}</p>
-        </template>
+    <!-- Storytel: structured two-column hero layout -->
+    <div v-if="isStorytel" class="storytel-stage" :class="{ 'storytel-stage--hero': isHeroLayoutActive }">
+      <div class="storytel-stage__left">
+        <RouletteCompoment ref="storytelRoulette" @showImg="onShowImg" />
       </div>
-    </transition>
+      <div class="storytel-stage__right">
+        <transition name="win-reveal">
+          <WinRowComponent v-if="showWinResult" :win-type="winType" :visible="showWinResult" />
+        </transition>
+      </div>
+    </div>
+
+    <!-- Parrano: original layout -->
+    <template v-if="!isStorytel">
+      <RouletteCompoment @showImg="onShowImg" />
+
+      <transition name="write-reveal">
+        <div v-if="hasResult" class="result-label" :class="{ 'result-label--main': isPrizeHeroResult }">
+          <template v-if="isPrizeHeroResult">
+            <p class="result-label__main-title" :class="heroTitleSizeClass">{{ prizeHeroTitle }}</p>
+          </template>
+          <template v-else>
+            <p class="result-label__eyebrow">{{ resultCopy.kicker }}</p>
+            <p class="result-label__title">{{ resultCopy.title }}</p>
+          </template>
+        </div>
+      </transition>
+    </template>
   </div>
 </template>
 
@@ -22,50 +37,72 @@
 import { mapActions, mapGetters } from "vuex";
 import RouletteCompoment from "@/components/RouletteCompoment.vue";
 import ConfettiComponent from "@/components/ConfettiComponent.vue";
+import WinRowComponent from "@/components/WinRowComponent.vue";
 
 const RESULT_CONFIG = {
   repeat: {
-    duration: 4000,
+    duration: 6000,
     confetti: false,
     kicker: "Repeat",
-    title: "Kokeile uudestaan",
+    title: "Arki ansaitsee parempaa!",
     description: "Saat uuden mahdollisuuden."
   },
   mainPrize: {
-    duration: 10000,
+    duration: 9000,
     confetti: true,
     kicker: "Main prize",
-    title: "LAHJAKASSI",
+    title: "Olet voittanut!",
     description: "Pääpalkinto osui kohdalleen."
   },
   surpriseWin: {
-    duration: 9000,
-    confetti: true,
+    duration: 11000,
+    confetti: false,
     kicker: "Surprise win",
-    title: "Yllätyspalkinto",
+    title: "Onnittelut!",
     description: "Voitit yllätyspalkinnon."
   },
+  giftCard3m: {
+    duration: 11000,
+    confetti: false,
+    kicker: "Gift card 3 months",
+    title: "Onnittelut!",
+    description: "Voitit 3kk lahjakortin."
+  },
+  giftCard1m: {
+    duration: 11000,
+    confetti: true,
+    kicker: "Gift card 1 month",
+    title: "Onnittelut!",
+    description: "Voitit 1kk lahjakortin."
+  },
   noWin: {
-    duration: 5000,
+    duration: 7000,
     confetti: false,
     kicker: "No win",
-    title: "Ei voittoa",
+    title: "Kiitos osallistumisesta!",
     description: "Tämä sektori ei anna palkintoa."
   }
 };
 
 export default {
   name: "RouletteView",
-  components: { RouletteCompoment, ConfettiComponent },
+  components: { RouletteCompoment, ConfettiComponent, WinRowComponent },
   data() {
     return {
       winType: "",
+      confettiVariant: "",
+      confettiOrigin: null,
       isVisibleConfetti: false,
-      resultTimer: null
+      isHeroLayoutActive: false,
+      showWinResult: false,
+      resultTimer: null,
+      heroDelayTimer: null,
+      resultRevealTimer: null,
+      confettiDelayTimer: null
     };
   },
   computed: {
-    ...mapGetters(["isMainPrizeActive"]),
+    ...mapGetters(["isMainPrizeActive", "isStorytel"]),
     hasResult() {
       return Boolean(this.winType);
     },
@@ -73,13 +110,10 @@ export default {
       return this.winType === "mainPrize";
     },
     isPrizeHeroResult() {
-      return this.winType === "mainPrize" || this.winType === "surpriseWin" || this.winType === "noWin" || this.winType === "repeat";
+      return Boolean(RESULT_CONFIG[this.winType]);
     },
     prizeHeroTitle() {
-      if (this.winType === "surpriseWin") return "Onnittelut!";
-      if (this.winType === "noWin") return "Kiitos osallistumisesta!";
-      if (this.winType === "repeat") return "Arki ansaitsee parempaa!";
-      return "Olet voittanut!";
+      return RESULT_CONFIG[this.winType]?.title || "Olet voittanut!";
     },
     heroTitleSizeClass() {
       const len = (this.prizeHeroTitle || "").length;
@@ -98,6 +132,23 @@ export default {
   },
   methods: {
     ...mapActions(["updateState"]),
+    captureWheelCenter() {
+      const root = this.$refs.storytelRoulette?.$el || this.$el;
+      const stage = root.querySelector(".wheel-stage");
+      const rect = stage?.getBoundingClientRect();
+
+      if (!rect) {
+        return {
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2
+        };
+      }
+
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+    },
     onShowImg({ type }) {
       const result = RESULT_CONFIG[type];
 
@@ -109,11 +160,42 @@ export default {
       }
 
       this.clearTimers();
-      this.winType = type;
+
+      if (this.isStorytel && type === "mainPrize") {
+        this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
+        this.confettiOrigin = this.captureWheelCenter();
+        this.confettiVariant = type;
+        this.isVisibleConfetti = result.confetti;
+
+        this.heroDelayTimer = window.setTimeout(() => {
+          this.showResult(type, result);
+        }, 1200);
+        return;
+      }
+
+      this.confettiVariant = type;
       this.isVisibleConfetti = result.confetti;
       this.updateState({ mutationType: "setTimeToShowOptions", payload: result.duration });
-      this.updateState({ mutationType: "setMainPrizeActive", payload: type === "mainPrize" || type === "surpriseWin" || type === "noWin" || type === "repeat" });
+
+      this.showResult(type, result);
+    },
+    showResult(type, result) {
+      this.winType = type;
+      this.updateState({ mutationType: "setMainPrizeActive", payload: Boolean(RESULT_CONFIG[type]) });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: type });
+
+      if (this.isStorytel) {
+        this.isHeroLayoutActive = true;
+        this.$nextTick(() => {
+          this.$refs.storytelRoulette?.handleResize?.();
+        });
+        this.resultRevealTimer = window.setTimeout(() => {
+          this.showWinResult = true;
+          this.$refs.storytelRoulette?.handleResize?.();
+        }, 320);
+      } else {
+        this.showWinResult = true;
+      }
 
       this.resultTimer = window.setTimeout(() => {
         this.resetResultState();
@@ -121,16 +203,37 @@ export default {
     },
     resetResultState() {
       this.clearTimers();
+      this.showWinResult = false;
+      this.isHeroLayoutActive = false;
       this.winType = "";
+      this.confettiVariant = "";
+      this.confettiOrigin = null;
       this.isVisibleConfetti = false;
+      this.$nextTick(() => {
+        this.$refs.storytelRoulette?.handleResize?.();
+      });
       this.updateState({ mutationType: "setMainPrizeActive", payload: false });
       this.updateState({ mutationType: "setActiveHeroResultType", payload: "" });
-      this.updateState({ mutationType: "setSpinRoullete", payload: true });
+      window.setTimeout(() => {
+        this.updateState({ mutationType: "setSpinRoullete", payload: true });
+      }, 700);
     },
     clearTimers() {
       if (this.resultTimer) {
         window.clearTimeout(this.resultTimer);
         this.resultTimer = null;
+      }
+      if (this.heroDelayTimer) {
+        window.clearTimeout(this.heroDelayTimer);
+        this.heroDelayTimer = null;
+      }
+      if (this.resultRevealTimer) {
+        window.clearTimeout(this.resultRevealTimer);
+        this.resultRevealTimer = null;
+      }
+      if (this.confettiDelayTimer) {
+        window.clearTimeout(this.confettiDelayTimer);
+        this.confettiDelayTimer = null;
       }
     }
   }
@@ -146,6 +249,89 @@ export default {
   align-items: flex-start;
   justify-content: center;
   padding-top: 5.8rem;
+}
+
+.roulette-view--storytel {
+  align-items: center;
+  padding: 0 0 clamp(2.4rem, 8vh, 4rem);
+}
+
+/* Storytel two-column hero stage */
+.storytel-stage {
+  position: relative;
+  align-self: stretch;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.storytel-stage--hero .storytel-stage__left {
+  align-items: flex-start;
+  padding: var(--storytel-wheel-top-offset) clamp(0.4rem, 1.2vw, 1rem) var(--storytel-wheel-top-offset) clamp(2rem, 9vw, 6.5rem);
+  flex-basis: 50%;
+  max-width: 50%;
+}
+
+.storytel-stage__left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex: 0 1 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 clamp(0.5rem, 1.5vw, 1.5rem) 0 clamp(0.75rem, 2.5vw, 2.5rem);
+  transform: translateX(0);
+  transition:
+    flex-basis 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    max-width 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    padding 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 1.08s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.storytel-stage__right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex: 0 0 0%;
+  max-width: 0;
+  min-width: 0;
+  overflow: hidden;
+  transition:
+    flex-basis 1.08s cubic-bezier(0.19, 1, 0.22, 1),
+    max-width 1.08s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.storytel-stage--hero .storytel-stage__right {
+  flex: 0 0 50%;
+  max-width: 50%;
+  overflow: visible;
+  padding: var(--storytel-wheel-top-offset) clamp(2rem, 6vw, 4.5rem) var(--storytel-wheel-top-offset) clamp(0.4rem, 1.2vw, 1rem);
+}
+
+.win-reveal-enter-active,
+.win-reveal-leave-active {
+  transition:
+    opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.win-reveal-leave-active {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: none;
+}
+
+.win-reveal-enter,
+.win-reveal-leave-to {
+  opacity: 0;
+  transform: translateX(34px) scale(0.975);
 }
 
 .result-label {
@@ -171,8 +357,8 @@ export default {
   font-weight: 400;
   line-height: 0.88;
   letter-spacing: 0;
-  color: #2e6a49;
-  text-shadow: 0 4px 14px rgba(255, 255, 255, 0.55);
+  color: var(--color-primary-soft);
+  text-shadow: 0 4px 14px rgba(var(--rgb-panel), 0.55);
   opacity: 0;
   clip-path: inset(0 100% 0 0);
   animation: handwriting-reveal 0.92s cubic-bezier(0.2, 0.84, 0.22, 1) 0.84s forwards;
@@ -200,18 +386,18 @@ export default {
   text-transform: uppercase;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-weight: 800;
 }
 
 .result-label__title {
   margin: 0.15rem 0 0;
-  color: #1d2b22;
+  color: var(--color-text);
   font-size: 1.6rem;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.7);
+  text-shadow: 0 2px 8px rgba(var(--rgb-panel), 0.7);
 }
 
 
@@ -240,12 +426,21 @@ export default {
   .result-label--main {
     top: 2.2rem;
   }
+
+  .roulette-view--storytel {
+    padding-top: 0;
+    padding-bottom: clamp(2.6rem, 8vh, 4rem);
+  }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
   .roulette-view {
     padding-top: 0;
     padding-bottom: 2.4rem;
+  }
+
+  .roulette-view--storytel {
+    padding-bottom: clamp(2.2rem, 7vh, 3.2rem);
   }
 }
 
@@ -260,6 +455,11 @@ export default {
 
   .result-label__main-title {
     font-size: clamp(2.8rem, 7.5vw, 5rem);
+  }
+
+  .roulette-view--storytel {
+    padding-top: 0;
+    padding-bottom: clamp(3rem, 9vh, 5rem);
   }
 }
 

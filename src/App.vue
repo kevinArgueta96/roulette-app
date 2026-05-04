@@ -1,5 +1,15 @@
 <template>
-  <div id="app" class="app-shell">
+  <div
+    id="app"
+    class="app-shell"
+    :class="[
+      `app-shell--${theme}`,
+      {
+        'app-shell--storytel-hero': theme === 'storytel' && isMainPrizeActive && !isDashboardRoute,
+        'app-shell--dashboard': isDashboardRoute
+      }
+    ]"
+  >
     <main class="tablet-stage">
       <section class="tablet-canvas">
         <header class="screen-header">
@@ -7,11 +17,11 @@
             to="/"
             class="brand-link"
             :class="{
-              'brand-link--hero': isMainPrizeActive && $route.name !== 'dashboard',
-              'brand-link--dashboard': $route.name === 'dashboard'
+              'brand-link--hero': isMainPrizeActive && !isDashboardRoute,
+              'brand-link--dashboard': isDashboardRoute
             }"
           >
-            <img class="brand-logo" src="/parrano-assets/new-logo.webp" alt="Parrano" fetchpriority="high" decoding="async" />
+            <img class="brand-logo" :src="brandLogoSrc" :alt="brandLogoAlt" fetchpriority="high" decoding="async" />
           </router-link>
 
           <nav class="menu-shell">
@@ -22,6 +32,14 @@
               :aria-expanded="isMenuOpen ? 'true' : 'false'"
               @click="toggleMenu"
             >
+              <img
+                v-if="theme === 'storytel'"
+                class="menu-icon menu-icon--storytel"
+                src="/storytel-assets/menu-icon.svg"
+                alt=""
+                aria-hidden="true"
+                decoding="async"
+              />
               <svg class="menu-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <circle class="menu-icon__dot" cx="18" cy="12" r="2.2"/>
                 <circle class="menu-icon__dot" cx="18" cy="18" r="2.2"/>
@@ -33,7 +51,7 @@
                 <router-link
                   to="/"
                   class="menu-dropdown__item"
-                  :class="{ 'menu-dropdown__item--active': $route.name === 'roulette' }"
+                  :class="{ 'menu-dropdown__item--active': !isDashboardRoute }"
                   role="menuitem"
                   @click.native="closeMenu"
                 >
@@ -42,7 +60,7 @@
                 <router-link
                   to="/dashboard"
                   class="menu-dropdown__item"
-                  :class="{ 'menu-dropdown__item--active': $route.name === 'dashboard' }"
+                  :class="{ 'menu-dropdown__item--active': isDashboardRoute }"
                   role="menuitem"
                   @click.native="closeMenu"
                 >
@@ -55,7 +73,7 @@
 
         <router-view class="router-outlet" />
 
-        <template v-if="$route.name !== 'dashboard'">
+        <template v-if="theme !== 'storytel' && !isDashboardRoute">
           <transition name="slide-left">
             <img
               v-if="isMainPrizeActive"
@@ -88,12 +106,22 @@
         </div>
 
         <img
-          v-if="$route.name !== 'dashboard'"
+          v-if="theme !== 'storytel' && !isDashboardRoute"
           class="bottom-wave"
           src="@/assets/brand/infe_sin_blanco.svg"
           alt=""
           aria-hidden="true"
           loading="lazy"
+          decoding="async"
+        />
+
+        <img
+          v-if="theme === 'storytel'"
+          class="storytel-footer"
+          src="/storytel-assets/background.svg"
+          alt=""
+          aria-hidden="true"
+          fetchpriority="high"
           decoding="async"
         />
       </section>
@@ -128,7 +156,19 @@ export default {
     document.removeEventListener("click", this.handleOutsideClick);
   },
   computed: {
-    ...mapGetters(["isMainPrizeActive"])
+    ...mapGetters(["isMainPrizeActive", "themeId", "themeMeta"]),
+    theme() {
+      return this.themeId;
+    },
+    brandLogoSrc() {
+      return this.themeMeta?.logo || "/parrano-assets/new-logo.webp";
+    },
+    brandLogoAlt() {
+      return this.themeMeta?.label || "Parrano";
+    },
+    isDashboardRoute() {
+      return this.$route.name === "dashboard";
+    }
   },
   methods: {
     ...mapActions(["initializeRandomAngle", "hydrateBootstrapData"]),
@@ -173,7 +213,7 @@ export default {
 <style scoped>
 .app-shell {
   min-height: var(--app-height, 100vh);
-  background: #f5efdd;
+  background: var(--color-app-bg);
 }
 
 .tablet-stage {
@@ -188,7 +228,7 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f5efdd;
+  background: var(--color-app-bg);
   padding: 0 1.05rem 0;
 }
 
@@ -271,7 +311,7 @@ export default {
 }
 
 .menu-icon__dot {
-  fill: rgba(31, 90, 63, 0.52);
+  fill: rgba(var(--rgb-primary), 0.52);
 }
 
 .menu-button:hover {
@@ -281,7 +321,7 @@ export default {
 .menu-button:focus-visible {
   opacity: 0.82;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(31, 90, 63, 0.12);
+  box-shadow: 0 0 0 2px rgba(var(--rgb-primary), 0.12);
 }
 
 .menu-button[aria-expanded="true"] {
@@ -309,9 +349,9 @@ export default {
   min-width: 148px;
   padding: 0.35rem;
   border-radius: 0.8rem;
-  background: rgba(255, 251, 243, 0.98);
-  border: 1px solid rgba(31, 90, 63, 0.12);
-  box-shadow: 0 14px 24px rgba(29, 43, 34, 0.12);
+  background: rgba(var(--rgb-card), 0.98);
+  border: 1px solid rgba(var(--rgb-primary), 0.12);
+  box-shadow: 0 14px 24px rgba(var(--rgb-text), 0.12);
 }
 
 .menu-dropdown__item {
@@ -319,7 +359,7 @@ export default {
   width: 100%;
   border: 0;
   background: transparent;
-  color: #1d2b22;
+  color: var(--color-text);
   text-align: left;
   padding: 0.7rem 0.8rem;
   border-radius: 0.6rem;
@@ -331,13 +371,13 @@ export default {
 }
 
 .menu-dropdown__item:hover {
-  background: rgba(47, 96, 57, 0.08);
+  background: rgba(var(--rgb-primary-soft), 0.08);
 }
 
 .menu-dropdown__item--active {
-  color: #1f5a3f;
+  color: var(--color-primary);
   font-weight: 700;
-  background: rgba(31, 90, 63, 0.06);
+  background: rgba(var(--rgb-primary), 0.06);
 }
 
 .router-outlet {
@@ -356,7 +396,7 @@ export default {
   height: auto;
   object-fit: contain;
   pointer-events: none;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(0 8px 20px rgba(var(--rgb-black), 0.22));
 }
 
 .prize-product--left {
@@ -424,9 +464,9 @@ export default {
   z-index: 7;
   border-radius: 1rem;
   padding: 0.8rem 1rem;
-  background: rgba(255, 80, 28, 0.08);
-  border: 1px solid rgba(255, 80, 28, 0.18);
-  color: #8d3a1a;
+  background: rgba(var(--rgb-accent), 0.08);
+  border: 1px solid rgba(var(--rgb-accent), 0.18);
+  color: var(--color-storytel-alert);
   font-size: 0.92rem;
 }
 
@@ -437,7 +477,7 @@ export default {
   display: grid;
   place-items: center;
   gap: 0.6rem;
-  background: rgba(245, 239, 221, 0.92);
+  background: rgba(var(--rgb-bg-soft), 0.92);
   text-align: center;
 }
 
@@ -445,8 +485,8 @@ export default {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  border: 4px solid rgba(255, 80, 28, 0.18);
-  border-top-color: #d3382d;
+  border: 4px solid rgba(var(--rgb-accent), 0.18);
+  border-top-color: var(--color-accent);
   animation: spin 0.8s linear infinite;
 }
 
@@ -488,6 +528,179 @@ export default {
   to {
     transform: translateX(-50%) translateY(var(--brand-hero-shift)) scale(var(--brand-hero-scale));
   }
+}
+
+@keyframes storytel-logo-enter {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-50% - 2.5rem)) translateY(-2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+.app-shell--storytel {
+  background: var(--color-bg);
+}
+
+.app-shell--storytel .tablet-stage {
+  min-width: 100vw;
+}
+
+.app-shell--storytel .tablet-canvas {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  padding: 0;
+}
+
+.app-shell--storytel .screen-header {
+  position: absolute;
+  inset: clamp(1.45rem, 4.8vh, 2.4rem) clamp(2.1rem, 5.6vw, 4.25rem) auto;
+  z-index: 20;
+  grid-template-columns: auto 1fr auto;
+  min-height: auto;
+  margin: 0;
+  pointer-events: none;
+}
+
+.app-shell--storytel .brand-link,
+.app-shell--storytel .brand-link:not(.brand-link--dashboard),
+.app-shell--storytel .brand-link--dashboard {
+  position: relative;
+  left: auto;
+  top: auto;
+  grid-column: 1;
+  justify-self: start;
+  transform: none;
+  animation: none;
+  pointer-events: auto;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+}
+
+.app-shell--storytel .brand-link--hero {
+  transform: none;
+  animation: none;
+}
+
+.app-shell--storytel .brand-logo,
+.app-shell--storytel .brand-link--dashboard .brand-logo {
+  width: clamp(154px, 18vw, 220px);
+  max-height: clamp(2.5rem, 6vh, 3.65rem);
+}
+
+.app-shell--storytel .router-outlet {
+  flex: 1;
+  width: 100%;
+  overflow: visible;
+  align-self: stretch;
+  z-index: 5;
+}
+
+.app-shell--storytel.app-shell--dashboard .router-outlet {
+  overflow: auto;
+  padding-top: clamp(5.5rem, 12vh, 7.1rem);
+  padding-bottom: 1.4rem;
+  scroll-padding-top: clamp(5.5rem, 12vh, 7.1rem);
+}
+
+.app-shell--storytel.app-shell--dashboard .screen-header {
+  z-index: 40;
+}
+
+.app-shell--storytel .prize-product,
+.app-shell--storytel .bottom-wave {
+  display: none;
+}
+
+.app-shell--storytel .status-banner {
+  display: none;
+}
+
+.app-shell--storytel .menu-shell {
+  grid-column: 3;
+  justify-self: end;
+  transform: none;
+  pointer-events: auto;
+}
+
+.app-shell--storytel .menu-button {
+  width: clamp(2.45rem, 5vw, 3.35rem);
+  height: clamp(2.45rem, 5vw, 3.35rem);
+  opacity: 1;
+}
+
+.app-shell--storytel .menu-button .menu-icon:not(.menu-icon--storytel) {
+  display: none;
+}
+
+.app-shell--storytel .menu-icon--storytel {
+  width: clamp(1.8rem, 3.4vw, 2.45rem);
+  height: auto;
+  filter: none;
+}
+
+.app-shell--storytel .menu-dropdown {
+  top: calc(100% + 0.65rem);
+  min-width: 152px;
+  border-radius: 0.85rem;
+  background: rgba(var(--rgb-card), 0.98);
+  border-color: rgba(var(--rgb-accent), 0.18);
+  box-shadow: 0 16px 30px rgba(var(--rgb-text), 0.12);
+}
+
+.app-shell--storytel-hero .roulette-view {
+  padding-bottom: 0;
+}
+
+.app-shell--storytel-hero {
+  --storytel-logo-top: clamp(1rem, 3vh, 2.5rem);
+  --storytel-logo-height: clamp(5rem, 11.6vh, 7rem);
+  --storytel-logo-gap: 10px;
+  --storytel-wheel-top-offset: calc(
+    var(--storytel-logo-top) +
+    var(--storytel-logo-height) +
+    var(--storytel-logo-gap)
+  );
+}
+
+.app-shell--storytel-hero .menu-shell {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-shell--storytel-hero .brand-link,
+.app-shell--storytel-hero .brand-link:not(.brand-link--dashboard) {
+  position: fixed;
+  left: calc(25vw + ((clamp(2rem, 9vw, 6.5rem) - clamp(0.4rem, 1.2vw, 1rem)) / 2));
+  top: auto;
+  bottom: calc(var(--app-height, 100vh) / 2 + min(32vw, 58vh, 660px) / 2 + 10px);
+  transform: translateX(-50%);
+  animation: storytel-logo-enter 1.08s cubic-bezier(0.19, 1, 0.22, 1) both;
+  --brand-hero-shift: 0px;
+  --brand-hero-scale: 1;
+}
+
+.app-shell--storytel-hero .brand-logo {
+  width: clamp(300px, 32vw, 420px);
+  max-height: var(--storytel-logo-height);
+}
+
+.storytel-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom center;
+  pointer-events: none;
+  user-select: none;
 }
 
 @media (max-width: 900px) {

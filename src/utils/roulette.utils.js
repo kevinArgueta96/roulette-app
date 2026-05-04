@@ -1,53 +1,36 @@
 import { calculateIndex } from "./calculate_roulette";
 import { isTimeWithinRange } from "./time.utils";
+import {
+  OUTCOME_KEYS,
+  OUTCOME_LOGIC,
+  OUTCOME_THEME,
+  SECTOR_PRESET,
+  DEFAULT_TOTAL_SECTORS,
+  THEME_NAME
+} from "@/themes";
 
-export const OUTCOME_KEYS = ["mainWin", "smallWin", "repeat", "noWin"];
-
-export const OUTCOME_META = {
-  mainWin: {
-    label: "LAHJAKASSI",
-    color: "#1B1A17",
-    textColor: "#d9bf74",
-    resultType: "mainPrize",
-    defaultSectorCount: 1,
-    defaultBaseWeight: 0,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  smallWin: {
-    label: "YLLÄTYSPALKINTO",
-    color: "#F8F0D8",
-    textColor: "#2d5b38",
-    resultType: "surpriseWin",
-    defaultSectorCount: 4,
-    defaultBaseWeight: 0,
-    hasDailyLimit: true,
-    hasSlots: true
-  },
-  repeat: {
-    label: "KOKEILE UUDESTAAN",
-    color: "#F8F0D8",
-    textColor: "#2d5b38",
-    resultType: "repeat",
-    defaultSectorCount: 3,
-    defaultBaseWeight: 0.3,
-    hasDailyLimit: false,
-    hasSlots: false
-  },
-  noWin: {
-    label: "",
-    color: "#2E5E39",
-    textColor: "#f6edd1",
-    resultType: "noWin",
-    defaultSectorCount: 8,
-    defaultBaseWeight: 0.7,
-    hasDailyLimit: false,
-    hasSlots: false
-  }
+export {
+  OUTCOME_KEYS,
+  OUTCOME_LOGIC,
+  OUTCOME_THEME,
+  SECTOR_PRESET,
+  DEFAULT_TOTAL_SECTORS
 };
 
-export const DEFAULT_TOTAL_SECTORS = 16;
-export const RANDOM_START_ANGLES = [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
+export const OUTCOME_META = OUTCOME_KEYS.reduce((acc, key) => {
+  acc[key] = {
+    ...OUTCOME_LOGIC[key],
+    ...OUTCOME_THEME[key]
+  };
+  return acc;
+}, {});
+
+export const RANDOM_START_ANGLES = THEME_NAME === "storytel"
+  ? [Math.PI * 1.5 - (Math.PI * 2 / DEFAULT_TOTAL_SECTORS) / 2]
+  : [5.1, 1.16, 4.3, 3.5, 5.9, 0.35, 2.75];
+
+const slotAwareKeys = () => OUTCOME_KEYS.filter((key) => OUTCOME_LOGIC[key].hasSlots);
+const isAmountPerTimeOutcome = (key) => OUTCOME_LOGIC[key]?.selectionMode === "amountPerTime";
 
 export const createDefaultSlot = () => ({
   startTime: "09:00",
@@ -57,32 +40,33 @@ export const createDefaultSlot = () => ({
   weight: 0.1
 });
 
-export const DEFAULT_WIN_DISTRIBUTION = () => ({
-  totalSectors: DEFAULT_TOTAL_SECTORS,
-  mainWin: {
-    sectorCount: OUTCOME_META.mainWin.defaultSectorCount,
-    baseWeight: OUTCOME_META.mainWin.defaultBaseWeight,
-    dailyLimit: 5,
-    givenToday: 0,
-    slots: []
-  },
-  smallWin: {
-    sectorCount: OUTCOME_META.smallWin.defaultSectorCount,
-    baseWeight: OUTCOME_META.smallWin.defaultBaseWeight,
-    dailyLimit: 20,
-    givenToday: 0,
-    slots: []
-  },
-  repeat: {
-    sectorCount: OUTCOME_META.repeat.defaultSectorCount,
-    baseWeight: OUTCOME_META.repeat.defaultBaseWeight
-  },
-  noWin: {
-    sectorCount: OUTCOME_META.noWin.defaultSectorCount,
-    baseWeight: OUTCOME_META.noWin.defaultBaseWeight
-  },
-  lastResetDate: ""
-});
+export const DEFAULT_WIN_DISTRIBUTION = () => {
+  const distribution = {
+    totalSectors: DEFAULT_TOTAL_SECTORS,
+    lastResetDate: ""
+  };
+
+  OUTCOME_KEYS.forEach((key) => {
+    const meta = OUTCOME_LOGIC[key];
+    const entry = {
+      sectorCount: meta.defaultSectorCount,
+      baseWeight: meta.defaultBaseWeight
+    };
+
+    if (meta.hasDailyLimit) {
+      entry.dailyLimit = meta.defaultDailyLimit ?? 0;
+      entry.givenToday = 0;
+    }
+
+    if (meta.hasSlots) {
+      entry.slots = [];
+    }
+
+    distribution[key] = entry;
+  });
+
+  return distribution;
+};
 
 const LEGACY_INDEX_TO_KEY = {
   0: "mainWin",
@@ -135,6 +119,8 @@ export const normalizeTotals = (payload) => {
     totalSpecialSurprise: Number(source.totalSpecialSurprise || source.totalSpecialSurprice) || 0,
     totalTopPrice: Number(source.totalTopPrice) || 0,
     totalGiftCard: Number(source.totalGiftCard || source.totalGitfCard) || 0,
+    totalGiftCard3m: Number(source.totalGiftCard3m) || 0,
+    totalGiftCard1m: Number(source.totalGiftCard1m) || 0,
     totalSpin: Number(source.totalSpin) || 0
   };
 };
@@ -154,15 +140,20 @@ const normalizeSlot = (slot, fallbackWeight = 0) => {
 const normalizeOutcomeCategory = (key, payload, defaults) => {
   const source = payload && typeof payload === "object" ? payload : {};
   const base = defaults[key];
-  const meta = OUTCOME_META[key];
+  const meta = OUTCOME_LOGIC[key];
+  const numberOrDefault = (value, fallback) => {
+    if (value == null) return fallback;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  };
 
   const normalized = {
-    sectorCount: Math.max(0, Number(source.sectorCount) || base.sectorCount),
-    baseWeight: Math.max(0, Number(source.baseWeight) || base.baseWeight)
+    sectorCount: Math.max(0, numberOrDefault(source.sectorCount, base.sectorCount)),
+    baseWeight: Math.max(0, numberOrDefault(source.baseWeight, base.baseWeight))
   };
 
   if (meta.hasDailyLimit) {
-    normalized.dailyLimit = Math.max(0, Number(source.dailyLimit) || base.dailyLimit);
+    normalized.dailyLimit = Math.max(0, Number(source.dailyLimit) || base.dailyLimit || 0);
     normalized.givenToday = Math.max(0, Number(source.givenToday) || 0);
   }
 
@@ -175,46 +166,57 @@ const normalizeOutcomeCategory = (key, payload, defaults) => {
   return normalized;
 };
 
+const isLegacyParranoPayload = (payload) => {
+  if (THEME_NAME !== "parrano") return false;
+  if (!payload || typeof payload !== "object") return false;
+  const hasNewShape = Object.prototype.hasOwnProperty.call(payload, "totalSectors") ||
+    Object.prototype.hasOwnProperty.call(payload, "repeat") ||
+    Object.prototype.hasOwnProperty.call(payload, "noWin");
+  return !hasNewShape;
+};
+
 const migrateLegacyDistribution = (payload) => {
   const defaults = DEFAULT_WIN_DISTRIBUTION();
   const source = payload && typeof payload === "object" ? payload : {};
   const sectorCounts = OUTCOME_KEYS.reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
 
   Object.values(LEGACY_INDEX_TO_KEY).forEach((key) => {
-    sectorCounts[key] += 1;
+    if (Object.prototype.hasOwnProperty.call(sectorCounts, key)) {
+      sectorCounts[key] += 1;
+    }
   });
 
-  return {
+  const migrated = {
     ...defaults,
     totalSectors: DEFAULT_TOTAL_SECTORS,
-    mainWin: {
-      ...defaults.mainWin,
-      sectorCount: sectorCounts.mainWin,
-      dailyLimit: Math.max(0, Number(source.mainWin?.dailyLimit) || defaults.mainWin.dailyLimit),
-      givenToday: Math.max(0, Number(source.mainWin?.givenToday) || 0),
-      slots: Array.isArray(source.mainWin?.slots)
-        ? source.mainWin.slots.map((slot) => normalizeSlot(slot, defaults.mainWin.baseWeight))
-        : []
-    },
-    smallWin: {
-      ...defaults.smallWin,
-      sectorCount: sectorCounts.smallWin,
-      dailyLimit: Math.max(0, Number(source.smallWin?.dailyLimit) || defaults.smallWin.dailyLimit),
-      givenToday: Math.max(0, Number(source.smallWin?.givenToday) || 0),
-      slots: Array.isArray(source.smallWin?.slots)
-        ? source.smallWin.slots.map((slot) => normalizeSlot(slot, defaults.smallWin.baseWeight))
-        : []
-    },
-    repeat: {
-      ...defaults.repeat,
-      sectorCount: sectorCounts.repeat
-    },
-    noWin: {
-      ...defaults.noWin,
-      sectorCount: sectorCounts.noWin
-    },
     lastResetDate: String(source.lastResetDate || "")
   };
+
+  OUTCOME_KEYS.forEach((key) => {
+    const meta = OUTCOME_LOGIC[key];
+    const base = defaults[key];
+    const sourceCategory = source[key] && typeof source[key] === "object" ? source[key] : {};
+
+    const entry = {
+      sectorCount: sectorCounts[key] || base.sectorCount,
+      baseWeight: base.baseWeight
+    };
+
+    if (meta.hasDailyLimit) {
+      entry.dailyLimit = Math.max(0, Number(sourceCategory.dailyLimit) || base.dailyLimit || 0);
+      entry.givenToday = Math.max(0, Number(sourceCategory.givenToday) || 0);
+    }
+
+    if (meta.hasSlots) {
+      entry.slots = Array.isArray(sourceCategory.slots)
+        ? sourceCategory.slots.map((slot) => normalizeSlot(slot, base.baseWeight))
+        : [];
+    }
+
+    migrated[key] = entry;
+  });
+
+  return migrated;
 };
 
 export const normalizeWinDistribution = (payload) => {
@@ -225,19 +227,30 @@ export const normalizeWinDistribution = (payload) => {
   }
 
   const hasDynamicShape = Object.prototype.hasOwnProperty.call(payload, "totalSectors") ||
-    Object.prototype.hasOwnProperty.call(payload, "repeat") ||
-    Object.prototype.hasOwnProperty.call(payload, "noWin");
+    OUTCOME_KEYS.some((key) => Object.prototype.hasOwnProperty.call(payload, key));
 
-  const source = hasDynamicShape ? payload : migrateLegacyDistribution(payload);
+  const source = (hasDynamicShape || !isLegacyParranoPayload(payload))
+    ? payload
+    : migrateLegacyDistribution(payload);
 
   const normalized = {
     totalSectors: Math.max(1, Number(source.totalSectors) || defaults.totalSectors),
-    mainWin: normalizeOutcomeCategory("mainWin", source.mainWin, defaults),
-    smallWin: normalizeOutcomeCategory("smallWin", source.smallWin, defaults),
-    repeat: normalizeOutcomeCategory("repeat", source.repeat, defaults),
-    noWin: normalizeOutcomeCategory("noWin", source.noWin, defaults),
     lastResetDate: String(source.lastResetDate || "")
   };
+
+  OUTCOME_KEYS.forEach((key) => {
+    normalized[key] = normalizeOutcomeCategory(key, source[key], defaults);
+  });
+
+  if (THEME_NAME === "storytel") {
+    const storytelAssigned = OUTCOME_KEYS.reduce((sum, key) => sum + normalized[key].sectorCount, 0);
+    if (storytelAssigned !== DEFAULT_TOTAL_SECTORS) {
+      OUTCOME_KEYS.forEach((key) => {
+        normalized[key] = { ...normalized[key], sectorCount: defaults[key].sectorCount };
+      });
+      normalized.totalSectors = DEFAULT_TOTAL_SECTORS;
+    }
+  }
 
   const assigned = OUTCOME_KEYS.reduce((sum, key) => sum + normalized[key].sectorCount, 0);
   if (assigned !== normalized.totalSectors) {
@@ -263,51 +276,36 @@ export const findActiveSlotIndex = (slots, currentTime) => {
   });
 };
 
+const presetMatchesCounts = (counts) => {
+  if (!Array.isArray(SECTOR_PRESET) || !SECTOR_PRESET.length) return false;
+  const presetCounts = SECTOR_PRESET.reduce((acc, key) => {
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  return OUTCOME_KEYS.every((key) => (presetCounts[key] || 0) === (counts[key] || 0));
+};
+
 const distributeOutcomeKeys = (distribution) => {
   const counts = OUTCOME_KEYS.reduce((acc, key) => {
     acc[key] = Math.max(0, Number(distribution?.[key]?.sectorCount) || 0);
     return acc;
   }, {});
 
-  const imagePreset = [
-    "noWin",
-    "repeat",
-    "noWin",
-    "smallWin",
-    "noWin",
-    "repeat",
-    "noWin",
-    "smallWin",
-    "noWin",
-    "mainWin",
-    "noWin",
-    "smallWin",
-    "noWin",
-    "repeat",
-    "noWin",
-    "smallWin"
-  ];
-
-  const matchesImagePreset = distribution?.totalSectors === 16 &&
-    counts.mainWin === 1 &&
-    counts.smallWin === 4 &&
-    counts.repeat === 3 &&
-    counts.noWin === 8;
-
-  if (matchesImagePreset) {
-    return imagePreset;
+  if (presetMatchesCounts(counts) && distribution?.totalSectors === SECTOR_PRESET.length) {
+    return SECTOR_PRESET.slice();
   }
 
   const ordered = [];
+  const working = { ...counts };
 
-  while (Object.values(counts).some((count) => count > 0)) {
+  while (Object.values(working).some((count) => count > 0)) {
     OUTCOME_KEYS
       .slice()
-      .sort((left, right) => counts[right] - counts[left] || OUTCOME_KEYS.indexOf(left) - OUTCOME_KEYS.indexOf(right))
+      .sort((left, right) => working[right] - working[left] || OUTCOME_KEYS.indexOf(left) - OUTCOME_KEYS.indexOf(right))
       .forEach((key) => {
-        if (counts[key] > 0) {
+        if (working[key] > 0) {
           ordered.push(key);
-          counts[key] -= 1;
+          working[key] -= 1;
         }
       });
   }
@@ -322,18 +320,23 @@ export const buildSectorsFromDistribution = (distribution) => {
   return sequence.map((outcomeKey, index) => ({
     index,
     outcomeKey,
-    label: OUTCOME_META[outcomeKey].label,
-    color: OUTCOME_META[outcomeKey].color,
-    textColor: OUTCOME_META[outcomeKey].textColor,
-    resultType: OUTCOME_META[outcomeKey].resultType
+    label: OUTCOME_THEME[outcomeKey].label,
+    color: OUTCOME_THEME[outcomeKey].color,
+    textColor: OUTCOME_THEME[outcomeKey].textColor,
+    resultType: OUTCOME_LOGIC[outcomeKey].resultType
   }));
 };
 
 export const getFallbackIndexForDistribution = (distribution) => {
   const sectors = buildSectorsFromDistribution(distribution);
-  const preferred = sectors.find((sector) => sector.outcomeKey === "noWin")
-    || sectors.find((sector) => sector.outcomeKey === "repeat")
-    || sectors[0];
+  const noLimitKeys = OUTCOME_KEYS.filter((key) => !OUTCOME_LOGIC[key].hasDailyLimit);
+  const preferredKeys = ["repeat", "noWin", ...noLimitKeys];
+  let preferred;
+  for (const key of preferredKeys) {
+    preferred = sectors.find((sector) => sector.outcomeKey === key);
+    if (preferred) break;
+  }
+  preferred = preferred || sectors[0];
   return preferred ? preferred.index : 0;
 };
 
@@ -369,21 +372,33 @@ export const buildNextTotals = (currentTotals, outcomeKey) => {
     totalSpecialSurprise: Number(currentTotals.totalSpecialSurprise) || 0,
     totalTopPrice: Number(currentTotals.totalTopPrice) || 0,
     totalGiftCard: Number(currentTotals.totalGiftCard) || 0,
+    totalGiftCard3m: Number(currentTotals.totalGiftCard3m) || 0,
+    totalGiftCard1m: Number(currentTotals.totalGiftCard1m) || 0,
     totalSpin: (Number(currentTotals.totalSpin) || 0) + 1
   };
 
   switch (outcomeKey) {
     case "smallWin":
+    case "surpriseWin":
       totals.totalSpecialSurprise += 1;
       break;
     case "repeat":
       totals.totalReplay += 1;
       break;
     case "mainWin":
+    case "mainPrize":
       totals.totalTopPrice += 1;
       break;
     case "noWin":
       totals.totalSpecialPrice += 1;
+      break;
+    case "giftCard3m":
+      totals.totalGiftCard3m += 1;
+      totals.totalGiftCard += 1;
+      break;
+    case "giftCard1m":
+      totals.totalGiftCard1m += 1;
+      totals.totalGiftCard += 1;
       break;
     default:
       break;
@@ -394,33 +409,49 @@ export const buildNextTotals = (currentTotals, outcomeKey) => {
 
 export const buildOutcomeWeights = (distribution, currentTime) => {
   const normalized = normalizeWinDistribution(distribution);
-  const slotWeights = {
-    mainWin: 0,
-    smallWin: 0,
-    repeat: 0,
-    noWin: 0
-  };
+  const activeOutcomeKeys = OUTCOME_KEYS.filter((key) => Math.max(0, Number(normalized[key]?.sectorCount) || 0) > 0);
+  const slotKeys = slotAwareKeys().filter((key) => activeOutcomeKeys.includes(key));
 
-  ["mainWin", "smallWin"].forEach((key) => {
+  const slotWeights = OUTCOME_KEYS.reduce((acc, key) => {
+    acc[key] = 0;
+    return acc;
+  }, {});
+
+  slotKeys.forEach((key) => {
     const category = normalized[key];
+    if (!category) return;
     const activeSlotIndex = findActiveSlotIndex(category.slots, currentTime);
     const activeSlot = activeSlotIndex >= 0 ? category.slots[activeSlotIndex] : null;
-    const available = category.givenToday < category.dailyLimit && activeSlot && activeSlot.given < activeSlot.limit;
-    slotWeights[key] = available ? Math.max(0, Number(activeSlot.weight) || 0) : 0;
+    const dailyOk = !OUTCOME_LOGIC[key].hasDailyLimit || (category.givenToday < category.dailyLimit);
+    const available = dailyOk && activeSlot && activeSlot.given < activeSlot.limit;
+    slotWeights[key] = available
+      ? (isAmountPerTimeOutcome(key) ? 1 : Math.max(0, Number(activeSlot.weight) || 0))
+      : 0;
   });
 
-  const reserved = Math.min(1, slotWeights.mainWin + slotWeights.smallWin);
+  const reservedRaw = slotKeys.reduce((sum, key) => sum + slotWeights[key], 0);
+  const reserved = Math.min(1, reservedRaw);
   const remaining = Math.max(0, 1 - reserved);
-  const fallbackSplit = Math.max(0, normalized.repeat.baseWeight) + Math.max(0, normalized.noWin.baseWeight);
-  const repeatShare = fallbackSplit > 0 ? Math.max(0, normalized.repeat.baseWeight) / fallbackSplit : 0;
-  const noWinShare = fallbackSplit > 0 ? Math.max(0, normalized.noWin.baseWeight) / fallbackSplit : 0;
 
-  return {
-    mainWin: slotWeights.mainWin,
-    smallWin: slotWeights.smallWin,
-    repeat: remaining * repeatShare,
-    noWin: remaining * noWinShare
-  };
+  const fallbackKeys = OUTCOME_KEYS.filter((key) => activeOutcomeKeys.includes(key) && !OUTCOME_LOGIC[key].hasSlots);
+  const fallbackTotal = fallbackKeys.reduce(
+    (sum, key) => sum + Math.max(0, Number(normalized[key]?.baseWeight) || 0),
+    0
+  );
+
+  const result = OUTCOME_KEYS.reduce((acc, key) => {
+    if (slotKeys.includes(key)) {
+      acc[key] = slotWeights[key];
+    } else if (fallbackKeys.includes(key) && fallbackTotal > 0) {
+      const share = Math.max(0, Number(normalized[key]?.baseWeight) || 0) / fallbackTotal;
+      acc[key] = remaining * share;
+    } else {
+      acc[key] = 0;
+    }
+    return acc;
+  }, {});
+
+  return result;
 };
 
 export const buildDynamicProbabilities = (distribution, currentTime) => {
@@ -449,8 +480,14 @@ export const buildDynamicProbabilities = (distribution, currentTime) => {
 };
 
 export const getSectorResultType = (sector) => {
-  if (!sector) return OUTCOME_META.noWin.resultType;
-  return OUTCOME_META[sector.outcomeKey]?.resultType || OUTCOME_META.noWin.resultType;
+  if (!sector) {
+    const fallbackKey = OUTCOME_KEYS.find((key) => key === "repeat") ||
+      OUTCOME_KEYS.find((key) => key === "noWin") ||
+      OUTCOME_KEYS.find((key) => !OUTCOME_LOGIC[key].hasDailyLimit) ||
+      OUTCOME_KEYS[0];
+    return OUTCOME_LOGIC[fallbackKey].resultType;
+  }
+  return OUTCOME_LOGIC[sector.outcomeKey]?.resultType || OUTCOME_KEYS[0];
 };
 
 export const getTargetDegreesForIndex = (winnerIndex, arc) => {

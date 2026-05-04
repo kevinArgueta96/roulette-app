@@ -1,10 +1,10 @@
 export const textDefaultRouletteStyle = {
-  fontWeight: "700",
+  fontWeight: "800",
   fontFamily: "\"agenda-one-compressed\", sans-serif"
 };
 
 export const textTeslaRouletteStyle = {
-  fontWeight: "700",
+  fontWeight: "800",
   fontFamily: "\"agenda-one-compressed\", sans-serif"
 };
 
