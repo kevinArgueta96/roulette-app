@@ -1,14 +1,6 @@
 <template>
   <div class="confetti-root">
     <canvas id="confetti-container" ref="confettiCanvas" class="confetti-layer"></canvas>
-    <div class="burst-layer" aria-hidden="true">
-      <span
-        v-for="particle in burstParticles"
-        :key="particle.id"
-        class="burst-particle"
-        :style="particle.style"
-      ></span>
-    </div>
   </div>
 </template>
 
@@ -23,6 +15,15 @@ const DEFAULT_CONFETTI_COLORS = [
   [216, 187, 113], [245, 215, 138], [246, 237, 209],
   [255, 80, 20], [255, 255, 255], [46, 94, 57]
 ];
+
+const DESKTOP_PARTICLE_COUNT = 1200;
+const MOBILE_PARTICLE_COUNT = 450;
+
+const SHAPE_CIRCLE = 0;
+const SHAPE_SQUARE = 1;
+
+const TWO_PI = Math.PI * 2;
+const PI_5_8 = 5.8 * Math.PI;
 
 export default {
   name: "ConfettiComponent",
@@ -47,9 +48,6 @@ export default {
     const mobile = isMobile();
     return {
       confetti: null,
-      burstParticles: [],
-      burstTimers: [],
-      burstRaf: null,
       confettiSettings: {
         target: "confetti-container",
         respawn: true,
@@ -75,16 +73,31 @@ export default {
       }
     }
   },
+  created() {
+    this._burst = null;
+    this._burstRaf = null;
+    this._burstRender = null;
+    this._burstStartedAt = 0;
+    this._burstPauseElapsed = 0;
+    this._visibilityHandler = null;
+  },
   mounted() {
     const colors = this.themeMeta?.confettiColors || DEFAULT_CONFETTI_COLORS;
     this.confettiSettings = { ...this.confettiSettings, colors };
     this.confetti = new ConfettiGenerator(this.confettiSettings);
+
+    this._visibilityHandler = () => this.handleVisibilityChange();
+    document.addEventListener("visibilitychange", this._visibilityHandler);
 
     if (this.isVisibleConfetti) {
       this.startConfetti();
     }
   },
   beforeDestroy() {
+    if (this._visibilityHandler) {
+      document.removeEventListener("visibilitychange", this._visibilityHandler);
+      this._visibilityHandler = null;
+    }
     this.stopBurst();
     if (this.confetti) {
       this.confetti.clear();
@@ -111,14 +124,14 @@ export default {
       }
     },
     stopBurst() {
-      this.burstTimers.forEach((timer) => window.clearTimeout(timer));
-      this.burstTimers = [];
-      this.burstParticles = [];
-
-      if (this.burstRaf) {
-        window.cancelAnimationFrame(this.burstRaf);
-        this.burstRaf = null;
+      if (this._burstRaf) {
+        window.cancelAnimationFrame(this._burstRaf);
+        this._burstRaf = null;
       }
+      this._burst = null;
+      this._burstRender = null;
+      this._burstStartedAt = 0;
+      this._burstPauseElapsed = 0;
 
       this.clearCanvas();
     },
@@ -144,13 +157,6 @@ export default {
 
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     },
-    easeOutCubic(value) {
-      return 1 - Math.pow(1 - value, 3);
-    },
-    smoothStep(value) {
-      const clamped = Math.max(0, Math.min(1, value));
-      return clamped * clamped * (3 - (2 * clamped));
-    },
     getWheelOrigin() {
       const wheel = document.querySelector(".wheel-stage");
       const bounds = wheel?.getBoundingClientRect();
@@ -167,6 +173,98 @@ export default {
         y: bounds.top + bounds.height / 2
       };
     },
+    handleVisibilityChange() {
+      if (!this._burst) return;
+
+      if (document.hidden) {
+        if (this._burstRaf) {
+          window.cancelAnimationFrame(this._burstRaf);
+          this._burstRaf = null;
+          this._burstPauseElapsed = performance.now() - this._burstStartedAt;
+        }
+        return;
+      }
+
+      if (this._burstPauseElapsed > 0 && this._burstRender) {
+        this._burstStartedAt = performance.now() - this._burstPauseElapsed;
+        this._burstPauseElapsed = 0;
+        this._burstRaf = window.requestAnimationFrame(this._burstRender);
+      }
+    },
+    buildBurstData(particleCount, origin, viewportWidth, viewportHeight, mobile, colors) {
+      const xs = new Float32Array(particleCount);
+      const ys = new Float32Array(particleCount);
+      const targetXs = new Float32Array(particleCount);
+      const targetYs = new Float32Array(particleCount);
+      const sizes = new Float32Array(particleCount);
+      const delays = new Float32Array(particleCount);
+      const invDurations = new Float32Array(particleCount);
+      const wobbles = new Float32Array(particleCount);
+      const wobbleSpeeds = new Float32Array(particleCount);
+      const airLifts = new Float32Array(particleCount);
+      const airDrifts = new Float32Array(particleCount);
+      const fanDelays = new Float32Array(particleCount);
+      const invFanRanges = new Float32Array(particleCount);
+      const rotations = new Float32Array(particleCount);
+      const spins = new Float32Array(particleCount);
+      const colorIdx = new Uint8Array(particleCount);
+      const shapes = new Uint8Array(particleCount);
+
+      const spreadPadding = Math.max(viewportWidth, viewportHeight) * 0.18;
+      const maxDuration = mobile ? 4300 : 4600;
+      const colorCount = colors.length;
+      const startRadiusMax = mobile ? 34 : 58;
+      const sizeBase = mobile ? 1.8 : 1.6;
+      const sizeRange = mobile ? 3.4 : 4.2;
+      const airLiftBase = mobile ? 90 : 150;
+      const airLiftRange = mobile ? 190 : 330;
+      const airDriftRange = mobile ? 120 : 260;
+
+      // Round-robin color assignment, then sort indices by color so the
+      // serialized arrays are color-grouped (enables fillStyle batching).
+      const indices = new Uint32Array(particleCount);
+      const tmpColorIdx = new Uint8Array(particleCount);
+      for (let i = 0; i < particleCount; i++) {
+        indices[i] = i;
+        tmpColorIdx[i] = i % colorCount;
+      }
+      indices.sort((a, b) => tmpColorIdx[a] - tmpColorIdx[b]);
+
+      for (let dst = 0; dst < particleCount; dst++) {
+        const src = indices[dst];
+        const angle = Math.random() * TWO_PI;
+        const startRadius = Math.random() * startRadiusMax;
+        const duration = 3650 + Math.random() * (maxDuration - 3650);
+        const fanDelay = 0.52 + Math.random() * 0.14;
+
+        xs[dst] = origin.x + Math.cos(angle) * startRadius;
+        ys[dst] = origin.y + Math.sin(angle) * startRadius;
+        targetXs[dst] = (Math.random() * (viewportWidth + spreadPadding * 2)) - spreadPadding;
+        targetYs[dst] = (Math.random() * (viewportHeight + spreadPadding * 1.4)) - spreadPadding * 0.7;
+        sizes[dst] = sizeBase + Math.random() * sizeRange;
+        delays[dst] = Math.random() * 240;
+        invDurations[dst] = 1 / duration;
+        wobbles[dst] = 12 + Math.random() * 34;
+        wobbleSpeeds[dst] = 5 + Math.random() * 9;
+        airLifts[dst] = airLiftBase + Math.random() * airLiftRange;
+        airDrifts[dst] = (Math.random() - 0.5) * airDriftRange;
+        fanDelays[dst] = fanDelay;
+        invFanRanges[dst] = 1 / (1 - fanDelay);
+        rotations[dst] = Math.random() * Math.PI;
+        spins[dst] = (Math.random() - 0.5) * 9;
+        colorIdx[dst] = tmpColorIdx[src];
+        shapes[dst] = Math.random() > 0.62 ? SHAPE_SQUARE : SHAPE_CIRCLE;
+      }
+
+      return {
+        count: particleCount,
+        xs, ys, targetXs, targetYs, sizes, delays, invDurations,
+        wobbles, wobbleSpeeds, airLifts, airDrifts, fanDelays, invFanRanges,
+        rotations, spins, colorIdx, shapes,
+        colorStrings: colors,
+        viewportWidth, viewportHeight
+      };
+    },
     playWheelExplosion() {
       this.stopBurst();
       const ctx = this.prepareCanvas();
@@ -176,100 +274,134 @@ export default {
       const colors = (this.themeMeta?.confettiColors || DEFAULT_CONFETTI_COLORS)
         .map(([r, g, b]) => `rgb(${r}, ${g}, ${b})`);
       const mobile = isMobile();
-      const particleCount = mobile ? 1500 : 4200;
+      const particleCount = mobile ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT;
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const spreadPadding = Math.max(viewportWidth, viewportHeight) * 0.18;
-      const maxDuration = mobile ? 4300 : 4600;
 
-      this.burstParticles = Array.from({ length: particleCount }, (_, index) => {
-        const angle = Math.random() * Math.PI * 2;
-        const startRadius = Math.random() * (mobile ? 34 : 58);
-        const targetX = (Math.random() * (viewportWidth + spreadPadding * 2)) - spreadPadding;
-        const targetY = (Math.random() * (viewportHeight + spreadPadding * 1.4)) - spreadPadding * 0.7;
-        const size = mobile ? 1.8 + Math.random() * 3.4 : 1.6 + Math.random() * 4.2;
+      this._burst = this.buildBurstData(
+        particleCount, origin, viewportWidth, viewportHeight, mobile, colors
+      );
+      this._burstStartedAt = performance.now();
+      this._burstPauseElapsed = 0;
 
-        return {
-          x: origin.x + Math.cos(angle) * startRadius,
-          y: origin.y + Math.sin(angle) * startRadius,
-          targetX,
-          targetY,
-          size,
-          color: colors[index % colors.length],
-          delay: Math.random() * 240,
-          duration: 3650 + Math.random() * (maxDuration - 3650),
-          wobble: 12 + Math.random() * 34,
-          wobbleSpeed: 5 + Math.random() * 9,
-          airLift: (mobile ? 90 : 150) + Math.random() * (mobile ? 190 : 330),
-          airDrift: (Math.random() - 0.5) * (mobile ? 120 : 260),
-          fanDelay: 0.52 + Math.random() * 0.14,
-          rotation: Math.random() * Math.PI,
-          spin: (Math.random() - 0.5) * 9,
-          shape: Math.random() > 0.62 ? "square" : "circle"
-        };
-      });
+      const cullMinX = -50;
+      const cullMaxX = viewportWidth + 50;
+      const cullMinY = -50;
+      const cullMaxY = viewportHeight + 50;
 
-      const startedAt = performance.now();
       const render = (now) => {
+        const burst = this._burst;
+        if (!burst) return;
+
         ctx.clearRect(0, 0, viewportWidth, viewportHeight);
 
+        const xs = burst.xs;
+        const ys = burst.ys;
+        const targetXs = burst.targetXs;
+        const targetYs = burst.targetYs;
+        const sizes = burst.sizes;
+        const delays = burst.delays;
+        const invDurations = burst.invDurations;
+        const wobbles = burst.wobbles;
+        const wobbleSpeeds = burst.wobbleSpeeds;
+        const airLifts = burst.airLifts;
+        const airDrifts = burst.airDrifts;
+        const fanDelays = burst.fanDelays;
+        const invFanRanges = burst.invFanRanges;
+        const rotations = burst.rotations;
+        const spins = burst.spins;
+        const colorIdx = burst.colorIdx;
+        const shapes = burst.shapes;
+        const colorStrings = burst.colorStrings;
+        const count = burst.count;
+
+        const elapsedBase = now - this._burstStartedAt;
         let active = false;
-        this.burstParticles.forEach((particle) => {
-          const elapsed = now - startedAt - particle.delay;
+        let currentColor = -1;
+
+        for (let i = 0; i < count; i++) {
+          const elapsed = elapsedBase - delays[i];
           if (elapsed < 0) {
             active = true;
-            return;
+            continue;
           }
 
-          const progress = Math.min(1, elapsed / particle.duration);
-          if (progress < 1) active = true;
-
-          const eased = this.easeOutCubic(progress);
-          const fan = this.smoothStep((progress - particle.fanDelay) / (1 - particle.fanDelay));
-          const fall = 34 * progress * progress * (1 - fan * 0.75);
-          const wobble = Math.sin((progress * particle.wobbleSpeed * Math.PI) + particle.rotation) * particle.wobble;
-          const fanWave = Math.sin((progress * 5.8 * Math.PI) + particle.rotation) * particle.wobble * 1.45;
-          const x = particle.x +
-            (particle.targetX - particle.x) * eased +
-            wobble * (1 - progress * 0.45) +
-            (particle.airDrift + fanWave) * fan;
-          const y = particle.y +
-            (particle.targetY - particle.y) * eased +
-            fall -
-            (particle.airLift * fan);
-
-          const fadeIn = Math.min(1, progress / 0.08);
-          const fadeOut = progress > 0.86 ? Math.max(0, 1 - ((progress - 0.86) / 0.14)) : 1;
-          const opacity = fadeIn * fadeOut;
-
-          ctx.save();
-          ctx.globalAlpha = opacity;
-          ctx.fillStyle = particle.color;
-          ctx.translate(x, y);
-          ctx.rotate(particle.rotation + particle.spin * progress);
-
-          if (particle.shape === "square") {
-            ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+          let progress = elapsed * invDurations[i];
+          if (progress >= 1) {
+            progress = 1;
           } else {
-            ctx.beginPath();
-            ctx.arc(0, 0, particle.size / 2, 0, Math.PI * 2);
-            ctx.fill();
+            active = true;
           }
 
-          ctx.restore();
-        });
+          const oneMinusP = 1 - progress;
+          const eased = 1 - oneMinusP * oneMinusP * oneMinusP;
+
+          const fanRaw = (progress - fanDelays[i]) * invFanRanges[i];
+          const fanClamped = fanRaw < 0 ? 0 : (fanRaw > 1 ? 1 : fanRaw);
+          const fan = fanClamped * fanClamped * (3 - 2 * fanClamped);
+
+          const fall = 34 * progress * progress * (1 - fan * 0.75);
+          const rotation = rotations[i];
+          const wobbleAmp = wobbles[i];
+          const wobble = Math.sin(progress * wobbleSpeeds[i] * Math.PI + rotation) * wobbleAmp;
+          const fanWave = Math.sin(progress * PI_5_8 + rotation) * wobbleAmp * 1.45;
+
+          const x = xs[i] +
+            (targetXs[i] - xs[i]) * eased +
+            wobble * (1 - progress * 0.45) +
+            (airDrifts[i] + fanWave) * fan;
+          const y = ys[i] +
+            (targetYs[i] - ys[i]) * eased +
+            fall -
+            (airLifts[i] * fan);
+
+          if (x < cullMinX || x > cullMaxX || y < cullMinY || y > cullMaxY) continue;
+
+          const fadeIn = progress < 0.08 ? progress * 12.5 : 1;
+          const fadeOut = progress > 0.86 ? (1 - ((progress - 0.86) * 7.142857)) : 1;
+          const opacity = fadeIn * fadeOut;
+          if (opacity <= 0) continue;
+
+          const ci = colorIdx[i];
+          if (ci !== currentColor) {
+            ctx.fillStyle = colorStrings[ci];
+            currentColor = ci;
+          }
+          ctx.globalAlpha = opacity;
+
+          const size = sizes[i];
+
+          if (shapes[i] === SHAPE_CIRCLE) {
+            const r = size * 0.5;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, TWO_PI);
+            ctx.fill();
+          } else {
+            const half = size * 0.5;
+            const rot = rotation + spins[i] * progress;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rot);
+            ctx.fillRect(-half, -half, size, size);
+            ctx.restore();
+          }
+        }
+
+        ctx.globalAlpha = 1;
 
         if (active) {
-          this.burstRaf = window.requestAnimationFrame(render);
+          this._burstRaf = window.requestAnimationFrame(render);
           return;
         }
 
         this.clearCanvas();
-        this.burstParticles = [];
-        this.burstRaf = null;
+        this._burst = null;
+        this._burstRender = null;
+        this._burstRaf = null;
       };
 
-      this.burstRaf = window.requestAnimationFrame(render);
+      this._burstRender = render;
+      this._burstRaf = window.requestAnimationFrame(render);
     }
   }
 };
@@ -291,54 +423,6 @@ export default {
   height: 100%;
   pointer-events: none;
   z-index: 35;
-}
-
-.confetti-layer {
   display: block;
-}
-
-.burst-layer {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  overflow: hidden;
-}
-
-.burst-particle {
-  position: absolute;
-  display: block;
-  border-radius: 999px;
-  transform: translate(-50%, -50%) scale(0.5);
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: wheel-confetti-burst cubic-bezier(0.16, 0.84, 0.28, 1) forwards;
-}
-
-@keyframes wheel-confetti-burst {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.4);
-  }
-
-  8% {
-    opacity: 1;
-  }
-
-  55% {
-    opacity: 1;
-    transform: translate(
-      calc(-50% + var(--burst-x) * 0.85),
-      calc(-50% + var(--burst-y) * 0.85)
-    ) scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate(
-      calc(-50% + var(--burst-x)),
-      calc(-50% + var(--burst-y) + 40px)
-    ) scale(0.85);
-  }
 }
 </style>

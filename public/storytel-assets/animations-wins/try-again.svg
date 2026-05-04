@@ -18,32 +18,43 @@
         letter-spacing: -.02em;
       }
 
+      @font-face {
+        font-family: 'Storytel Euclid';
+        src: url('/fonts/storytel/StorytelEuclid-Semibold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+      }
+
       .cls-5 {
         fill: #383838;
-        font-family: StorytelEuclid-Semibold, 'Storytel Euclid';
+        font-family: 'Storytel Euclid', system-ui, sans-serif;
         font-size: 133.87px;
         font-weight: 600;
       }
 
-      text tspan {
+      text {
         opacity: 0;
         transform-box: fill-box;
         transform-origin: center;
-        animation: text-write 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        animation: text-bounce 0.9s ease-out 0.42s forwards;
       }
 
-      text tspan:nth-child(1) { animation-delay: .42s; }
-      text tspan:nth-child(2) { animation-delay: .56s; }
-      text tspan:nth-child(3) { animation-delay: .7s; }
-      text tspan:nth-child(4) { animation-delay: .84s; }
-      text tspan:nth-child(5) { animation-delay: 1.08s; }
-
-      @keyframes text-write {
-        from {
+      @keyframes text-bounce {
+        0% {
           opacity: 0;
-          transform: translateY(18px) scale(0.96);
+          transform: translateY(34px) scale(0.4);
         }
-        to {
+        55% {
+          opacity: 1;
+          transform: translateY(-10px) scale(1.1);
+        }
+        72% {
+          transform: translateY(4px) scale(0.96);
+        }
+        88% {
+          transform: translateY(-2px) scale(1.02);
+        }
+        100% {
           opacity: 1;
           transform: translateY(0) scale(1);
         }
@@ -54,6 +65,6 @@
     <g id="Capa_1-2" data-name="Capa 1-2">
       <path class="cls-3" d="M839.17,125.86C698.09-8.03,434.01-38.71,266.07,51.27,116.75,131.27,14.59,275.24,1.78,444.65c-20.57,271.96,138.85,492.59,408.17,515.32l104.51.27c189.62.51,356.65-67.28,411.69-256.08,55.79-191.36,55.7-429.91-86.98-578.3h0Z"/>
     </g>
-    <text class="cls-5" transform="translate(330.79 480.84)"><tspan class="cls-1" x="0" y="0">Y</tspan><tspan class="cls-4" x="79.65" y="0">ti</tspan><tspan class="cls-2" x="171.09" y="0">r</tspan><tspan class="cls-4" x="217.28" y="0">ä</tspan><tspan class="cls-4"><tspan x="-129.66" y="121.84">uudellen!</tspan></tspan></text>
+    <g transform="translate(330.79 480.84)"><text class="cls-5"><tspan class="cls-1" x="0" y="0">Y</tspan><tspan class="cls-4" x="79.65" y="0">ti</tspan><tspan class="cls-2" x="171.09" y="0">r</tspan><tspan class="cls-4" x="217.28" y="0">ä</tspan><tspan class="cls-4"><tspan x="-129.66" y="121.84">uudellen!</tspan></tspan></text></g>
   </g>
 </svg>
