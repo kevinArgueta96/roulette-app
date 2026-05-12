@@ -99,8 +99,8 @@ export const meta = {
     textAlign: "left",
     defaultScale: 0.029,
     defaultMinSize: 25,
-    teslaScale: 0.033,
-    teslaMinSize: 29,
+    teslaScale: 0.036,
+    teslaMinSize: 19,
     sectorStrokeStyle: "#ffffff",
     outerRing: { outerColor: "#000000", innerColor: "#ffffff" },
     multilineLabels: {
