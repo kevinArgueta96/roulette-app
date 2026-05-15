@@ -83,6 +83,7 @@ const RESULT_CONFIG = {
     description: "Tämä sektori ei anna palkintoa."
   }
 };
+const STORYTEL_RESULT_DURATION = 6000;
 
 export default {
   name: "RouletteView",
@@ -149,8 +150,15 @@ export default {
         y: rect.top + rect.height / 2
       };
     },
-    onShowImg({ type }) {
+    getResultConfig(type) {
       const result = RESULT_CONFIG[type];
+      if (!result) return null;
+      return this.isStorytel
+        ? { ...result, duration: STORYTEL_RESULT_DURATION }
+        : result;
+    },
+    onShowImg({ type }) {
+      const result = this.getResultConfig(type);
 
       if (!result) {
         this.updateState({ mutationType: "setMainPrizeActive", payload: false });
